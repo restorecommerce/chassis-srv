@@ -1,0 +1,3 @@
+[submodule "protos"]
+	path = protos
+	url = https://gitlab.n-fuse.de/restorecommerce/protos.git

@@ -1,0 +1,24 @@
+{
+  "name": "restore-chassis",
+  "version": "0.1.0",
+  "description": "Restore Commerce microservice chassis",
+  "main": "index",
+  "author": "Marcel Hauf",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/restorecommerce/restore-chassis.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "restore",
+    "commerce",
+    "microservice",
+    "chassis"
+  ],
+  "dependencies": {
+    "grpc": "^0.13.2-pre1"
+  },
+  "engines": {
+    "node": ">= 5.0.0"
+  }
+}
