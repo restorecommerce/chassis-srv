@@ -34,7 +34,6 @@ function checkUser(requestBody, options) {
 
 function userGetFactory(instance) {
   let client = new proto.user.User(instance, grpc.credentials.createInsecure());
-  let deadline = 1000;
   return function*(request) {
     function get(req) {
       return function(cb) {
