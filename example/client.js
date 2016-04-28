@@ -3,68 +3,81 @@
 // gRPC
 let grpc = require('grpc');
 let co = require('co');
+let util = require('util');
 const PROTO_PATH = __dirname + '/../protos/user.proto';
 let proto = grpc.load(PROTO_PATH);
 
 // chassis
 let endpoint = require('../lib/endpoint');
+let Client = require('../lib/transport/grpc');
 let StaticPublisher = require('../lib/loadbalancer/static').StaticPublisher;
 
-// checkUser middleware example
-function checkUser(requestBody, options) {
-  let id = requestBody['@id'];
-  let name = requestBody.name;
-  let email = requestBody.email;
-  try {
-    let resp = options.microservice.user.get(id, name, email);
-    return {
-      exists: true
-    }
-  } catch (e) {
-    if (e.message === 'User does not exist') {
-      return {
-        exists: false
-      }
-    }
-    return {
-      error: e
-    }
-  }
-}
-
-function userGetFactory(instance) {
-  let client = new proto.user.User(instance, grpc.credentials.createInsecure());
-  return function*(request) {
-    function get(req) {
+function makeUserFactory(method, timeout) {
+  return function*(instance) {
+    let conn = new proto.user.User(instance, grpc.credentials.createInsecure());
+    function waitForClientReady(client, deadline) {
       return function(cb) {
-        client.get(req, cb);
+        grpc.waitForClientReady(client, deadline, cb);
       }
     }
-    return yield get(request);
+    try {
+      let deadline = Date.now() + timeout;
+      yield waitForClientReady(conn, deadline);
+    } catch (e) {
+      let chan = grpc.getClientChannel(conn);
+      chan.close();
+      throw e;
+    }
+    let client = new Client(conn, method);
+    return client.endpoint;
   }
 }
 
-function Microservice(options) {
+function* init(options) {
+  let logger = options.logger;
+  let timeout = options.timeout;
   // Register microservices here
   // User
   let userInstances = options.instances;
-  let userGetPublisher = new StaticPublisher(userInstances, userGetFactory);
+  let userGetPublisher = yield StaticPublisher(userInstances, makeUserFactory('get', options.timeout), logger);
   let userGetLoadBalancer = endpoint.roundRobin(userGetPublisher);
-  let userGet = endpoint.retry(10, 1000, userGetLoadBalancer);
-  this.user = {
-    get: function*(req){
-      return yield userGet(req);
+  let userGet = endpoint.retry(10, timeout, userGetLoadBalancer);
+
+  return {
+    user: {
+      get: userGet
     }
-  }
+  };
 }
 
-co(function*(){
+co(function*() {
   let options = {
-    instances: ["localhost:50051"]
+    instances: ["localhost:50051"],
+    logger: {
+      log: console.log
+    },
+    timeout: 10000
   };
-  let ms = new Microservice(options);
-  let resp = yield ms.user.get({id:'/users/me'});
-  console.log(resp);
-}).catch(function(err){
-  console.error(err);
+  let ms = yield init(options);
+
+  let results = [
+    yield ms.user.get({
+      id: '/users/admin'
+    }),
+    yield ms.user.get({
+      id: '/users/me'
+    }),
+    yield ms.user.get({
+      id: '/users/does_not_exist'
+    })
+  ];
+  for(let result of results) {
+    if(result.error) {
+      console.error(result.error);
+      continue;
+    }
+    console.log(result.data);
+  }
+}).catch(function(err) {
+  console.error('example error', err);
 });
