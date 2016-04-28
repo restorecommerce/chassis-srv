@@ -11,6 +11,7 @@ const Hour = 60 * Minute;
 let grpc = require('grpc');
 let co = require('co');
 let util = require('util');
+let Serve = require('../lib/transport/grpc').Serve;
 const PROTO_PATH = __dirname + '/../protos/user.proto';
 let proto = grpc.load(PROTO_PATH);
 
@@ -41,21 +42,6 @@ function Logging(srv, logger) {
   }
 }
 
-function makeGetEndpoint(service) {
-  return function(call, callback) {
-    let req = call.request;
-    let resp = service.get(req.id, req.name, req.email);
-    if (resp) {
-      callback(null, resp);
-    } else {
-      callback({
-        code: grpc.status.NOT_FOUND,
-        details: 'not found'
-      });
-    }
-  };
-}
-
 function makeNotImplemented() {
   return function(call, callback) {
     callback({
@@ -64,47 +50,9 @@ function makeNotImplemented() {
   };
 }
 
-function makeGenericEndpoint(service, method) {
-  return function(call, callback) {
-    let req = call.request;
-    let f = service[method];
-    if (!f) {
-      callback({
-        code: grpc.status.NOT_IMPLEMENTED
-      });
-    }
-    let args = [];
-    Object.keys(req).forEach(function(key) {
-      args.push(req[key]);
-    });
-    let resp, error;
-    try {
-      resp = f.apply(service, args);
-    } catch (e) {
-      error = e;
-    }
-    if (error) {
-      let code = grpc.status.INTERNAL;
-      callback({
-        code: code,
-        details: error.message
-      });
-      return;
-    }
-    if (!resp) {
-      callback({
-        code: grpc.status.NOT_FOUND,
-        details: 'not found'
-      });
-      return;
-    }
-    callback(null, resp);
-  };
-}
-
 function makeServiceBinding(srv) {
   return {
-    get: makeGenericEndpoint(srv, 'get'),
+    get: Serve(srv.get),
     register: makeNotImplemented(),
     activate: makeNotImplemented(),
     changePassword: makeNotImplemented(),

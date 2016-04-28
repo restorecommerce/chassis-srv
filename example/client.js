@@ -9,7 +9,7 @@ let proto = grpc.load(PROTO_PATH);
 
 // chassis
 let endpoint = require('../lib/endpoint');
-let Client = require('../lib/transport/grpc');
+let Client = require('../lib/transport/grpc').Client;
 let StaticPublisher = require('../lib/loadbalancer/static').StaticPublisher;
 
 function makeUserFactory(method, timeout) {
