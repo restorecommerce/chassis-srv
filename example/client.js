@@ -20,7 +20,6 @@ function makeUserFactory(method, timeout) {
   return function*(instance) {
     let conn = new proto.user.User(instance, grpc.credentials.createInsecure());
     let client = new Client(conn, method);
-    console.log('client created');
     return client.endpoint;
   }
 }
