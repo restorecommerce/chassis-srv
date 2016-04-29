@@ -16,7 +16,9 @@
     "chassis"
   ],
   "dependencies": {
-    "grpc": "^0.13.2-pre1"
+    "co": "^4.6.0",
+    "grpc": "^0.13.2-pre1",
+    "retry": "^0.9.0"
   },
   "engines": {
     "node": ">= 5.0.0"

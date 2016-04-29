@@ -15,20 +15,8 @@ let StaticPublisher = require('../lib/loadbalancer/static').StaticPublisher;
 function makeUserFactory(method, timeout) {
   return function*(instance) {
     let conn = new proto.user.User(instance, grpc.credentials.createInsecure());
-    function waitForClientReady(client, deadline) {
-      return function(cb) {
-        grpc.waitForClientReady(client, deadline, cb);
-      }
-    }
-    try {
-      let deadline = Date.now() + timeout;
-      yield waitForClientReady(conn, deadline);
-    } catch (e) {
-      let chan = grpc.getClientChannel(conn);
-      chan.close();
-      throw e;
-    }
     let client = new Client(conn, method);
+    console.log('client created');
     return client.endpoint;
   }
 }
@@ -56,7 +44,7 @@ co(function*() {
     logger: {
       log: console.log
     },
-    timeout: 10000
+    timeout: 100
   };
   let ms = yield init(options);
 
@@ -71,13 +59,13 @@ co(function*() {
       id: '/users/does_not_exist'
     })
   ];
-  for(let result of results) {
-    if(result.error) {
+  for (let result of results) {
+    if (result.error) {
       console.error(result.error);
-      continue;
+      return;
     }
     console.log(result.data);
   }
 }).catch(function(err) {
-  console.error('example error', err);
+  console.error('example error', err.stack);
 });
