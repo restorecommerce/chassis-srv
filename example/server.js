@@ -15,12 +15,31 @@ let Serve = require('../lib/transport/grpc').Serve;
 const PROTO_PATH = __dirname + '/../protos/user.proto';
 let proto = grpc.load(PROTO_PATH);
 
-function Service() {
+// events
+let Events = require('../lib/transport/events/events').Events;
+let Kafka = require('../lib/transport/events/kafka').Kafka;
+
+function Service(userEvents) {
   var data = [{
     id: '/users/admin'
   }, {
     id: '/users/me'
   }, ];
+
+  this.register = function(guest, name, email, password) {
+    if (guest) {
+      name = '';
+    }
+    let user = {
+      id: '/users/' + name,
+      guest: guest,
+      name: name,
+      email: email,
+      password: password,
+    }
+    data.push(user);
+    userEvents.emit('created', user);
+  }
   this.get = function(id, name, email) {
     for (let entry of data) {
       if (entry.id === id || entry.name === name || entry.email === email) {
@@ -37,7 +56,15 @@ function Logging(srv, logger) {
     let resp = srv.get(id, name, email);
     let took = process.hrtime(begin);
     took = took[0] * Second + took[1];
-    logger.log('method', 'get', 'id', id, 'name', name, 'email', email, 'took', took);
+    logger.log('INFO', 'method', 'get', 'id', id, 'name', name, 'email', email, 'took', took);
+    return resp;
+  }
+  this.register = function(guest, name, email, password) {
+    let begin = process.hrtime();
+    let resp = srv.register(guest, name, email, password);
+    let took = process.hrtime(begin);
+    took = took[0] * Second + took[1];
+    logger.log('INFO', 'method', 'register', 'guest', guest, 'name', name, 'email', email, 'password', password, 'took', took);
     return resp;
   }
 }
@@ -45,15 +72,16 @@ function Logging(srv, logger) {
 function makeNotImplemented() {
   return function(call, callback) {
     callback({
-      code: grpc.status.NOT_IMPLEMENTED
-    });
+      code: grpc.status.NOT_IMPLEMENTED,
+      details: 'not implemented',
+    }, null);
   };
 }
 
 function makeServiceBinding(srv) {
   return {
     get: Serve(srv.get),
-    register: makeNotImplemented(),
+    register: Serve(srv.register),
     activate: makeNotImplemented(),
     changePassword: makeNotImplemented(),
     unregister: makeNotImplemented()
@@ -67,8 +95,14 @@ function init(options) {
   // Register microservices here
   // User
 
+  // Events
+  let kafka = new Kafka(options.kafka);
+  let events = new Events(kafka);
+  let userEvents = events.subscribe('user');
+  kafka.start();
+
   // Business domain
-  let srv = new Service();
+  let srv = new Service(userEvents);
   srv = new Logging(srv, logger);
 
   var server = new grpc.Server();
@@ -78,6 +112,7 @@ function init(options) {
     server.tryShutdown(function() {
       logger.log('server', 'shutdown success');
     });
+    kafka.end();
     process.exit(0);
   });
 
@@ -85,16 +120,20 @@ function init(options) {
   server.bind(addr, grpc.ServerCredentials.createInsecure());
   server.start();
 }
-
-co(function*() {
-  let options = {
-    addr: "localhost:50051",
+let logger = {
+  log: console.log,
+};
+let options = {
+  addr: "localhost:50051",
+  logger: logger,
+  kafka: {
+    groupId: 'restore-chassis-example-server',
+    clientId: 'restore-chassis-example-server',
+    connectionString: 'localhost:9092',
     logger: {
-      log: console.log
+      logFunction: logger.log,
     },
-    timeout: 10000
-  };
-  let ms = init(options);
-}).catch(function(err) {
-  console.error('example error', err);
-});
+  },
+  timeout: 10000,
+};
+let ms = init(options);
