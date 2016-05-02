@@ -145,5 +145,6 @@ let options = {
 co(function*(){
   let ms = yield init(options);
 }).catch(function(err){
-  logger.log('error', 'microservice', 'message', err.stack);
+  logger.log('error', 'microservice', 'message', err);
+  process.exit(1);
 });

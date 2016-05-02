@@ -109,5 +109,6 @@ co(function*() {
     console.log(result.data);
   }
 }).catch(function(err) {
-  console.error('example error', err.stack);
+  console.error('client error', err);
+  process.exit(1);
 });
