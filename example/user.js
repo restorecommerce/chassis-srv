@@ -38,7 +38,11 @@ function Service(userEvents) {
       password: password,
     }
     data.push(user);
-    userEvents.emit('created', user);
+    co(function*(){
+      let result = yield userEvents.emit('created', user);
+    }).catch(function(err){
+      logger.log('ERROR', 'emitting event error', err);
+    });
   }
   this.get = function(id, name, email) {
     for (let entry of data) {
@@ -98,7 +102,7 @@ function* init(options) {
   // Events
   let kafka = new Kafka(options.kafka);
   let events = new Events(kafka);
-  let userEvents = events.subscribe('user');
+  let userEvents = yield events.subscribe('user');
   yield kafka.start();
 
   // Business domain

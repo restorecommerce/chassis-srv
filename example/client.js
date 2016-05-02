@@ -41,7 +41,7 @@ function* init(options) {
   // Events
   let kafka = new Kafka(options.kafka);
   let events = new Events(kafka);
-  let userEvents = events.subscribe('user');
+  let userEvents = yield events.subscribe('user');
   userEvents.on('created', function*(message) {
     logger.log('topic', 'user', 'event', 'created', 'message', message);
   });

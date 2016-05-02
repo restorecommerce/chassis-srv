@@ -33,7 +33,7 @@ function* init(options) {
   // Events
   let kafka = new Kafka(options.kafka);
   let events = new Events(kafka);
-  let userEvents = events.subscribe('user');
+  let userEvents = yield events.subscribe('user');
   userEvents.on('created', function*(message){
     throw new Error('testing errors');
     let name = message.name || message.id;
