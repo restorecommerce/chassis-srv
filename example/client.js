@@ -16,6 +16,7 @@ let StaticPublisher = require('../lib/loadbalancer/static').StaticPublisher;
 let Events = require('../lib/transport/events/events').Events;
 let Kafka = require('../lib/transport/events/kafka').Kafka;
 
+// returns endpoint
 function makeUserFactory(method, timeout) {
   return function*(instance) {
     let conn = new proto.user.User(instance, grpc.credentials.createInsecure());
@@ -29,26 +30,41 @@ function* init(options) {
 
   // Register microservices endpoints here
   // User
+  // list of instances (typically host:port strings)
   let userInstances = options.instances;
+
+  // User.Get service method creation
+  // Publisher provides instances, which the factory turns into endpoints
   let userGetPublisher = yield StaticPublisher(userInstances, makeUserFactory('get', options.timeout), logger);
+  // LoadBalancer balances calls to endpoints
   let userGetLoadBalancer = endpoint.roundRobin(userGetPublisher);
+  // retry wraps a LoadBalancer to provide retry and timeout mechanics for the endpoint
   let userGet = endpoint.retry(10, timeout, userGetLoadBalancer);
+
+  // User.Register service method creation
   let userRegisterPublisher = yield StaticPublisher(userInstances, makeUserFactory('register', options.timeout), logger);
   let userRegisterLoadBalancer = endpoint.roundRobin(userRegisterPublisher);
   let userRegister = endpoint.retry(10, timeout, userRegisterLoadBalancer);
 
   // Events
+  // Create a Kafka provider
   let kafka = new Kafka(options.kafka);
+  // Use Kafka provider for events
   let events = new Events(kafka);
+  // subscribe to user events provided by kafka (topic:user)
   let userEvents = yield events.subscribe('user');
+  // listen to user.created events (kafka messages)
   userEvents.on('created', function*(message) {
     logger.log('topic', 'user', 'event', 'created', 'message', message);
   });
+  // start provider kafka (consumer, producer)
   yield kafka.start();
 
+  // listen to SIGINT signals
   process.on('SIGINT', function() {
     logger.log('signal', 'SIGINT');
     co(function*(){
+      // shutdown kafka
       yield kafka.end();
       process.exit(0);
     }).catch(function(err){
@@ -57,6 +73,7 @@ function* init(options) {
     });
   });
 
+  // return microservice object
   return {
     user: {
       get: userGet,
@@ -84,6 +101,7 @@ co(function*() {
   };
   let ms = yield init(options);
 
+  // call endpoint user.register (gRPC:user.User.service.get)
   yield ms.user.register({
     guest: false,
     name: 'example'

@@ -19,6 +19,7 @@ let proto = grpc.load(PROTO_PATH);
 let Events = require('../lib/transport/events/events').Events;
 let Kafka = require('../lib/transport/events/kafka').Kafka;
 
+// Service the business logic of this microservice.
 function Service(userEvents) {
   var data = [{
     id: '/users/admin'
@@ -26,9 +27,17 @@ function Service(userEvents) {
     id: '/users/me'
   }, ];
 
+  // will be an endpoint
   this.register = function*(guest, name, email, password) {
     if (guest) {
       name = '';
+    }
+    if (false) {
+      // Throwing an error in an endpoint will send a INTERNAL error message
+      // to the caller containing the error.message.
+      throw new Error('Internal server error');
+
+      // TODO Allow different kind of errors (gRPC status code)
     }
     let user = {
       id: '/users/' + name,
@@ -38,18 +47,24 @@ function Service(userEvents) {
       password: password,
     }
     data.push(user);
+    // emits an event (kafka message)
     yield userEvents.emit('created', user);
   }
+
+  // will be an endpoint
   this.get = function*(id, name, email) {
     for (let entry of data) {
       if (entry.id === id || entry.name === name || entry.email === email) {
+        // Return a value for a successful request
         return entry;
       }
     }
+    // Returning a null value will send a NOT_FOUND status code gRPC error message
     return null;
   }
 }
 
+// Logging is a simple log middleware
 function Logging(srv, logger) {
   this.get = function*(id, name, email) {
     let begin = process.hrtime();
@@ -79,6 +94,7 @@ function makeNotImplemented() {
 }
 
 function makeServiceBinding(srv) {
+  // serve creates an endpoint around the service method
   return {
     get: serve(srv.get),
     register: serve(srv.register),
@@ -96,17 +112,25 @@ function* init(options) {
   // User
 
   // Events
+  // Create a Kafka provider
   let kafka = new Kafka(options.kafka);
+  // Use Kafka provider for events
   let events = new Events(kafka);
+  // subscribe to user events provided by kafka (topic:user)
   let userEvents = yield events.subscribe('user');
+  // start provider kafka (consumer, producer)
   yield kafka.start();
 
   // Business domain
+  // Create a plain business logic
   let srv = new Service(userEvents);
+  // Use a middleware to log endpoint calls
   srv = new Logging(srv, logger);
 
+  // Create gRPC server
   var server = new grpc.Server();
 
+  // Listen to SIGINT for shutdown
   process.on('SIGINT', function() {
     logger.log('signal', 'SIGINT');
     server.tryShutdown(function() {
@@ -121,8 +145,13 @@ function* init(options) {
     });
   });
 
-  server.addProtoService(proto.user.User.service, makeServiceBinding(srv));
+  // wrap the business logic into a gRPC service using endpoints
+  var serviceBinding = makeServiceBinding(srv)
+  // add the service binding as a gRPC service to the server
+  server.addProtoService(proto.user.User.service, serviceBinding);
+  // bind the server to an addr
   server.bind(addr, grpc.ServerCredentials.createInsecure());
+  // start the gRPC server
   server.start();
 }
 let logger = {
