@@ -26,7 +26,7 @@ function Service(userEvents) {
     id: '/users/me'
   }, ];
 
-  this.register = function(guest, name, email, password) {
+  this.register = function*(guest, name, email, password) {
     if (guest) {
       name = '';
     }
@@ -38,13 +38,9 @@ function Service(userEvents) {
       password: password,
     }
     data.push(user);
-    co(function*(){
-      let result = yield userEvents.emit('created', user);
-    }).catch(function(err){
-      logger.log('ERROR', 'emitting event error', err);
-    });
+    yield userEvents.emit('created', user);
   }
-  this.get = function(id, name, email) {
+  this.get = function*(id, name, email) {
     for (let entry of data) {
       if (entry.id === id || entry.name === name || entry.email === email) {
         return entry;
@@ -55,20 +51,20 @@ function Service(userEvents) {
 }
 
 function Logging(srv, logger) {
-  this.get = function(id, name, email) {
+  this.get = function*(id, name, email) {
     let begin = process.hrtime();
-    let resp = srv.get(id, name, email);
+    let resp = yield srv.get(id, name, email);
     let took = process.hrtime(begin);
     took = took[0] * Second + took[1];
-    logger.log('INFO', 'method', 'get', 'id', id, 'name', name, 'email', email, 'took', took);
+    logger.log('INFO', 'method', 'get', 'id', id, 'name', name, 'email', email, 'took', util.format('%dns', took));
     return resp;
   }
-  this.register = function(guest, name, email, password) {
+  this.register = function*(guest, name, email, password) {
     let begin = process.hrtime();
-    let resp = srv.register(guest, name, email, password);
+    let resp = yield srv.register(guest, name, email, password);
     let took = process.hrtime(begin);
     took = took[0] * Second + took[1];
-    logger.log('INFO', 'method', 'register', 'guest', guest, 'name', name, 'email', email, 'password', password, 'took', took);
+    logger.log('INFO', 'method', 'register', 'guest', guest, 'name', name, 'email', email, 'password', password, 'took', util.format('%dns', took));
     return resp;
   }
 }

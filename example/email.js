@@ -35,7 +35,6 @@ function* init(options) {
   let events = new Events(kafka);
   let userEvents = yield events.subscribe('user');
   userEvents.on('created', function*(message){
-    throw new Error('testing errors');
     let name = message.name || message.id;
     let msg = util.format('Hello user %s Your account has beeen created.', name);
     let email = {
