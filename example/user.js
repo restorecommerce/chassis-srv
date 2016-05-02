@@ -88,7 +88,7 @@ function makeServiceBinding(srv) {
   }
 }
 
-function init(options) {
+function* init(options) {
   let logger = options.logger;
   let timeout = options.timeout;
   let addr = options.addr;
@@ -99,7 +99,7 @@ function init(options) {
   let kafka = new Kafka(options.kafka);
   let events = new Events(kafka);
   let userEvents = events.subscribe('user');
-  kafka.start();
+  yield kafka.start();
 
   // Business domain
   let srv = new Service(userEvents);
@@ -112,8 +112,13 @@ function init(options) {
     server.tryShutdown(function() {
       logger.log('server', 'shutdown success');
     });
-    kafka.end();
-    process.exit(0);
+    co(function*(){
+      yield kafka.end();
+      process.exit(0);
+    }).catch(function(err){
+      logger.log('error', err);
+      process.exit(1);
+    });
   });
 
   server.addProtoService(proto.user.User.service, makeServiceBinding(srv));
@@ -136,4 +141,9 @@ let options = {
   },
   timeout: 10000,
 };
-let ms = init(options);
+
+co(function*(){
+  let ms = yield init(options);
+}).catch(function(err){
+  logger.log('error', 'microservice', 'message', err.stack);
+});

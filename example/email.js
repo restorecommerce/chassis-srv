@@ -29,7 +29,7 @@ function sendEmail(mail) {
   logger.log('debug', 'pretending to send email', mail);
 }
 
-function init(options) {
+function* init(options) {
   // Events
   let kafka = new Kafka(options.kafka);
   let events = new Events(kafka);
@@ -62,12 +62,22 @@ function init(options) {
     };
     sendEmail(email);
   });
-  kafka.start();
+  yield kafka.start();
+
+  process.on('SIGINT', function() {
+    logger.log('signal', 'SIGINT');
+    co(function*(){
+      yield kafka.end();
+      process.exit(0);
+    }).catch(function(err){
+      logger.log('error', err);
+      process.exit(1);
+    });
+  });
 }
 
-
-try {
-  let ms = init(options);
-} catch (err) {
+co(function*(){
+  let ms = yield init(options);
+}).catch(function(err){
   logger.log('error', 'microservice', 'message', err.stack);
-}
+});
