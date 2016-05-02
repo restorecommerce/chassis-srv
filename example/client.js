@@ -9,7 +9,7 @@ let proto = grpc.load(PROTO_PATH);
 
 // chassis
 let endpoint = require('../lib/endpoint');
-let Client = require('../lib/transport/grpc').Client;
+let call = require('../lib/transport/grpc').call;
 let StaticPublisher = require('../lib/loadbalancer/static').StaticPublisher;
 
 // events
@@ -19,9 +19,8 @@ let Kafka = require('../lib/transport/events/kafka').Kafka;
 function makeUserFactory(method, timeout) {
   return function*(instance) {
     let conn = new proto.user.User(instance, grpc.credentials.createInsecure());
-    let client = new Client(conn, method);
-    return client.endpoint;
-  }
+    return call(conn, method);
+  };
 }
 
 function* init(options) {

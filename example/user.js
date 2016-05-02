@@ -11,7 +11,7 @@ const Hour = 60 * Minute;
 let grpc = require('grpc');
 let co = require('co');
 let util = require('util');
-let Serve = require('../lib/transport/grpc').Serve;
+let serve = require('../lib/transport/grpc').serve;
 const PROTO_PATH = __dirname + '/../protos/user.proto';
 let proto = grpc.load(PROTO_PATH);
 
@@ -80,8 +80,8 @@ function makeNotImplemented() {
 
 function makeServiceBinding(srv) {
   return {
-    get: Serve(srv.get),
-    register: Serve(srv.register),
+    get: serve(srv.get),
+    register: serve(srv.register),
     activate: makeNotImplemented(),
     changePassword: makeNotImplemented(),
     unregister: makeNotImplemented()
