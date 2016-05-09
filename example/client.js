@@ -37,7 +37,7 @@ function* init(options) {
   // Publisher provides instances, which the factory turns into endpoints
   let userGetPublisher = staticPublisher(userInstances, makeUserFactory('get', options.timeout), logger);
   // LoadBalancer balances calls to endpoints
-  let userGetLoadBalancer = endpoint.roundRobin(userGetPublisher);
+  let userGetLoadBalancer = endpoint.random(userGetPublisher, 0);
   // retry wraps a LoadBalancer to provide retry and timeout mechanics for the endpoint
   let userGet = endpoint.retry(10, timeout, userGetLoadBalancer);
 
