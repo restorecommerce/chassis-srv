@@ -10,7 +10,7 @@ let proto = grpc.load(PROTO_PATH);
 // chassis
 let endpoint = require('../lib/endpoint');
 let call = require('../lib/transport/grpc').call;
-let StaticPublisher = require('../lib/loadbalancer/static').StaticPublisher;
+let staticPublisher = require('../lib/loadbalancer/static').staticPublisher;
 
 // events
 let Events = require('../lib/transport/events/events').Events;
@@ -35,14 +35,14 @@ function* init(options) {
 
   // User.Get service method creation
   // Publisher provides instances, which the factory turns into endpoints
-  let userGetPublisher = yield StaticPublisher(userInstances, makeUserFactory('get', options.timeout), logger);
+  let userGetPublisher = staticPublisher(userInstances, makeUserFactory('get', options.timeout), logger);
   // LoadBalancer balances calls to endpoints
   let userGetLoadBalancer = endpoint.roundRobin(userGetPublisher);
   // retry wraps a LoadBalancer to provide retry and timeout mechanics for the endpoint
   let userGet = endpoint.retry(10, timeout, userGetLoadBalancer);
 
   // User.Register service method creation
-  let userRegisterPublisher = yield StaticPublisher(userInstances, makeUserFactory('register', options.timeout), logger);
+  let userRegisterPublisher = staticPublisher(userInstances, makeUserFactory('register', options.timeout), logger);
   let userRegisterLoadBalancer = endpoint.roundRobin(userRegisterPublisher);
   let userRegister = endpoint.retry(10, timeout, userRegisterLoadBalancer);
 
@@ -126,6 +126,6 @@ co(function*() {
     console.log(result.data);
   }
 }).catch(function(err) {
-  console.error('client error', err);
+  console.error('client error', err.stack);
   process.exit(1);
 });
