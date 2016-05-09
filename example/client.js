@@ -8,9 +8,9 @@ const PROTO_PATH = __dirname + '/../protos/user.proto';
 let proto = grpc.load(PROTO_PATH);
 
 // chassis
-let endpoint = require('../lib/endpoint');
 let call = require('../lib/transport/grpc').call;
-let staticPublisher = require('../lib/loadbalancer/static').staticPublisher;
+let loadBalancer = require('../lib/loadbalancer/');
+let staticPublisher = loadBalancer.staticPublisher;
 
 // events
 let Events = require('../lib/transport/events/events').Events;
@@ -37,14 +37,14 @@ function* init(options) {
   // Publisher provides instances, which the factory turns into endpoints
   let userGetPublisher = staticPublisher(userInstances, makeUserFactory('get', options.timeout), logger);
   // LoadBalancer balances calls to endpoints
-  let userGetLoadBalancer = endpoint.random(userGetPublisher, 0);
+  let userGetLoadBalancer = loadBalancer.random(userGetPublisher, 0);
   // retry wraps a LoadBalancer to provide retry and timeout mechanics for the endpoint
-  let userGet = endpoint.retry(10, timeout, userGetLoadBalancer);
+  let userGet = loadBalancer.retry(10, timeout, userGetLoadBalancer);
 
   // User.Register service method creation
   let userRegisterPublisher = staticPublisher(userInstances, makeUserFactory('register', options.timeout), logger);
-  let userRegisterLoadBalancer = endpoint.roundRobin(userRegisterPublisher);
-  let userRegister = endpoint.retry(10, timeout, userRegisterLoadBalancer);
+  let userRegisterLoadBalancer = loadBalancer.roundRobin(userRegisterPublisher);
+  let userRegister = loadBalancer.retry(10, timeout, userRegisterLoadBalancer);
 
   // Events
   // Create a Kafka provider
