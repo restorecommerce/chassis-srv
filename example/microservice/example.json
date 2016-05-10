@@ -1,0 +1,62 @@
+{
+  "server": {
+    "events": {
+      "provider": {
+        "name": "kafka",
+        "config": {
+          "groupId": "restore-chassis-example-server",
+          "clientId": "restore-chassis-example-server",
+          "connectionString": "localhost:9092"
+        }
+      }
+    },
+    "endpoints": {
+      "get": {
+        "transport": ["grpc"]
+      },
+      "register": {
+        "transport": ["grpc"]
+      }
+    },
+    "transports": [{
+      "name": "grpc",
+      "config": {
+        "proto": "/../protos/user.proto",
+        "package": "user",
+        "service": "User",
+        "addr": "localhost:50051"
+      }
+    }]
+  },
+  "client": {
+    "transports": {
+      "grpc": {
+        "proto": "/../protos/user.proto",
+        "package": "user",
+        "service": "User"
+      }
+    },
+    "endpoints": {
+      "get": {
+        "loadbalancer":{
+          "name": "roundRobin"
+        },
+        "publisher": {
+          "name": "static",
+          "instances": ["grpc://localhost:50051", "http://localhost:80/api/user/get"]
+        }
+      },
+      "register": {
+        "loadbalancer":{
+          "name": "random",
+          "seed": 1
+        },
+        "publisher": {
+          "name": "consul",
+          "addr": "localhost:8500",
+          "service": "user.register"
+        }
+      }
+    }
+  }
+}
