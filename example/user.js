@@ -108,7 +108,7 @@ let config = {
 
 co(function*(){
   let server = new Server(config);
-  let userEvents = server.events.subscribe('user');
+  let userEvents = yield server.events.subscribe('user');
   let service = new Service(userEvents);
   yield server.bind(service);
   yield server.start();
