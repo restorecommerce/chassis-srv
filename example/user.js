@@ -14,7 +14,7 @@ let util = require('util');
 let Server = require('../lib/microservice').Server
 
 // Service the business logic of this microservice.
-function Service(userEvents) {
+function Service(userEvents, logger) {
   var data = [{
     id: '/users/admin'
   }, {
@@ -41,6 +41,7 @@ function Service(userEvents) {
       password: password,
     }
     data.push(user);
+    logger.log('INFO', 'user created', user);
     // emits an event (kafka message)
     yield userEvents.emit('created', user);
   }
@@ -48,7 +49,7 @@ function Service(userEvents) {
   // will be an endpoint
   this.get = function*(id, name, email) {
     for (let entry of data) {
-      if (entry.id === id || entry.name === name || entry.email === email) {
+      if (entry.id === id && id || entry.name === name && name || entry.email === email && email) {
         // Return a value for a successful request
         return entry;
       }
@@ -93,26 +94,32 @@ let config = {
       transport: ['grpc'],
     },
   },
-  transports: [
-    {
-      name: 'grpc',
-      config: {
-        proto: '/../protos/user.proto',
-        package: 'user',
-        service: 'User',
-        addr: "localhost:50051",
-      },
+  transports: [{
+    name: 'grpc',
+    config: {
+      proto: '/../protos/user.proto',
+      package: 'user',
+      service: 'User',
+      addr: "localhost:50051",
     },
-  ],
+  }, ],
 };
 
-co(function*(){
+function makeLogging(logger) {
+  return function*(req) {
+    logger.log('INFO', req.transport, req.method, req.request);
+    return yield req;
+  }
+}
+
+co(function*() {
   let server = new Server(config);
+  server.middleware.push(makeLogging(server.logger));
   let userEvents = yield server.events.subscribe('user');
-  let service = new Service(userEvents);
+  let service = new Service(userEvents, server.logger);
   yield server.bind(service);
   yield server.start();
-}).catch(function(err){
+}).catch(function(err) {
   console.log(err.stack);
   process.exit(1);
 });
