@@ -10,7 +10,8 @@ let config = {
     grpc: {
       proto: "/../protos/user.proto",
       package: "user",
-      service: "User"
+      service: "User",
+      timeout: 100
     }
   },
   endpoints: {
@@ -43,7 +44,7 @@ co(function*() {
     user.register({
       guest: false,
       name: 'example'
-    }, {retry:3}),
+    }, {retry:3, timeout: 1000}),
     user.get({
       id: '/users/admin'
     }),
@@ -55,11 +56,16 @@ co(function*() {
     })
   ];
   client.logger.log('INFO', util.format('calls finished with %s results', results.length));
-  for (let result of results) {
+  for (let i = 0; i < results.length; i++) {
+    let result = results[i];
+    if (!result) {
+      console.error(util.format('result %d is undefined',i));
+      continue
+    }
     if (result.error) {
-      console.error(result.error);
+      console.error(util.format('result %d: %s', i, result.error));
     } else {
-      console.log(result.data);
+      console.log(util.format('result %d: %s', i, result.data));
     }
   }
 }).catch(function(err) {
