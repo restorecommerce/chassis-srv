@@ -39,18 +39,18 @@ let config = {
 co(function*() {
   let client = new Client(config);
   let user = yield client.connect();
-  let results = [
-    yield user.register({
+  let results = yield [
+    user.register({
       guest: false,
       name: 'example'
     }, {retry:3}),
-    yield user.get({
+    user.get({
       id: '/users/admin'
     }),
-    yield user.get({
+    user.get({
       id: '/users/me'
     }),
-    yield user.get({
+    user.get({
       id: '/users/does_not_exist'
     })
   ];
