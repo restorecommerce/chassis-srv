@@ -34,6 +34,7 @@ function Service(userEvents, logger) {
     logger.log('INFO', 'user created', user);
     // emits an event (kafka message)
     yield userEvents.emit('created', user);
+    return user;
   }
 
   // will be an endpoint
