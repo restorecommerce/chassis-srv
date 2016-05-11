@@ -39,12 +39,11 @@ let config = {
 co(function*() {
   let client = new Client(config);
   let user = yield client.connect();
-
   let results = [
     yield user.register({
       guest: false,
       name: 'example'
-    }),
+    }, {retry:3}),
     yield user.get({
       id: '/users/admin'
     }),
