@@ -11,7 +11,7 @@ let config = {
       proto: "/../protos/user.proto",
       package: "user",
       service: "User",
-      timeout: 100
+      timeout: 3000
     }
   },
   endpoints: {
@@ -40,20 +40,22 @@ let config = {
 co(function*() {
   let client = new Client(config);
   let user = yield client.connect();
+  let result = yield user.register({
+    guest: false,
+    name: 'example'
+  }, {retry:3, timeout: 1000})
+  client.logger.log('INFO', 'user.register response', result);
+
   let results = yield [
-    user.register({
-      guest: false,
-      name: 'example'
-    }, {retry:3, timeout: 1000}),
     user.get({
       id: '/users/admin'
-    }),
+    }, {timeout: 1000}),
     user.get({
       id: '/users/me'
-    }),
+    }, {timeout: 1000}),
     user.get({
       id: '/users/does_not_exist'
-    })
+    }, {timeout: 1000}),
   ];
   client.logger.log('INFO', util.format('calls finished with %s results', results.length));
   for (let i = 0; i < results.length; i++) {
@@ -63,7 +65,7 @@ co(function*() {
       continue
     }
     if (result.error) {
-      console.error(util.format('result %d: %s', i, result.error));
+      console.error(util.format('result %d error: %s', i, result.error));
     } else {
       console.log(util.format('result %d: %s', i, result.data));
     }
