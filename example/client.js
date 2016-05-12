@@ -40,13 +40,14 @@ let config = {
 co(function*() {
   let client = new Client(config);
   let user = yield client.connect();
-  let result = yield user.register({
-    guest: false,
-    name: 'example'
-  }, {retry:3, timeout: 1000})
-  client.logger.log('INFO', 'user.register response', result);
 
   let results = yield [
+    user.register({
+      guest: false,
+      name: 'example' ,
+      email: '',
+      password: '',
+    }, {retry:3, timeout: 1000}),
     user.get({
       id: '/users/admin'
     }, {timeout: 1000}),
@@ -67,7 +68,7 @@ co(function*() {
     if (result.error) {
       console.error(util.format('result %d error: %s', i, result.error));
     } else {
-      console.log(util.format('result %d: %s', i, result.data));
+      console.log(util.format('result %d: %j', i, result.data));
     }
   }
 }).catch(function(err) {
