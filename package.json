@@ -22,8 +22,7 @@
     "grpc": "^0.14.1",
     "no-kafka": "^2.4.2",
     "random-js": "^1.0.8",
-    "restore-logger": "git+https://github.com/restorecommerce/logger.git",
-    "wait.for-es6": "^0.1.0"
+    "restore-logger": "git+https://github.com/restorecommerce/logger.git"
   },
   "engines": {
     "node": ">= 5.0.0"
