@@ -16,12 +16,20 @@ function Service(userEvents, logger) {
     if (guest) {
       name = '';
     }
-    if (false) {
-      // Throwing an error in an endpoint will send a INTERNAL error message
-      // to the caller containing the error.message.
-      throw new Error('Internal server error');
-
-      // TODO Allow different kind of errors (gRPC status code)
+    if (!name) {
+      let err = new Error('invalid argument');
+      err.details = 'argument name is empty';
+      throw err;
+    }
+    if (!email) {
+      let err = new Error('invalid argument');
+      err.details = 'argument email is empty';
+      throw err;
+    }
+    if (!password) {
+      let err = new Error('invalid argument');
+      err.details = 'argument password is empty';
+      throw err;
     }
     let user = {
       id: '/users/' + name,
@@ -45,8 +53,7 @@ function Service(userEvents, logger) {
         return entry;
       }
     }
-    // Returning a null value will send a NOT_FOUND status code gRPC error message
-    return null;
+    throw new Error('not found');
   }
 
   this.activate = function*() {
