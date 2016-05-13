@@ -1,5 +1,48 @@
 # restore-cassis
 
+## Features
+
+### done:
+
++ endpoint
+  + publisher
+    + static
+  + loadbalancer
+      + random
+      + roundrobin
++ log
++ service
+  + client
+  + server
++ transport
+  + grpc
+
+### TODO:
+Some of these points depend on the orchestration software in use.
+Kubernetes has service discovery, load balancing and config provision build in.
+
+[Mindmap of the docker ecosystem](https://www.mindmeister.com/389671722/docker-ecosystem)
+
++ config
+  + file
+  + consul/etcd/zookeeper
++ circuitbreaker
+  + hystrixjs
++ database
+  + arangodb
+  + mongodb
+  + redis
++ endpoint
+    + publisher
+      + consul/etcd/zookeeper
++ health checks
++ metrics
+  + prometheus
+  + elasticsearch (Kibana)
++ ratelimit
++ log
+  + tracing
+    + opentracing
 
 ## gRPC
 
