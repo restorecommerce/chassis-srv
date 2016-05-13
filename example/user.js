@@ -76,8 +76,6 @@ let config = {
     },
   },
   endpoints: {
-    // TODO A default for all endpoints?
-    // eg.: transport: ['grpc'],
     activate: {
       // Specify which configured transport the endpoint should use
       transport: ['grpc'],
