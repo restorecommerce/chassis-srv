@@ -45,8 +45,8 @@ co(function*() {
     user.register({
       guest: false,
       name: 'example' ,
-      email: '',
-      password: '',
+      email: 'example@example.com',
+      password: 'example_password',
     }, {retry:3, timeout: 1000}),
     user.get({
       id: '/users/admin'
@@ -66,7 +66,7 @@ co(function*() {
       continue
     }
     if (result.error) {
-      console.error(util.format('result %d error: %s', i, result.error));
+      console.error(util.format('result %d error:"%s" %s', i, result.error, result.error.details || ''));
     } else {
       console.log(util.format('result %d: %j', i, result.data));
     }
