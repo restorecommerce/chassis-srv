@@ -118,7 +118,7 @@ let config = {
 function makeLogging(logger) {
   return function*(next) {
     return function*(request, context){
-      logger.log('INFO', util.format('received request to method %s over transport %s', context.method, context.transportName), request);
+      logger.log('INFO', util.format('received request to method %s over transport %s', context.method, context.transport), request);
       return yield next(request, context);
     };
   }
