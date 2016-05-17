@@ -24,7 +24,15 @@
     "random-js": "^1.0.8",
     "restore-logger": "git+https://github.com/restorecommerce/logger.git"
   },
+  "scripts": {
+    "lint": "node ./node_modules/jshint/bin/jshint lib test example --exclude-path=.jshintignore",
+    "test": "./node_modules/.bin/mocha test && npm run-script lint",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test"
+  },
   "engines": {
     "node": ">= 5.0.0"
+  },
+  "devDependencies": {
+    "co-mocha": "^1.1.2"
   }
 }

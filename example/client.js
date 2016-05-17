@@ -46,7 +46,7 @@ function makeLogging(logger) {
       logger.log('INFO', util.format('received request attempt: %d/%d', context.currentAttempt, context.attempts), request);
       return result;
     };
-  }
+  };
 }
 
 co(function*() {
