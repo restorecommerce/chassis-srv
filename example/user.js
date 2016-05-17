@@ -15,7 +15,7 @@ function Service(userEvents, logger) {
   // will be an endpoint
   this.register = function*(request, context) {
     let guest = request.guest;
-    let name = request.guest;
+    let name = request.name;
     let email = request.email;
     let password = request.password;
     if (guest) {
