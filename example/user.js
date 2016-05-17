@@ -1,6 +1,7 @@
 'use strict';
 
 let co = require('co');
+let util = require('util');
 let Server = require('../lib/microservice').Server
 
 // Service the business logic of this microservice.
@@ -12,7 +13,11 @@ function Service(userEvents, logger) {
   }, ];
 
   // will be an endpoint
-  this.register = function*(guest, name, email, password) {
+  this.register = function*(request, context) {
+    let guest = request.guest;
+    let name = request.guest;
+    let email = request.email;
+    let password = request.password;
     if (guest) {
       name = '';
     }
@@ -46,7 +51,10 @@ function Service(userEvents, logger) {
   }
 
   // will be an endpoint
-  this.get = function*(id, name, email) {
+  this.get = function*(request, context) {
+    let id = request.id;
+    let name = request.name;
+    let email = request.email;
     for (let entry of data) {
       if (entry.id === id && id || entry.name === name && name || entry.email === email && email) {
         // Return a value for a successful request
@@ -108,9 +116,11 @@ let config = {
 
 // makeLogging returns a simple middleware which is called before the business logic.
 function makeLogging(logger) {
-  return function*(req) {
-    logger.log('INFO', req.transport, req.method, req.request);
-    return yield req;
+  return function*(next) {
+    return function*(request, context){
+      logger.log('INFO', util.format('received request to method %s over transport %s', context.method, context.transportName), request);
+      return yield next(request, context);
+    };
   }
 }
 
