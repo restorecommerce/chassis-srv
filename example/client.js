@@ -37,8 +37,21 @@ let config = {
   }
 };
 
+// makeLogging returns a simple middleware which is called before each transport endpoint is called
+function makeLogging(logger) {
+  return function*(next) {
+    return function*(request, context){
+      logger.log('INFO', util.format('sending request attempt: %d/%d', context.currentAttempt, context.attempts), request);
+      let result = yield next(request, context);
+      logger.log('INFO', util.format('received request attempt: %d/%d', context.currentAttempt, context.attempts), request);
+      return result;
+    };
+  }
+}
+
 co(function*() {
   let client = new Client(config);
+  client.middleware.push(makeLogging(client.logger));
   let user = yield client.connect();
 
   let results = yield [
