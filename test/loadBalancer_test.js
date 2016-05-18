@@ -31,15 +31,15 @@ describe('fixed publisher', function() {
 });
 
 describe('static publisher', function() {
+  let factory = function*(instance) {
+    assert.equal(instance, 'test');
+    return endpoint;
+  };
+  let logger = {
+    log: function() {},
+  };
   it('should always yield the same endpoints', function*() {
-    let factory = function*(instance) {
-      assert.equal(instance, 'test');
-      return endpoint;
-    }
     let instances = ['test'];
-    let logger = {
-      log: function() {},
-    };
     let publisher = loadBalancer.staticPublisher(instances, factory, logger);
     let n = publisher.next();
     assert(!n.done);
@@ -54,6 +54,18 @@ describe('static publisher', function() {
     let resultB = yield n.value;
 
     assert.equal(resultA, resultB);
+  });
+  it('should throw an error with no instances', function*() {
+    let result = yield co(function*() {
+      let publisher = loadBalancer.staticPublisher([], factory, logger);
+      let n = publisher.next();
+      return yield n.value;
+    }).then(function(result) {
+      assert.ok(false, 'should not call then');
+    }).catch(function(err) {
+      assert(err);
+    })
+    assert(result === undefined);
   });
 });
 
@@ -75,10 +87,17 @@ tests.forEach(function(test) {
     let oneEndpoints = [endpoint];
     let endpoints = [endpoint, endpoint, endpoint];
 
+    describe('with no publisher, calling next', function() {
+      it('should throw an error', function*() {
+        let lb = test.loadBalancer();
+        assert.throws(lb.next);
+      });
+    });
+
     describe('with fixedPublisher and three endpoints, calling next', function() {
       let publisher = loadBalancer.fixedPublisher(endpoints);
-      let random = test.loadBalancer(publisher);
-      let r = random.next();
+      let lb = test.loadBalancer(publisher);
+      let r = lb.next();
       it('should not end the loadBalancer', function*() {
         assert.ok(!r.done);
       });
@@ -97,8 +116,8 @@ tests.forEach(function(test) {
 
     describe('with fixedPublisher and one endpoint, calling next', function() {
       let publisher = loadBalancer.fixedPublisher(oneEndpoints);
-      let random = test.loadBalancer(publisher);
-      let r = random.next();
+      let lb = test.loadBalancer(publisher);
+      let r = lb.next();
       it('should not end the loadBalancer', function*() {
         assert.ok(!r.done);
       });
@@ -117,10 +136,10 @@ tests.forEach(function(test) {
 
     describe('with fixedPublisher and zero endpoint, calling next', function() {
       let publisher = loadBalancer.fixedPublisher(zeroEndpoints);
-      let random = test.loadBalancer(publisher);
+      let lb = test.loadBalancer(publisher);
       it('should throw an error', function*() {
         let result = yield co(function*() {
-          let r = random.next();
+          let r = lb.next();
           let endpoint = yield r.value;
           return endpoint;
         }).then(function(result) {
@@ -132,7 +151,7 @@ tests.forEach(function(test) {
       });
       it('should throw an error after calling it again', function*() {
         let result = yield co(function*() {
-          let r = random.next();
+          let r = lb.next();
           let endpoint = yield r.value;
           return endpoint;
         }).then(function(result) {
