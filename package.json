@@ -24,6 +24,14 @@
     "random-js": "^1.0.8",
     "restore-logger": "git+https://github.com/restorecommerce/logger.git"
   },
+  "devDependencies": {
+    "co-mocha": "^1.1.2",
+    "is-generator": "^1.0.3",
+    "istanbul": "^0.4.3",
+    "jshint": "^2.9.2",
+    "mocha": "^2.4.5",
+    "should": "^8.3.2"
+  },
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint lib test example --exclude-path=.jshintignore",
     "test": "./node_modules/.bin/mocha test && npm run-script lint",
@@ -31,8 +39,5 @@
   },
   "engines": {
     "node": ">= 5.0.0"
-  },
-  "devDependencies": {
-    "co-mocha": "^1.1.2"
   }
 }
