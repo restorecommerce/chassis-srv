@@ -17,6 +17,46 @@ function* endpoint(request, context) {
   };
 }
 
+describe('fixed publisher', function() {
+  it('should always yield its input', function*() {
+    let endpoints = [endpoint];
+    let publisher = loadBalancer.fixedPublisher(endpoints);
+    let n = publisher.next();
+    assert(!n.done);
+    assert(n.value);
+    assert(n.value.then);
+    let result = yield n.value;
+    assert.equal(endpoints, result);
+  });
+});
+
+describe('static publisher', function() {
+  it('should always yield the same endpoints', function*() {
+    let factory = function*(instance) {
+      assert.equal(instance, 'test');
+      return endpoint;
+    }
+    let instances = ['test'];
+    let logger = {
+      log: function() {},
+    };
+    let publisher = loadBalancer.staticPublisher(instances, factory, logger);
+    let n = publisher.next();
+    assert(!n.done);
+    assert(n.value);
+    assert(n.value.then);
+    let resultA = yield n.value;
+
+    n = publisher.next();
+    assert(!n.done);
+    assert(n.value);
+    assert(n.value.then);
+    let resultB = yield n.value;
+
+    assert.equal(resultA, resultB);
+  });
+});
+
 var tests = [{
   name: 'random',
   loadBalancer: function(publisher) {
