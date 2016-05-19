@@ -2,7 +2,7 @@
   "name": "restore-chassis-srv",
   "version": "0.1.0",
   "description": "Restore Commerce microservice chassis",
-  "main": "index",
+  "main": "index.js",
   "author": "Marcel Hauf",
   "repository": {
     "type": "git",
