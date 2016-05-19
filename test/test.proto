@@ -9,6 +9,8 @@ package test;
 
 service Test {
   rpc Test (TestRequest) returns (TestResponse);
+  rpc Throw (TestRequest) returns (TestResponse);
+  rpc NotImplemented (TestRequest) returns (TestResponse);
 }
 
 message TestRequest {
