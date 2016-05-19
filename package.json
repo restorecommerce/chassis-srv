@@ -22,7 +22,8 @@
     "grpc": "^0.14.1",
     "no-kafka": "^2.4.2",
     "random-js": "^1.0.8",
-    "restore-logger": "git+https://github.com/restorecommerce/logger.git"
+    "restore-logger": "git+https://github.com/restorecommerce/logger.git",
+    "restore-server-config": "git+https://github.com/restorecommerce/server-config.git"
   },
   "devDependencies": {
     "co-mocha": "^1.1.2",

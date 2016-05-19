@@ -1,0 +1,40 @@
+{
+  "server": {
+    "events": {
+      "provider": {
+        "name": "kafka",
+        "config": {
+          "groupId": "restore-chassis-example-server",
+          "clientId": "restore-chassis-example-server",
+          "connectionString": "localhost:9092"
+        }
+      }
+    },
+    "endpoints": {
+      "activate": {
+        "transport": ["grpc"]
+      },
+      "changePassword": {
+        "transport": ["grpc"]
+      },
+      "get": {
+        "transport": ["grpc"]
+      },
+      "register": {
+        "transport": ["grpc"]
+      },
+      "unregister": {
+        "transport": ["grpc"]
+      }
+    },
+    "transports": [{
+      "name": "grpc",
+      "config": {
+        "proto": "/../../protos/user.proto",
+        "package": "user",
+        "service": "User",
+        "addr": "localhost:50051"
+      }
+    }]
+  }
+}

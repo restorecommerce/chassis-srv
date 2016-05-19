@@ -2,7 +2,7 @@
 
 let co = require('co');
 let util = require('util');
-let Server = require('../lib/microservice').Server
+let Server = require('../../lib/microservice').Server
 
 function Service(userEvents, logger) {
   function* sendEmail(mail) {
@@ -37,22 +37,9 @@ function Service(userEvents, logger) {
   });
 }
 
-let config = {
-  events: {
-    provider: {
-      name: 'kafka',
-      config: { // config object pased to kafka provider
-        groupId: 'restore-chassis-example-email',
-        clientId: 'restore-chassis-example-email',
-        connectionString: 'localhost:9092',
-      },
-    },
-  }
-};
-
 co(function*(){
   // Create a new microservice Server
-  let server = new Server(config);
+  let server = new Server();
 
   // Subscribe to events which the business logic requires
   let userEvents = yield server.events.subscribe('user');

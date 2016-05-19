@@ -2,40 +2,8 @@
 
 let co = require('co');
 let util = require('util');
-let Client = require('../lib/microservice').Client;
-
-
-let config = {
-  transports: {
-    grpc: {
-      proto: "/../protos/user.proto",
-      package: "user",
-      service: "User",
-      timeout: 3000
-    }
-  },
-  endpoints: {
-    get: {
-      loadbalancer:{
-        name: "roundRobin"
-      },
-      publisher: {
-        name: "static",
-        instances: ["grpc://localhost:50051"]
-      }
-    },
-    register: {
-      loadbalancer:{
-        name: "random",
-        seed: 1
-      },
-      publisher: {
-        name: "static",
-        instances: ["grpc://localhost:50051"]
-      }
-    }
-  }
-};
+let Client = require('../../lib/microservice').Client;
+let loadConfig = require('../../lib/config').load;
 
 // makeLogging returns a simple middleware which is called before each transport endpoint is called
 function makeLogging(logger) {
@@ -50,7 +18,8 @@ function makeLogging(logger) {
 }
 
 co(function*() {
-  let client = new Client(config);
+  loadConfig(process.cwd());
+  let client = new Client('user');
   client.middleware.push(makeLogging(client.logger));
   let user = yield client.connect();
 

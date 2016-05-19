@@ -2,7 +2,7 @@
 
 let co = require('co');
 let util = require('util');
-let Server = require('../lib/microservice').Server
+let Server = require('../../lib/microservice').Server
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
@@ -72,48 +72,6 @@ function Service(userEvents, logger) {
   this.unregister = this.activate;
 }
 
-let config = {
-  events: {
-    provider: {
-      name: 'kafka',
-      config: { // config object pased to kafka provider
-        groupId: 'restore-chassis-example-server',
-        clientId: 'restore-chassis-example-server',
-        connectionString: 'localhost:9092',
-      },
-    },
-  },
-  endpoints: {
-    activate: {
-      // Specify which configured transport the endpoint should use
-      transport: ['grpc'],
-    },
-    changePassword: {
-      transport: ['grpc'],
-    },
-    get: {
-      transport: ['grpc'],
-    },
-    register: {
-      transport: ['grpc'],
-    },
-    unregister: {
-      transport: ['grpc'],
-    },
-  },
-  // It is possible to register multiple transports of the same kind(name).
-  // For example a grpc server listening on port 50051 and one on port 50052.
-  transports: [{
-    name: 'grpc',
-    config: { // config object passed to grpc provider
-      proto: '/../protos/user.proto',
-      package: 'user',
-      service: 'User',
-      addr: "localhost:50051",
-    },
-  }, ],
-};
-
 // makeLogging returns a simple middleware which is called before the business logic.
 function makeLogging(logger) {
   return function*(next) {
@@ -126,7 +84,7 @@ function makeLogging(logger) {
 
 co(function*() {
   // Create a new microservice Server
-  let server = new Server(config);
+  let server = new Server();
 
   // Add middleware
   server.middleware.push(makeLogging(server.logger));

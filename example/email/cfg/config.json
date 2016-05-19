@@ -1,0 +1,14 @@
+{
+  "server": {
+    "events": {
+      "provider": {
+        "name": "kafka",
+        "config": {
+          "groupId": "restore-chassis-example-email",
+          "clientId": "restore-chassis-example-email",
+          "connectionString": "localhost:9092"
+        }
+      }
+    }
+  }
+}
