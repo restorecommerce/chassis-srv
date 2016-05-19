@@ -1,5 +1,5 @@
 {
-  "name": "restore-chassis",
+  "name": "restore-chassis-srv",
   "version": "0.1.0",
   "description": "Restore Commerce microservice chassis",
   "main": "index",
