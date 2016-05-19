@@ -112,23 +112,20 @@ providers.forEach(function(provider) {
           should.not.exist(endpoint);
         });
         describe('without running server', function() {
-          it('should create an endpoint', function*() {
-            endpoint = yield client.makeEndpoint(methodName, instance);
-            should.exist(endpoint);
-          });
-          it('should fail when calling it', function*() {
-            let result = yield endpoint(request);
-            should.not.exist(result.data);
-            should.exist(result.error);
-            should.equal(result.error.message, 'unavailable')
-          });
-          it('should fail when calling it with a timeout', function*() {
-            let result = yield endpoint(request, {
-              timeout: 1000,
-            });
-            should.not.exist(result.data);
-            should.exist(result.error);
-            should.equal(result.error.message, 'unavailable')
+          this.slow(200);
+          it('should fail', function*() {
+            let err;
+            endpoint = yield co(function*() {
+              let endpoint = yield client.makeEndpoint(methodName, instance);
+              return endpoint;
+            }).then(function(result) {
+              assert.ok(false, 'should not call then');
+            }).catch(function(e) {
+              err = e;
+            })
+            should.not.exist(endpoint);
+            should.exist(err);
+            should.equal(err.message, 'Failed to connect before the deadline');
           });
         });
         describe('with running server', function() {
