@@ -1,5 +1,172 @@
 # restore-cassis
 
+## Architecture
+
+The chassis is split into a server and a client part.
+Both parts require configuration file(s).
+The client connects via transports to other servers and provides these endpoints.
+A Server exposes endpoints via transports, it can also listen to evens and emit them.
+
+### Transport
+
+A transport communicates between a server and a client.
+It handles encoding/decoding of data and sending/receving.
+The following transport providers are available:
++ [gRPC](http://www.grpc.io) (Client,Server)
+
+### Endpoint
+
+An endpoint is one function of a service.
+At the client side an endpoint is an exposed service function of one server.
+On the server it is one exposed business logic function.
+Endpoints are connected via transports.
+
+### Events
+
+The chassis provides a similar event API to [Node.js events](https://nodejs.org/api/events.html).
+An emitted event is broadcasted by a provider to listeners.
+The provider takes care of packaging the event and distributing it to listeners.
+The following events providers are available:
++ [Kafka](https://kafka.apache.org/)
+
+### Configuration
+
+Configuration is handled by [restore-server-config](https://github.com/restorecommerce/server-config) which uses [nconf](https://github.com/indexzero/nconf).
+The chassis loads the required configuration from files located in
+the subdirectory 'cfg' of the current working directory. Environment variables
+overwrite configuration values from files.
+
+### Logging
+
+Logging is handled by [restore-logger](https://github.com/restorecommerce/logger)
+which uses [winston](https://github.com/winstonjs/winston).
+A logger is created with each client and server. The logger can be configured.
+
+
+### Client
+
+Clients connect to servers via transports and provide endpoints.
+When calling an endpoint the request traverses on the client side
+possible middleware, retry and timeout logic, load balancing and
+finally it reaches the transport. The transport encodes the request and sends it
+to the server.
+The response from the server is directly provided as a result or an error.
+
+#### Config
+
+The client requires a configuration file which specifies
+to which services to connect, what transport to use, which endpoints to create,
+how to discover endpoints and how to balance calls.
+
+Example config file
+```json
+{
+  "client": {
+    "user": {
+      "transports": {
+        "grpc": {
+          "proto": "/protos/user.proto",
+          "package": "user",
+          "service": "User",
+          "timeout": 3000
+        }
+      },
+      "endpoints": {
+        "get": {
+          "loadbalancer": {
+            "name": "roundRobin"
+          },
+          "publisher": {
+            "name": "static",
+            "instances": ["grpc://localhost:50051"]
+          }
+        },
+        "register": {
+          "loadbalancer": {
+            "name": "random",
+            "seed": 1
+          },
+          "publisher": {
+            "name": "static",
+            "instances": ["grpc://localhost:50051"]
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Server
+
+A server can provide service endpoints, listen to events, emit events.
+Each business logic function is exposed via a transport as an endpoint.
+Clients connect to these endpoints.
+When a client calls a server endpoint it traverses from the transport through
+possible middleware to the business logic function.
+The business logic processes the request and respond with either a result or an error.
+The response is transported back to the client.
+
+#### Config
+
+In the following configuration only the endpoint part is configured.
+Listening and emitting events is not possible. Each configured endpoint specifies
+which transport to use to provide an endpoint.
+Every transport, specified in the endpoints section, needs to be listed in the
+transports with it's configuration.
+```json
+{
+  "server": {
+    "endpoints": {
+      "activate": {
+        "transport": ["grpc"]
+      },
+      "changePassword": {
+        "transport": ["grpc"]
+      },
+      "get": {
+        "transport": ["grpc"]
+      },
+      "register": {
+        "transport": ["grpc"]
+      },
+      "unregister": {
+        "transport": ["grpc"]
+      }
+    },
+    "transports": [{
+      "name": "grpc",
+      "config": {
+        "proto": "/../../protos/user.proto",
+        "package": "user",
+        "service": "User",
+        "addr": "localhost:50051"
+      }
+    }]
+  }
+}
+```
+
+In the following configuration only the events part of the server is configured.
+No endpoints are provided by the server. Only listening and emitting events is possible.
+The event provider is Kafka.
+```json
+{
+  "server": {
+    "events": {
+      "provider": {
+        "name": "kafka",
+        "config": {
+          "groupId": "restore-chassis-example",
+          "clientId": "restore-chassis-example",
+          "connectionString": "localhost:9092"
+        }
+      }
+    }
+  }
+}
+```
+
 ## Features
 
 ### done:
