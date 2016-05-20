@@ -6,7 +6,7 @@ let Server = require('../../lib/microservice').Server
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
-  var data = [{
+  this.data = [{
     id: '/users/admin'
   }, {
     id: '/users/me'
@@ -43,7 +43,7 @@ function Service(userEvents, logger) {
       email: email,
       password: password,
     }
-    data.push(user);
+    this.data.push(user);
     logger.log('INFO', 'user created', user);
     // emits an event (kafka message)
     yield userEvents.emit('created', user);
@@ -55,7 +55,7 @@ function Service(userEvents, logger) {
     let id = request.id;
     let name = request.name;
     let email = request.email;
-    for (let entry of data) {
+    for (let entry of this.data) {
       if (entry.id === id && id || entry.name === name && name || entry.email === email && email) {
         // Return a value for a successful request
         return entry;
