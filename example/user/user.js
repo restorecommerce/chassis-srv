@@ -72,22 +72,12 @@ function Service(userEvents, logger) {
   this.unregister = this.activate;
 }
 
-// makeLogging returns a simple middleware which is called before the business logic.
-function makeLogging(logger) {
-  return function*(next) {
-    return function*(request, context){
-      logger.log('INFO', util.format('received request to method %s over transport %s', context.method, context.transport), request);
-      return yield next(request, context);
-    };
-  }
-}
-
 co(function*() {
   // Create a new microservice Server
   let server = new Server();
 
   // Add middleware
-  server.middleware.push(makeLogging(server.logger));
+  // server.middleware.push(makeLogging(server.logger));
 
   // Subscribe to events which the business logic requires
   let userEvents = yield server.events.subscribe('user');
