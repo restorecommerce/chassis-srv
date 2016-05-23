@@ -12,6 +12,9 @@ var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn
 var grpc = require('../lib/transport/grpc');
 
+var logger = {
+  log: console.log,
+};
 var providers = [{
   config: {
     proto: '/test/test.proto',
@@ -49,7 +52,7 @@ providers.forEach(function(provider) {
             proto: provider.config.proto,
             service: provider.config.service,
           };
-          server = new Server(config);
+          server = new Server(config, logger);
           should.exist(server);
         });
       })
@@ -95,7 +98,7 @@ providers.forEach(function(provider) {
             service: provider.config.service,
             timeout: provider.config.timeout,
           };
-          client = new Client(config);
+          client = new Client(config, logger);
           should.exist(client);
         });
       });
@@ -147,7 +150,7 @@ providers.forEach(function(provider) {
             },
           };
           before(function*() {
-            server = new provider.server(config);
+            server = new provider.server(config, logger);
             yield server.bind(service);
             yield server.start();
           });

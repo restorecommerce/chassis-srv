@@ -7,6 +7,9 @@ option objc_class_prefix = "Test";
 
 package test;
 
+import "../protos/io/restorecommerce/event.proto";
+import "../protos/io/restorecommerce/user.proto";
+
 service Test {
   rpc Test (TestRequest) returns (TestResponse);
   rpc Throw (TestRequest) returns (TestResponse);
@@ -19,3 +22,8 @@ message TestRequest {
 message TestResponse {
   string result = 1;
 }
+
+message TestEvent {
+  string value = 1;
+  int32 count = 2;
+};

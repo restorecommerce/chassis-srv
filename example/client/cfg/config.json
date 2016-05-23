@@ -3,8 +3,8 @@
     "user": {
       "transports": {
         "grpc": {
-          "proto": "/../../protos/user.proto",
-          "package": "user",
+          "proto": "/../../protos/io/restorecommerce/user.proto",
+          "package": "io.restorecommerce.user",
           "service": "User",
           "timeout": 3000
         }

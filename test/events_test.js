@@ -32,13 +32,17 @@ describe('events', function() {
     });
   });
   describe('with kafka proivder', function() {
-    let config = {
-      groupId: 'restore-chassis-srv-test',
-      clientId: 'restore-chassis-srv-test',
-      connectionString: 'localhost:9092',
-    };
     let logger = {
-      log: function() {}, // silence kafka
+      log: console.log, // silence kafka
+    };
+    let config = {
+      "name": "kafka",
+      "proto": "test/test.proto",
+      "groupId": "restore-chassis-example-test",
+      "clientId": "restore-chassis-example-test",
+      "connectionString": "localhost:9092",
+      "message": "io.restorecommerce.event.Event",
+      "messages": {},
     };
     let kafka = new Kafka(config, logger);
     let events = new Events(kafka);
@@ -49,6 +53,8 @@ describe('events', function() {
       value: 'test',
       count: 1,
     };
+    config.messages[topicName] = {};
+    config.messages[topicName][eventName] = 'test.TestEvent';
     describe('yielding subscribe', function() {
       it('should return a topic', function*() {
         topic = yield events.subscribe(topicName);
@@ -61,6 +67,7 @@ describe('events', function() {
     describe('yielding kafka.start', function() {
       let callback;
       let listener = function*(message) {
+        console.log('message received');
         assert.deepEqual(testMessage, message);
         callback();
       };

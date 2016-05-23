@@ -3,10 +3,15 @@
     "events": {
       "provider": {
         "name": "kafka",
-        "config": {
-          "groupId": "restore-chassis-example-email",
-          "clientId": "restore-chassis-example-email",
-          "connectionString": "localhost:9092"
+        "proto": "email.proto",
+        "groupId": "restore-chassis-example-email",
+        "clientId": "restore-chassis-example-email",
+        "connectionString": "localhost:9092",
+        "message": "io.restorecommerce.event.Event",
+        "messages": {
+          "user": {
+            "created": "io.restorecommerce.user.UserResponse"
+          }
         }
       }
     }
