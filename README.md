@@ -1,5 +1,10 @@
 # restore-cassis
 
+## Install
+
+npm-link-shared svn.n-fuse.de/svn/nf/invend/trunk/int_modules/ gitlab.n-fuse.de/restorecommerce/chassis-srv/ restore-gss restore-aql-function
+npm install
+
 ## Architecture
 
 The chassis is split into a server and a client part.

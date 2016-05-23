@@ -2,7 +2,9 @@
 
 let co = require('co');
 let util = require('util');
-let Server = require('../../lib/microservice').Server
+let ms = require('../../lib/microservice');
+let Server = ms.Server;
+let Database = ms.Database;
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
@@ -73,8 +75,13 @@ function Service(userEvents, logger) {
 }
 
 co(function*() {
+
+
   // Create a new microservice Server
   let server = new Server();
+
+  // get gss
+  let db = yield Database.get('gss', server.logger);
 
   // Add middleware
   // server.middleware.push(makeLogging(server.logger));
