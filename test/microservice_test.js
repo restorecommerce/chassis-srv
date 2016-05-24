@@ -17,21 +17,22 @@ var grpc = require('../lib/transport/grpc');
 var Server = microservice.Server;
 var Client = microservice.Client;
 
+let service = {
+  test: function(request, context) {
+    request.value.should.be.equal('hello');
+    return {result:'welcome'};
+  },
+  throw: function(request, context) {
+    throw new Error('forced error');
+  },
+  notImplemented: null,
+};
+
 describe('microservice.Server', function() {
   let server;
   let topicName = 'test';
   let topic;
   let eventName = ''
-  let service = {
-    test: function(request, context) {
-      request.value.should.be.equal('hello');
-      return {result:'welcome'};
-    },
-    throw: function(request, context) {
-      throw new Error('forced error');
-    },
-    notImplemented: null,
-  };
   it('should be a constructor and have specific prototype functions', function*() {
     should.exist(Server.constructor);
     should.exist(Server.prototype.bind);
@@ -174,4 +175,65 @@ describe('microservice.Server', function() {
       yield server.end();
     })
   });
+});
+
+let logger = {
+  log: function(){
+    let level = arguments[0].toLowerCase();
+    if (level == 'error') {
+      let args = Array.prototype.splice.apply(arguments, [1]);
+      console.log(level, args);
+    }
+  },
+};
+describe('microservice.Client', function(){
+  let client;
+  let server;
+  before(function*() {
+    let config = {
+      proto: '/test/test.proto',
+      package: 'test',
+      service: 'Test',
+      addr: "localhost:50051",
+      timeout: 100,
+    };
+    server = new grpc.Server(config, logger);
+    yield server.bind(service);
+    yield server.start();
+  });
+  after(function*() {
+    yield server.end();
+  });
+  it('should be a constructor and have specific prototype functions', function*() {
+    should.exist(Client.constructor);
+    should.exist(Client.prototype.connect);
+    should.ok(isGeneratorFn(Client.prototype.connect));
+    should.exist(Client.prototype.middleware);
+    Client.prototype.middleware.should.have.iterable();
+  });
+  describe('constructing the client', function(){
+    it('should create a client when providing correct configuration', function*(){
+      config.load(process.cwd() + '/test');
+      client = new Client('test');
+      should.exist(client);
+      should.exist(client.logger);
+    });
+  });
+  describe('connect', function(){
+    it('should return a service object with endpoint functions', function*(){
+      let service = yield client.connect();
+      should.exist(service);
+      should.exist(service.test);
+      should.ok(isGeneratorFn(service.test));
+      should.exist(service.throw);
+      should.ok(isGeneratorFn(service.throw));
+      should.exist(service.notImplemented);
+      should.ok(isGeneratorFn(service.notImplemented));
+    });
+  });
+  describe('end', function(){
+    it('should disconnect from all endpoints', function*(){
+      yield client.end();
+    });
+  })
 });
