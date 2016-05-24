@@ -15,6 +15,7 @@ var config = require('../lib/config');
 var events = require('../lib/transport/events/events');
 var grpc = require('../lib/transport/grpc');
 var Server = microservice.Server;
+var Client = microservice.Client;
 
 describe('microservice.Server', function() {
   let server;
@@ -23,7 +24,8 @@ describe('microservice.Server', function() {
   let eventName = ''
   let service = {
     test: function(request, context) {
-
+      request.value.should.be.equal('hello');
+      return {result:'welcome'};
     },
     throw: function(request, context) {
       throw new Error('forced error');
@@ -108,12 +110,11 @@ describe('microservice.Server', function() {
       assert(server.transport.grpc);
       server.transport.grpc.should.be.an.instanceof(grpc.Server);
     });
-    it('should be possible to subscribe to even topics', function*() {
+    it('should be possible to subscribe to event topics', function*() {
       assert(server.events.subscribe);
       assert(isGeneratorFn(server.events.subscribe));
       topic = yield server.events.subscribe(topicName);
       assert(topic);
-      console.log(Object.keys(topic));
       assert(topic.on);
       assert(topic.emit);
       assert(isGeneratorFn(topic.emit));
@@ -128,6 +129,44 @@ describe('microservice.Server', function() {
   describe('calling start', function() {
     it('should expose the created endpoints via transports', function*() {
       yield server.start();
+
+      let cfg = config.get();
+      let grpcConfig = cfg.get('client:test:transports:grpc');
+      should.exist(grpcConfig);
+      should.exist(grpcConfig.proto);
+      should.exist(grpcConfig.package);
+      should.exist(grpcConfig.service);
+
+      // 'test' endpoint
+      let instance = cfg.get('client:test:endpoints:test:publisher:instances:0');
+      let client = new grpc.Client(grpcConfig, server.logger);
+      let testF = yield client.makeEndpoint('test', instance);
+      let result = yield testF({value:'hello'}, {test:true});
+      should.ifError(result.error);
+      should.exist(result.data);
+      should.exist(result.data.result);
+      result.data.result.should.be.equal('welcome');
+
+      // 'throw' endpoint
+      instance = cfg.get('client:test:endpoints:throw:publisher:instances:0');
+      let throwF = yield client.makeEndpoint('throw', instance);
+      result = yield throwF({value:'hello'}, {test:true});
+      should.exist(result.error);
+      result.error.should.be.Error();
+      result.error.message.should.equal('internal');
+      result.error.details.should.equal('forced error');
+      should.not.exist(result.data);
+
+      // 'notImplemented' endpoint
+      instance = cfg.get('client:test:endpoints:notImplemented:publisher:instances:0');
+      let notImplementedF = yield client.makeEndpoint('notImplemented', instance);
+      result = yield notImplementedF({value:'hello'}, {test:true});
+      should.exist(result.error);
+      result.error.should.be.Error();
+      result.error.message.should.equal('unimplemented');
+      should.not.exist(result.data);
+
+      yield client.end();
     });
   });
   describe('calling end', function() {

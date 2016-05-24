@@ -36,7 +36,13 @@ describe('static publisher', function() {
     return endpoint;
   };
   let logger = {
-    log: function() {},
+    log: function(){
+      let level = arguments[0].toLowerCase();
+      if (level == 'error') {
+        let args = Array.prototype.splice.apply(arguments, [1]);
+        console.log(level, args);
+      }
+    },
   };
   it('should always yield the same endpoints', function*() {
     let instances = ['test'];

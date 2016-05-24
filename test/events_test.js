@@ -31,9 +31,15 @@ describe('events', function() {
       })
     });
   });
-  describe('with kafka proivder', function() {
+  describe('with kafka provider', function() {
     let logger = {
-      log: console.log, // silence kafka
+      log: function(){
+        let level = arguments[0].toLowerCase();
+        if (level == 'error') {
+          let args = Array.prototype.splice.apply(arguments, [1]);
+          console.log(level, args);
+        }
+      },
     };
     let config = {
       "name": "kafka",
@@ -67,7 +73,6 @@ describe('events', function() {
     describe('yielding kafka.start', function() {
       let callback;
       let listener = function*(message) {
-        console.log('message received');
         assert.deepEqual(testMessage, message);
         callback();
       };

@@ -1,5 +1,63 @@
 {
+  "client": {
+    "test": {
+      "logger": {
+        "console": {
+          "handleExceptions": false,
+          "level": "error",
+          "colorize": true,
+          "prettyPrint": true
+        }
+      },
+      "transports": {
+        "grpc": {
+          "proto": "test/test.proto",
+          "package": "test",
+          "service": "Test",
+          "timeout": 3000
+        }
+      },
+      "endpoints": {
+        "test": {
+          "loadbalancer": {
+            "name": "random",
+            "seed": 0
+          },
+          "publisher": {
+            "name": "static",
+            "instances": ["grpc://localhost:50051"]
+          }
+        },
+        "notImplemented": {
+          "loadbalancer": {
+            "name": "roundRobin"
+          },
+          "publisher": {
+            "name": "static",
+            "instances": ["grpc://localhost:50051"]
+          }
+        },
+        "throw": {
+          "loadbalancer": {
+            "name": "roundRobin"
+          },
+          "publisher": {
+            "name": "static",
+            "instances": ["grpc://localhost:50051"]
+          }
+        }
+      }
+    }
+  },
   "server": {
+    "logger": {
+      "console": {
+        "handleExceptions": false,
+        "level": "error",
+        "colorize": true,
+        "prettyPrint": true
+      }
+    },
     "events": {
       "provider": {
         "name": "kafka",
