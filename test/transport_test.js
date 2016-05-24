@@ -179,7 +179,7 @@ providers.forEach(function(provider) {
             should.exist(result.error);
             should.equal(result.error.message, 'unimplemented')
           });
-          it('should return an error when calling a unimplemented method', function*() {
+          it('should return an error when calling a method which throws an error', function*() {
             let endpointThrow = yield client.makeEndpoint('throw', instance);
             should.exist(endpoint);
             let result = yield endpointThrow(request);

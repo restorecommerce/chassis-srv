@@ -1,0 +1,39 @@
+{
+  "server": {
+    "events": {
+      "provider": {
+        "name": "kafka",
+        "proto": "test/test.proto",
+        "groupId": "restore-chassis-test-server",
+        "clientId": "restore-chassis-test-server",
+        "connectionString": "localhost:9092",
+        "message": "io.restorecommerce.event.Event",
+        "messages": {
+          "test": {
+            "testEvent": "test.TestEvent"
+          }
+        }
+      }
+    },
+    "endpoints": {
+      "test": {
+        "transport": ["grpc"]
+      },
+      "throw": {
+        "transport": ["grpc"]
+      },
+      "notImplemented": {
+        "transport": ["grpc"]
+      }
+    },
+    "transports": [{
+      "name": "grpc",
+      "config": {
+        "proto": "test/test.proto",
+        "package": "test",
+        "service": "Test",
+        "addr": "localhost:50051"
+      }
+    }]
+  }
+}
