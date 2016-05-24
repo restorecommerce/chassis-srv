@@ -39,8 +39,8 @@
   },
   "scripts": {
     "lint": "node ./node_modules/jshint/bin/jshint lib test example --exclude-path=.jshintignore",
-    "test": "./node_modules/.bin/mocha test && npm run-script lint",
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test"
+    "test": "./node_modules/.bin/mocha -R nyan test && npm run-script lint",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test"
   },
   "engines": {
     "node": ">= 5.0.0"
