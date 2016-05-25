@@ -43,7 +43,7 @@
     "transports": [{
       "name": "grpc",
       "config": {
-        "proto": "/../../protos/io/restorecommerce/user.proto",
+        "proto": "../../protos/io/restorecommerce/user.proto",
         "package": "io.restorecommerce.user",
         "service": "User",
         "addr": "localhost:50051"
