@@ -43,7 +43,8 @@ describe('events', function() {
     };
     let config = {
       "name": "kafka",
-      "proto": "test/test.proto",
+      "proto": ["io/restorecommerce/event.proto", "../test/test.proto"],
+      "protoRoot": "protos/",
       "groupId": "restore-chassis-example-test",
       "clientId": "restore-chassis-example-test",
       "connectionString": "localhost:9092",

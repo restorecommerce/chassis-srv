@@ -3,7 +3,8 @@
     "events": {
       "provider": {
         "name": "kafka",
-        "proto": "email.proto",
+        "proto": ["io/restorecommerce/event.proto", "io/restorecommerce/user.proto"],
+        "protoRoot": "../../protos/",
         "groupId": "restore-chassis-example-email",
         "clientId": "restore-chassis-example-email",
         "connectionString": "localhost:9092",

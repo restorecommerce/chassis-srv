@@ -245,7 +245,7 @@ describe('microservice.Client', function() {
   context('with running server', function(){
     before(function*() {
       let config = {
-        proto: '/test/test.proto',
+        proto: 'test/test.proto',
         package: 'test',
         service: 'Test',
         addr: "localhost:50051",

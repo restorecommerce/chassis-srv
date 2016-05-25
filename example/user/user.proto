@@ -1,6 +1,0 @@
-syntax = "proto3";
-
-package io.restorecommerce.user;
-
-import "../../protos/io/restorecommerce/event.proto";
-import "../../protos/io/restorecommerce/user.proto";

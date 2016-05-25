@@ -61,7 +61,8 @@
     "events": {
       "provider": {
         "name": "kafka",
-        "proto": "test/test.proto",
+        "proto": ["io/restorecommerce/event.proto", "../test/test.proto"],
+        "protoRoot": "../protos/",
         "groupId": "restore-chassis-test-server",
         "clientId": "restore-chassis-test-server",
         "connectionString": "localhost:9092",
