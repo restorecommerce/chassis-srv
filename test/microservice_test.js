@@ -8,6 +8,7 @@ var assert = require('assert');
 var should = require('should');
 var util = require('util');
 var co = require('co');
+var _ = require('lodash');
 var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn
 var microservice = require('../lib/microservice');
@@ -194,7 +195,7 @@ describe('microservice.Server', function() {
 let logger = {
   log: function() {
     let level = arguments[0].toLowerCase();
-    if (level == 'error') {
+    if (level === 'error') {
       let args = Array.prototype.splice.apply(arguments, [1]);
       console.log(level, args);
     }
@@ -203,21 +204,6 @@ let logger = {
 describe('microservice.Client', function() {
   let client;
   let server;
-  before(function*() {
-    let config = {
-      proto: '/test/test.proto',
-      package: 'test',
-      service: 'Test',
-      addr: "localhost:50051",
-      timeout: 100,
-    };
-    server = new grpc.Server(config, logger);
-    yield server.bind(service);
-    yield server.start();
-  });
-  after(function*() {
-    yield server.end();
-  });
   it('should be a constructor and have specific prototype functions', function*() {
     should.exist(Client.constructor);
     should.exist(Client.prototype.connect);
@@ -232,42 +218,118 @@ describe('microservice.Client', function() {
       should.exist(client);
       should.exist(client.logger);
     });
-  });
-  describe('connect', function() {
-    it('should return a service object with endpoint functions', function*() {
-      let service = yield client.connect();
-      should.exist(service);
-      should.exist(service.test);
-      should.ok(isGeneratorFn(service.test));
-      should.exist(service.throw);
-      should.ok(isGeneratorFn(service.throw));
-      should.exist(service.notImplemented);
-      should.ok(isGeneratorFn(service.notImplemented));
+    it('should throw an error when providing no configuration', function*(){
+      config.load(process.cwd() + '/test');
+      let cfg = config.get();
+      cfg.set('client:test', null);
+      (function(){
+        client = new Client('test');
+      }).should.throw('no client:test config');
+    });
+    it('should throw an error when providing with invalid configuration', function*(){
+      config.load(process.cwd() + '/test');
+      let cfg = config.get();
+      cfg.set('client:test:endpoints', null);
+      (function(){
+        client = new Client('test');
+      }).should.throw('no endpoints configured');
 
-      // test
-      let result = yield service.test({
-        value: 'hello',
+      config.load(process.cwd() + '/test');
+      cfg = config.get();
+      cfg.set('client:test:transports', null);
+      (function(){
+        client = new Client('test');
+      }).should.throw('no transports configured');
+    });
+  });
+  context('with running server', function(){
+    before(function*() {
+      let config = {
+        proto: '/test/test.proto',
+        package: 'test',
+        service: 'Test',
+        addr: "localhost:50051",
+        timeout: 100,
+      };
+      server = new grpc.Server(config, logger);
+      yield server.bind(service);
+      yield server.start();
+    });
+    after(function*() {
+      yield server.end();
+    });
+    describe('connect', function() {
+      it('should return a service object with endpoint functions', function*() {
+        let service = yield client.connect();
+        should.exist(service);
+        should.exist(service.test);
+        should.ok(isGeneratorFn(service.test));
+        should.exist(service.throw);
+        should.ok(isGeneratorFn(service.throw));
+        should.exist(service.notImplemented);
+        should.ok(isGeneratorFn(service.notImplemented));
+
+        // test
+        let result = yield service.test({
+          value: 'hello',
+        });
+        should.exist(result);
+        should.not.exist(result.error);
+        should.exist(result.data);
+        should.exist(result.data.result);
+        result.data.result.should.equal('welcome');
+
+        // test with timeout and retry
+        result = yield service.test({
+          value: 'hello',
+        }, {timeout:500, retry:2});
+        should.exist(result);
+        should.not.exist(result.error);
+        should.exist(result.data);
+        should.exist(result.data.result);
+        result.data.result.should.equal('welcome');
       });
-      should.exist(result);
-      should.not.exist(result.error);
-      should.exist(result.data);
-      should.exist(result.data.result);
-      result.data.result.should.equal('welcome');
-
-      // test with timeout and retry
-      result = yield service.test({
-        value: 'hello',
-      }, {timeout:100, retry:2});
-      should.exist(result);
-      should.not.exist(result.error);
-      should.exist(result.data);
-      should.exist(result.data.result);
-      result.data.result.should.equal('welcome');
     });
+    describe('end', function() {
+      it('should disconnect from all endpoints', function*() {
+        yield client.end();
+      });
+    })
   });
-  describe('end', function() {
-    it('should disconnect from all endpoints', function*() {
-      yield client.end();
+  context('without a running server', function(){
+    describe('connect', function() {
+      it('should return a service object with endpoint functions which timeout', function*() {
+        let service = yield client.connect();
+        should.exist(service);
+        should.exist(service.test);
+        should.ok(isGeneratorFn(service.test));
+        should.exist(service.throw);
+        should.ok(isGeneratorFn(service.throw));
+        should.exist(service.notImplemented);
+        should.ok(isGeneratorFn(service.notImplemented));
+
+        // test
+        let result = yield service.test({
+          value: 'hello',
+        }, {timeout: 100});
+        should.exist(result);
+        should.exist(result.error);
+        if (_.isArray(result.error)) {
+          _.forEach(result.error, function(value, key){
+            value.should.be.Error();
+            value.message.should.equal('call timeout');
+          });
+        } else {
+          result.error.should.be.Error();
+          result.error.message.should.equal('call timeout');
+        }
+        should.not.exist(result.data);
+      });
     });
-  })
+    describe('end', function() {
+      it('should disconnect from all endpoints', function*() {
+        yield client.end();
+      });
+    })
+  });
 });
