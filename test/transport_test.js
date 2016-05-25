@@ -89,7 +89,7 @@ providers.forEach(function(provider) {
         result: 'abcd',
       };
       let request = {
-        value: 'k00l',
+        value: 'hello',
       };
       it('should conform to a client provider', function() {
         should.exist(Client.constructor);

@@ -20,7 +20,9 @@ var Client = microservice.Client;
 let service = {
   test: function(request, context) {
     request.value.should.be.equal('hello');
-    return {result:'welcome'};
+    return {
+      result: 'welcome'
+    };
   },
   throw: function(request, context) {
     throw new Error('forced error');
@@ -142,7 +144,11 @@ describe('microservice.Server', function() {
       let instance = cfg.get('client:test:endpoints:test:publisher:instances:0');
       let client = new grpc.Client(grpcConfig, server.logger);
       let testF = yield client.makeEndpoint('test', instance);
-      let result = yield testF({value:'hello'}, {test:true});
+      let result = yield testF({
+        value: 'hello'
+      }, {
+        test: true
+      });
       should.ifError(result.error);
       should.exist(result.data);
       should.exist(result.data.result);
@@ -151,7 +157,11 @@ describe('microservice.Server', function() {
       // 'throw' endpoint
       instance = cfg.get('client:test:endpoints:throw:publisher:instances:0');
       let throwF = yield client.makeEndpoint('throw', instance);
-      result = yield throwF({value:'hello'}, {test:true});
+      result = yield throwF({
+        value: 'hello'
+      }, {
+        test: true
+      });
       should.exist(result.error);
       result.error.should.be.Error();
       result.error.message.should.equal('internal');
@@ -161,7 +171,11 @@ describe('microservice.Server', function() {
       // 'notImplemented' endpoint
       instance = cfg.get('client:test:endpoints:notImplemented:publisher:instances:0');
       let notImplementedF = yield client.makeEndpoint('notImplemented', instance);
-      result = yield notImplementedF({value:'hello'}, {test:true});
+      result = yield notImplementedF({
+        value: 'hello'
+      }, {
+        test: true
+      });
       should.exist(result.error);
       result.error.should.be.Error();
       result.error.message.should.equal('unimplemented');
@@ -178,7 +192,7 @@ describe('microservice.Server', function() {
 });
 
 let logger = {
-  log: function(){
+  log: function() {
     let level = arguments[0].toLowerCase();
     if (level == 'error') {
       let args = Array.prototype.splice.apply(arguments, [1]);
@@ -186,7 +200,7 @@ let logger = {
     }
   },
 };
-describe('microservice.Client', function(){
+describe('microservice.Client', function() {
   let client;
   let server;
   before(function*() {
@@ -211,16 +225,16 @@ describe('microservice.Client', function(){
     should.exist(Client.prototype.middleware);
     Client.prototype.middleware.should.have.iterable();
   });
-  describe('constructing the client', function(){
-    it('should create a client when providing correct configuration', function*(){
+  describe('constructing the client', function() {
+    it('should create a client when providing correct configuration', function*() {
       config.load(process.cwd() + '/test');
       client = new Client('test');
       should.exist(client);
       should.exist(client.logger);
     });
   });
-  describe('connect', function(){
-    it('should return a service object with endpoint functions', function*(){
+  describe('connect', function() {
+    it('should return a service object with endpoint functions', function*() {
       let service = yield client.connect();
       should.exist(service);
       should.exist(service.test);
@@ -229,10 +243,30 @@ describe('microservice.Client', function(){
       should.ok(isGeneratorFn(service.throw));
       should.exist(service.notImplemented);
       should.ok(isGeneratorFn(service.notImplemented));
+
+      // test
+      let result = yield service.test({
+        value: 'hello',
+      });
+      should.exist(result);
+      should.not.exist(result.error);
+      should.exist(result.data);
+      should.exist(result.data.result);
+      result.data.result.should.equal('welcome');
+
+      // test with timeout and retry
+      result = yield service.test({
+        value: 'hello',
+      }, {timeout:100, retry:2});
+      should.exist(result);
+      should.not.exist(result.error);
+      should.exist(result.data);
+      should.exist(result.data.result);
+      result.data.result.should.equal('welcome');
     });
   });
-  describe('end', function(){
-    it('should disconnect from all endpoints', function*(){
+  describe('end', function() {
+    it('should disconnect from all endpoints', function*() {
       yield client.end();
     });
   })
