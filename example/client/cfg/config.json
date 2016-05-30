@@ -4,7 +4,7 @@
       "transports": {
         "grpc": {
           "proto": "io/restorecommerce/user.proto",
-          "protoRoot": "../../protos/",
+          "protoRoot": "protos/",
           "package": "io.restorecommerce.user",
           "service": "User",
           "timeout": 3000

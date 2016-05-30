@@ -11,7 +11,7 @@
       },
       "transports": {
         "grpc": {
-          "proto": "test/test.proto",
+          "proto": "protos/test/test.proto",
           "package": "test",
           "service": "Test",
           "timeout": 3000
@@ -61,17 +61,9 @@
     "events": {
       "provider": {
         "name": "kafka",
-        "proto": ["io/restorecommerce/event.proto", "../test/test.proto"],
-        "protoRoot": "../protos/",
         "groupId": "restore-chassis-test-server",
         "clientId": "restore-chassis-test-server",
-        "connectionString": "localhost:9092",
-        "message": "io.restorecommerce.event.Event",
-        "messages": {
-          "test": {
-            "testEvent": "test.TestEvent"
-          }
-        }
+        "connectionString": "localhost:9092"
       }
     },
     "endpoints": {
@@ -88,7 +80,7 @@
     "transports": [{
       "name": "grpc",
       "config": {
-        "proto": "test/test.proto",
+        "proto": "protos/test/test.proto",
         "package": "test",
         "service": "Test",
         "addr": "localhost:50051"

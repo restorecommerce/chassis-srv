@@ -11,17 +11,9 @@
     "events": {
       "provider": {
         "name": "kafka",
-        "proto": ["io/restorecommerce/event.proto", "io/restorecommerce/user.proto"],
-        "protoRoot": "../../protos/",
         "groupId": "restore-chassis-example-server",
         "clientId": "restore-chassis-example-server",
-        "connectionString": "localhost:9092",
-        "message": "io.restorecommerce.event.Event",
-        "messages": {
-          "user": {
-            "created": "io.restorecommerce.user.UserResponse"
-          }
-        }
+        "connectionString": "localhost:9092"
       }
     },
     "endpoints": {
@@ -45,7 +37,7 @@
       "name": "grpc",
       "config": {
         "proto": "io/restorecommerce/user.proto",
-        "protoRoot": "../../protos/",
+        "protoRoot": "protos/",
         "package": "io.restorecommerce.user",
         "service": "User",
         "addr": "localhost:50051"

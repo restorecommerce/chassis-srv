@@ -1,8 +1,9 @@
 'use strict';
 
-let co = require('co');
-let util = require('util');
-let Server = require('../../lib/microservice').Server
+var co = require('co');
+var util = require('util');
+var Server = require('../../lib/microservice').Server;
+var config = require('../../lib/config');
 
 function Service(userEvents, logger) {
   function* sendEmail(mail) {
@@ -38,6 +39,8 @@ function Service(userEvents, logger) {
 }
 
 co(function*(){
+  config.load(process.cwd() + '/example/email');
+
   // Create a new microservice Server
   let server = new Server();
 

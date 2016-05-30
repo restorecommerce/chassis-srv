@@ -43,13 +43,9 @@ describe('events', function() {
     };
     let config = {
       "name": "kafka",
-      "proto": ["io/restorecommerce/event.proto", "../test/test.proto"],
-      "protoRoot": "protos/",
       "groupId": "restore-chassis-example-test",
       "clientId": "restore-chassis-example-test",
       "connectionString": "localhost:9092",
-      "message": "io.restorecommerce.event.Event",
-      "messages": {},
     };
     let kafka = new Kafka(config, logger);
     let events = new Events(kafka);
@@ -60,8 +56,6 @@ describe('events', function() {
       value: 'test',
       count: 1,
     };
-    config.messages[topicName] = {};
-    config.messages[topicName][eventName] = 'test.TestEvent';
     describe('yielding subscribe', function() {
       it('should return a topic', function*() {
         topic = yield events.subscribe(topicName);
@@ -85,7 +79,11 @@ describe('events', function() {
       });
       it('should allow sending', function*(done) {
         callback = done
-        yield topic.emit(eventName, testMessage);
+        try {
+          yield topic.emit(eventName, testMessage);
+        } catch (e) {
+          done(e);
+        }
       });
       describe('yielding kafka.end', function() {
         it('should close the kafka connection', function*() {

@@ -1,9 +1,9 @@
 'use strict';
 
-let co = require('co');
-let util = require('util');
-let Client = require('../../lib/microservice').Client;
-let loadConfig = require('../../lib/config').load;
+var co = require('co');
+var util = require('util');
+var Client = require('../../lib/microservice').Client;
+var config = require('../../lib/config');
 
 // makeLogging returns a simple middleware which is called before each transport endpoint is called
 function makeLogging(logger) {
@@ -18,7 +18,8 @@ function makeLogging(logger) {
 }
 
 co(function*() {
-  loadConfig(process.cwd());
+  config.load(process.cwd() + '/example/client');
+
   let client = new Client('user');
   client.middleware.push(makeLogging(client.logger));
   let user = yield client.connect();

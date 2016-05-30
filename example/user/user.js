@@ -1,10 +1,11 @@
 'use strict';
 
-let co = require('co');
-let util = require('util');
-let ms = require('../../lib/microservice');
-let Server = ms.Server;
-let Database = ms.Database;
+var co = require('co');
+var util = require('util');
+var ms = require('../../lib/microservice');
+var config = require('../../lib/config');
+var Server = ms.Server;
+var Database = ms.Database;
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
@@ -75,7 +76,7 @@ function Service(userEvents, logger) {
 }
 
 co(function*() {
-
+  config.load(process.cwd() + '/example/user');
 
   // Create a new microservice Server
   let server = new Server();
