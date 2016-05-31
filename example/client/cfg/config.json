@@ -7,26 +7,16 @@
           "timeout": 3000
         }
       },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": ["grpc://localhost:50051"]
+      },
       "endpoints": {
-        "get": {
-          "loadbalancer": {
-            "name": "roundRobin"
-          },
-          "publisher": {
-            "name": "static",
-            "instances": ["grpc://localhost:50051"]
-          }
-        },
-        "register": {
-          "loadbalancer": {
-            "name": "random",
-            "seed": 1
-          },
-          "publisher": {
-            "name": "static",
-            "instances": ["grpc://localhost:50051"]
-          }
-        }
+        "get": {},
+        "register": {}
       }
     }
   }
