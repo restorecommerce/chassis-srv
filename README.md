@@ -100,8 +100,36 @@ LoadBalancers:
 
 The client requires a configuration file which specifies to which services to connect, what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
 
-Example config file
+By default the client uses the roundRobin loadbalancer.
+A different default loadbalancer can be set by adding a config value config.loadbalancer.
+Providing a client.publisher config value, sets a default publisher for all endpoints.
+Each endpoint can overwrite the default loadbalancer and publisher.
 
+Short example config file.
+```json
+{
+  "client": {
+    "user": {
+      "transports": {
+        "grpc": {
+          "package": "io.restorecommerce.user.User",
+          "timeout": 3000
+        }
+      },
+      "publisher": {
+        "name": "static",
+        "instances": ["grpc://localhost:50051"]
+      },
+      "endpoints": {
+        "get": {},
+        "register": {}
+      }
+    }
+  }
+}
+```
+
+Extended example config file
 ```json
 {
   "client": {
