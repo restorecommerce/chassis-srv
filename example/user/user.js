@@ -2,10 +2,9 @@
 
 var co = require('co');
 var util = require('util');
-var ms = require('../../lib/microservice');
+var Server = require('../../lib/microservice').Server;
+var Database = require('../../lib/database');
 var config = require('../../lib/config');
-var Server = ms.Server;
-var Database = ms.Database;
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
