@@ -1,4 +1,12 @@
 {
+  "database": {
+    "gss": {
+      "provider": "gss",
+      "host": "127.0.0.1",
+      "database": "restorecommerce",
+      "autoCreate": false
+    }
+  },
   "client": {
     "test": {
       "logger": {
