@@ -23,9 +23,7 @@ let logger = {
 };
 var providers = [{
   config: {
-    proto: 'protos/test/test.proto',
-    package: 'test',
-    service: 'Test',
+    service: 'test.Test',
     addr: "localhost:50051",
     timeout: 100,
   },

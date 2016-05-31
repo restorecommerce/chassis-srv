@@ -137,9 +137,8 @@ describe('microservice.Server', function() {
       let cfg = config.get();
       let grpcConfig = cfg.get('client:test:transports:grpc');
       should.exist(grpcConfig);
-      should.exist(grpcConfig.proto);
-      should.exist(grpcConfig.package);
       should.exist(grpcConfig.service);
+
 
       // 'test' endpoint
       let instance = cfg.get('client:test:endpoints:test:publisher:instances:0');
@@ -245,9 +244,7 @@ describe('microservice.Client', function() {
   context('with running server', function(){
     before(function*() {
       let config = {
-        proto: 'protos/test/test.proto',
-        package: 'test',
-        service: 'Test',
+        service: 'test.Test',
         addr: "localhost:50051",
         timeout: 100,
       };

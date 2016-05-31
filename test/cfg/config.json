@@ -11,9 +11,7 @@
       },
       "transports": {
         "grpc": {
-          "proto": "protos/test/test.proto",
-          "package": "test",
-          "service": "Test",
+          "service": "test.Test",
           "timeout": 3000
         }
       },
@@ -79,12 +77,8 @@
     },
     "transports": [{
       "name": "grpc",
-      "config": {
-        "proto": "protos/test/test.proto",
-        "package": "test",
-        "service": "Test",
-        "addr": "localhost:50051"
-      }
+      "service": "test.Test",
+      "addr": "localhost:50051"
     }]
   }
 }
