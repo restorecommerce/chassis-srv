@@ -108,9 +108,7 @@ Example config file
     "user": {
       "transports": {
         "grpc": {
-          "proto": "../../protos/io/restorecommerce/user.proto",
-          "package": "io.restorecommerce.user",
-          "service": "User",
+          "package": "io.restorecommerce.user.User",
           "timeout": 3000
         }
       },
@@ -170,12 +168,8 @@ In the following configuration only the endpoint part is configured. Listening a
     },
     "transports": [{
       "name": "grpc",
-      "config": {
-        "proto": "../../protos/user.proto",
-        "package": "io.restorecommerce.user",
-        "service": "User",
-        "addr": "localhost:50051"
-      }
+      "package": "io.restorecommerce.user.User",
+      "addr": "localhost:50051"
     }]
   }
 }
@@ -189,16 +183,9 @@ In the following configuration only the events part of the server is configured.
     "events": {
       "provider": {
         "name": "kafka",
-        "proto": "user.proto",
         "groupId": "restore-chassis-example-server",
         "clientId": "restore-chassis-example-server",
         "connectionString": "localhost:9092",
-        "message": "io.restorecommerce.event.Event",
-        "messages": {
-          "user": {
-            "created": "io.restorecommerce.user.UserResponse"
-          }
-        }
       }
     }
   }
