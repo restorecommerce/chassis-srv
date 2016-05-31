@@ -13,8 +13,8 @@ var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn
 var microservice = require('../lib/microservice');
 var config = require('../lib/config');
-var events = require('../lib/transport/events/events');
-var grpc = require('../lib/transport/grpc');
+var events = require('../lib/events');
+var grpc = require('../lib/transport/provider/grpc');
 var Server = microservice.Server;
 var Client = microservice.Client;
 

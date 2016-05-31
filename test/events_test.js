@@ -11,8 +11,8 @@ var co = require('co');
 var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn
 
-var Events = require('../lib/transport/events/events').Events;
-var Kafka = require('../lib/transport/events/kafka').Kafka;
+var Events = require('../lib/events').Events;
+var Kafka = require('../lib/events/provider/kafka').Kafka;
 
 describe('events', function() {
   describe('without a provider', function() {

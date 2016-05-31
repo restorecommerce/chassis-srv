@@ -10,7 +10,7 @@ var util = require('util');
 var co = require('co');
 var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn
-var grpc = require('../lib/transport/grpc');
+var grpc = require('../lib/transport/provider/grpc');
 
 let logger = {
   log: function(){
