@@ -87,7 +87,7 @@ co(function*() {
   // server.middleware.push(makeLogging(server.logger));
 
   // Subscribe to events which the business logic requires
-  let userEvents = yield server.events.subscribe('user');
+  let userEvents = yield server.events.topic('user');
 
   // Create the business logic
   let service = new Service(userEvents, server.logger);

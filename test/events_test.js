@@ -21,7 +21,7 @@ describe('events', function() {
     describe('yielding subscribe', function() {
       it('should throw an error', function*() {
         let result = yield co(function*() {
-          return yield events.subscribe(topicName);
+          return yield events.topic(topicName);
         }).then(function(result) {
           assert.ok(false, 'should not call then');
         }).catch(function(err) {
@@ -58,7 +58,7 @@ describe('events', function() {
     };
     describe('yielding subscribe', function() {
       it('should return a topic', function*() {
-        topic = yield events.subscribe(topicName);
+        topic = yield events.topic(topicName);
         assert(topic);
         assert(topic.on);
         assert(topic.emit);
