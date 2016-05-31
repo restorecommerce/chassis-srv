@@ -1,6 +1,8 @@
 'use strict';
 
 module.exports.config = require('./lib/config');
+module.exports.database = require('./lib/database');
+module.exports.gss = require('./lib/database/provider/gss');
 module.exports.loadbalancer = require('./lib/loadbalancer');
 module.exports.microservice = require('./lib/microservice');
 module.exports.grpc = require('./lib/transport/provider/grpc');
