@@ -1,10 +1,11 @@
 {
   "database": {
-    "gss": {
-      "provider": "gss",
+    "arango": {
+      "provider": "arango",
       "host": "127.0.0.1",
-      "database": "restorecommerce",
-      "autoCreate": false
+      "port": 8529,
+      "database": "chassis-test",
+      "autoCreate": true
     }
   },
   "client": {
