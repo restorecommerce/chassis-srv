@@ -115,9 +115,9 @@ describe('microservice.Server', function() {
       server.transport.grpc.should.be.an.instanceof(grpc.Server);
     });
     it('should be possible to subscribe to event topics', function*() {
-      assert(server.events.subscribe);
-      assert(isGeneratorFn(server.events.subscribe));
-      topic = yield server.events.subscribe(topicName);
+      assert(server.events.topic);
+      assert(isGeneratorFn(server.events.topic));
+      topic = yield server.events.topic(topicName);
       assert(topic);
       assert(topic.on);
       assert(topic.emit);
