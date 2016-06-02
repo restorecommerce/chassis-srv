@@ -72,20 +72,27 @@ providers.forEach(function(providerCfg) {
             yield db.insert(collection, document);
           });
           it('should be findable', function*(){
-            let result = yield db.findOne(collection, document.id);
+            let result = yield db.findByID(collection, document.id);
+            result = result[0];
+            result.should.deepEqual(document);
+
+            result = yield db.find(collection, {id:document.id});
+            result = result[0];
             result.should.deepEqual(document);
           });
           it('should be updatable', function*(){
             let newDoc = _.clone(document);
             newDoc.value = 'new';
             yield db.updateOne(collection, document.id, newDoc);
-            let result = yield db.findOne(collection, document.id);
+            let result = yield db.findByID(collection, document.id);
+            result = result[0];
             result.should.deepEqual(newDoc);
           });
           it('should be deletable', function*(){
             yield db.deleteOne(collection, document.id);
-            let result = yield db.findOne(collection, document.id);
-            should.not.exist(result);
+            let result = yield db.findByID(collection, document.id);
+            result.should.be.Array();
+            result.should.be.length(0);
           });
         });
       });
