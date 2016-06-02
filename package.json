@@ -45,6 +45,6 @@
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test"
   },
   "engines": {
-    "node": ">= 5.0.0"
+    "node": ">= 6.0.0"
   }
 }
