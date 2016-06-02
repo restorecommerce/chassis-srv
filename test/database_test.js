@@ -89,7 +89,7 @@ providers.forEach(function(providerCfg) {
             result.should.deepEqual(newDoc);
           });
           it('should be deletable', function*(){
-            yield db.delete(collection, document);
+            yield db.delete(collection, {id:document.id});
             let result = yield db.findByID(collection, document.id);
             result.should.be.Array();
             result.should.be.length(0);
