@@ -9,11 +9,18 @@
 
 ## Install
 
-The chassis has a few dependencies from the init_modules module collection. Which are required for the database provider. To install the chassis run the following commands. You need to adapt the paths to your local directory structure.
+To install the chassis just run ``npm install``.
 
+## Examples
+
+Code examples can be found in directory example.
+The examples require the protos directory to be in the current working directory.
+They also require a running Kafka instance for the event messaging.
+Commands to run the examples:
 ```
-npm-link-shared svn.n-fuse.de/svn/nf/invend/trunk/int_modules/ gitlab.n-fuse.de/restorecommerce/chassis-srv/ restore-gss restore-aql-function
-npm install
+node example/client/client.js
+node example/user/user.js
+node example/email/email.js
 ```
 
 ## Architecture
@@ -100,12 +107,10 @@ LoadBalancers:
 
 The client requires a configuration file which specifies to which services to connect, what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
 
-By default the client uses the roundRobin loadbalancer.
-A different default loadbalancer can be set by adding a config value config.loadbalancer.
-Providing a client.publisher config value, sets a default publisher for all endpoints.
-Each endpoint can overwrite the default loadbalancer and publisher.
+By default the client uses the roundRobin loadbalancer. A different default loadbalancer can be set by adding a config value config.loadbalancer. Providing a client.publisher config value, sets a default publisher for all endpoints. Each endpoint can overwrite the default loadbalancer and publisher.
 
 Short example config file.
+
 ```json
 {
   "client": {
@@ -130,6 +135,7 @@ Short example config file.
 ```
 
 Extended example config file
+
 ```json
 {
   "client": {
