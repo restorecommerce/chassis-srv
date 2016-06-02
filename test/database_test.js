@@ -83,13 +83,13 @@ providers.forEach(function(providerCfg) {
           it('should be updatable', function*(){
             let newDoc = _.clone(document);
             newDoc.value = 'new';
-            yield db.updateOne(collection, document.id, newDoc);
+            yield db.update(collection, newDoc);
             let result = yield db.findByID(collection, document.id);
             result = result[0];
             result.should.deepEqual(newDoc);
           });
           it('should be deletable', function*(){
-            yield db.deleteOne(collection, document.id);
+            yield db.delete(collection, document);
             let result = yield db.findByID(collection, document.id);
             result.should.be.Array();
             result.should.be.length(0);
