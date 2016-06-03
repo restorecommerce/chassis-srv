@@ -35,9 +35,8 @@ describe('events', function() {
     let logger = {
       log: function(){
         let level = arguments[0].toLowerCase();
-        if (level == 'error') {
-          let args = Array.prototype.splice.apply(arguments, [1]);
-          console.log(level, args);
+        if (level === 'error') {
+          console.log.apply(this, arguments);
         }
       },
     };
@@ -69,7 +68,10 @@ describe('events', function() {
       let callback;
       let listener = function*(message) {
         assert.deepEqual(testMessage, message);
-        callback();
+        if (callback) {
+          callback();
+          callback = undefined;
+        }
       };
       it('should connect to kafka cluster', function*() {
         yield kafka.start();
