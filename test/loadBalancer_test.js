@@ -1,19 +1,19 @@
 'use strict';
 
-var mocha = require('mocha')
-var coMocha = require('co-mocha')
-coMocha(mocha)
+var mocha = require('mocha');
+var coMocha = require('co-mocha');
+coMocha(mocha);
 
 var assert = require('assert');
 var should = require('should');
 var util = require('util');
 var co = require('co');
-var isGeneratorFn = require('is-generator').fn
+var isGeneratorFn = require('is-generator').fn;
 var loadBalancer = require('../lib/loadbalancer');
 
 function* endpoint(request, context) {
   return yield {
-    result: 'ok'
+    result: 'ok',
   };
 }
 
@@ -36,7 +36,7 @@ describe('static publisher', function() {
     return endpoint;
   };
   let logger = {
-    log: function(){
+    log: function() {
       let level = arguments[0].toLowerCase();
       if (level == 'error') {
         let args = Array.prototype.splice.apply(arguments, [1]);
@@ -70,7 +70,7 @@ describe('static publisher', function() {
       assert.ok(false, 'should not call then');
     }).catch(function(err) {
       assert(err);
-    })
+    });
     assert(result === undefined);
   });
 });
@@ -79,13 +79,13 @@ var tests = [{
   name: 'random',
   loadBalancer: function(publisher) {
     return loadBalancer.random(publisher, 1);
-  }
+  },
 }, {
   name: 'roundRobin',
   loadBalancer: function(publisher) {
     return loadBalancer.roundRobin(publisher);
-  }
-}]
+  },
+}];
 
 tests.forEach(function(test) {
   describe(util.format('%s loadBalancer', test.name), function() {
@@ -100,25 +100,27 @@ tests.forEach(function(test) {
       });
     });
 
-    describe('with fixedPublisher and three endpoints, calling next', function() {
-      let publisher = loadBalancer.fixedPublisher(endpoints);
-      let lb = test.loadBalancer(publisher);
-      let r = lb.next();
-      it('should not end the loadBalancer', function*() {
-        assert.ok(!r.done);
+    describe('with fixedPublisher and three endpoints, calling next',
+      function() {
+        let publisher = loadBalancer.fixedPublisher(endpoints);
+        let lb = test.loadBalancer(publisher);
+        let r = lb.next();
+        it('should not end the loadBalancer', function*() {
+          assert.ok(!r.done);
+        });
+        it('should return one endpoint promise', function*() {
+          assert(r.value);
+          assert(r.value.then);
+        });
+        it('should return generator function which when called yields a result',
+          function*() {
+            // yield r.value because it is a promise
+            let endpoint = yield r.value;
+            assert.ok(isGeneratorFn(endpoint));
+            let result = yield endpoint({}, {});
+            result.should.have.property('result', 'ok');
+          });
       });
-      it('should return one endpoint promise', function*() {
-        assert(r.value);
-        assert(r.value.then);
-      });
-      it('the endpoint should be a generator function and calling it should return a result', function*() {
-        // yield r.value because it is a promise
-        let endpoint = yield r.value;
-        assert.ok(isGeneratorFn(endpoint));
-        let result = yield endpoint({}, {});
-        result.should.have.property('result', 'ok');
-      });
-    });
 
     describe('with fixedPublisher and one endpoint, calling next', function() {
       let publisher = loadBalancer.fixedPublisher(oneEndpoints);
@@ -131,13 +133,14 @@ tests.forEach(function(test) {
         assert(r.value);
         assert(r.value.then);
       });
-      it('the endpoint should be a generator function and calling it should return a result', function*() {
-        // yield r.value because it is a promise
-        let endpoint = yield r.value;
-        assert.ok(isGeneratorFn(endpoint));
-        let result = yield endpoint({}, {});
-        result.should.have.property('result', 'ok');
-      });
+      it('should return a generator function which when called yields a result',
+        function*() {
+          // yield r.value because it is a promise
+          let endpoint = yield r.value;
+          assert.ok(isGeneratorFn(endpoint));
+          let result = yield endpoint({}, {});
+          result.should.have.property('result', 'ok');
+        });
     });
 
     describe('with fixedPublisher and zero endpoint, calling next', function() {
@@ -152,7 +155,7 @@ tests.forEach(function(test) {
           assert.ok(false, 'should not call then');
         }).catch(function(err) {
           assert(err);
-        })
+        });
         assert(result === undefined);
       });
       it('should throw an error after calling it again', function*() {
@@ -164,7 +167,7 @@ tests.forEach(function(test) {
           assert.ok(false, 'should not call then');
         }).catch(function(err) {
           assert(err);
-        })
+        });
         assert(result === undefined);
       });
     });

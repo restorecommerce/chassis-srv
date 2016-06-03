@@ -9,10 +9,12 @@ var config = require('../../lib/config');
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
   this.data = [{
-    id: '/users/admin'
+    id: '/users/admin',
+    created: Date.now(),
   }, {
-    id: '/users/me'
-  }, ];
+    id: '/users/me',
+    created: Date.now(),
+  }];
 
   // will be an endpoint
   this.register = function*(request, context) {
@@ -44,13 +46,13 @@ function Service(userEvents, logger) {
       name: name,
       email: email,
       password: password,
-    }
+    };
     this.data.push(user);
     logger.log('INFO', 'user created', user);
     // emits an event (kafka message)
     yield userEvents.emit('created', user);
     return user;
-  }
+  };
 
   // will be an endpoint
   this.get = function*(request, context) {
@@ -58,18 +60,20 @@ function Service(userEvents, logger) {
     let name = request.name;
     let email = request.email;
     for (let entry of this.data) {
-      if (entry.id === id && id || entry.name === name && name || entry.email === email && email) {
+      if (entry.id === id && id ||
+        entry.name === name && name ||
+        entry.email === email && email) {
         // Return a value for a successful request
         return entry;
       }
     }
     throw new Error('not found');
-  }
+  };
 
   this.activate = function*() {
     throw new Error('not implemented');
     return null;
-  }
+  };
   this.changePassword = this.activate;
   this.unregister = this.activate;
 }

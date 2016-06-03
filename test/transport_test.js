@@ -1,19 +1,19 @@
 'use strict';
 
-var mocha = require('mocha')
-var coMocha = require('co-mocha')
-coMocha(mocha)
+var mocha = require('mocha');
+var coMocha = require('co-mocha');
+coMocha(mocha);
 
 var assert = require('assert');
 var should = require('should');
 var util = require('util');
 var co = require('co');
 var isGenerator = require('is-generator');
-var isGeneratorFn = require('is-generator').fn
+var isGeneratorFn = require('is-generator').fn;
 var grpc = require('../lib/transport/provider/grpc');
 
 let logger = {
-  log: function(){
+  log: function() {
     let level = arguments[0].toLowerCase();
     if (level == 'error') {
       let args = Array.prototype.splice.apply(arguments, [1]);
@@ -24,13 +24,13 @@ let logger = {
 var providers = [{
   config: {
     service: 'test.Test',
-    addr: "localhost:50051",
+    addr: 'localhost:50051',
     timeout: 100,
   },
   name: 'grpc',
   client: grpc.Client,
   server: grpc.Server,
-}, ];
+}];
 providers.forEach(function(provider) {
   describe(util.format('transport provider %s', provider.name), function() {
     describe('the server', function() {
@@ -48,18 +48,19 @@ providers.forEach(function(provider) {
         should.exist(Server.prototype.end);
         should.ok(isGeneratorFn(Server.prototype.end));
       });
-      describe('constructing the server provider with proper config', function() {
-        it('should result in a server transport provider', function() {
-          let config = {
-            addr: provider.config.addr,
-            package: provider.config.package,
-            proto: provider.config.proto,
-            service: provider.config.service,
-          };
-          server = new Server(config, logger);
-          should.exist(server);
+      describe('constructing the server provider with proper config',
+        function() {
+          it('should result in a server transport provider', function() {
+            let config = {
+              addr: provider.config.addr,
+              package: provider.config.package,
+              proto: provider.config.proto,
+              service: provider.config.service,
+            };
+            server = new Server(config, logger);
+            should.exist(server);
+          });
         });
-      })
       describe('binding a service', function() {
         it('should result in a wrapped service', function*() {
           yield server.bind(service);
@@ -94,30 +95,33 @@ providers.forEach(function(provider) {
         should.exist(Client.prototype.makeEndpoint);
         should.ok(isGeneratorFn(Client.prototype.makeEndpoint));
       });
-      describe('constructing the client provider with proper config', function() {
-        it('should result in a client transport provider', function() {
-          let config = {
-            package: provider.config.package,
-            proto: provider.config.proto,
-            service: provider.config.service,
-            timeout: provider.config.timeout,
-          };
-          client = new Client(config, logger);
-          should.exist(client);
+      describe('constructing the client provider with proper config',
+        function() {
+          it('should result in a client transport provider', function() {
+            let config = {
+              package: provider.config.package,
+              proto: provider.config.proto,
+              service: provider.config.service,
+              timeout: provider.config.timeout,
+            };
+            client = new Client(config, logger);
+            should.exist(client);
+          });
         });
-      });
       describe('makeEndpoint', function() {
-        it('should fail when creating a method which is not defined in the protobuf', function*() {
-          endpoint = yield co(function*() {
-            let endpoint = yield client.makeEndpoint(methodNameFail, instance);
-            return endpoint;
-          }).then(function(result) {
-            assert.ok(false, 'should not call then');
-          }).catch(function(err) {
-            should.exist(err);
-          })
-          should.not.exist(endpoint);
-        });
+        it('should fail when creating an undefined protobuf method',
+          function*() {
+            endpoint = yield co(function*() {
+              let endpoint = yield client.makeEndpoint(methodNameFail,
+                instance);
+              return endpoint;
+            }).then(function(result) {
+              assert.ok(false, 'should not call then');
+            }).catch(function(err) {
+              should.exist(err);
+            });
+            should.not.exist(endpoint);
+          });
         describe('without running server', function() {
           this.slow(200);
           it('should fail', function*() {
@@ -129,7 +133,7 @@ providers.forEach(function(provider) {
               assert.ok(false, 'should not call then');
             }).catch(function(e) {
               err = e;
-            })
+            });
             should.not.exist(endpoint);
             should.exist(err);
             should.equal(err.message, 'Failed to connect before the deadline');
@@ -165,33 +169,36 @@ providers.forEach(function(provider) {
             endpoint = yield client.makeEndpoint(methodName, instance);
             should.exist(endpoint);
           });
-          it('should succeed when calling it with a correct request and an empty context', function*() {
+          it('should succeed when calling with empty context', function*() {
             let result = yield endpoint(request, {});
             should.deepEqual(response, result.data);
             should.ifError(result.error);
           });
-          it('should succeed when calling it with a correct request and omitting the context', function*() {
+          it('should succeed when calling without context', function*() {
             let result = yield endpoint(request);
             should.deepEqual(response, result.data);
             should.ifError(result.error);
           });
-          it('should return an error when calling a unimplemented method', function*() {
-            let endpointThrow = yield client.makeEndpoint('notImplemented', instance);
-            should.exist(endpoint);
-            let result = yield endpointThrow(request);
-            should.not.exist(result.data);
-            should.exist(result.error);
-            should.equal(result.error.message, 'unimplemented')
-          });
-          it('should return an error when calling a method which throws an error', function*() {
-            let endpointThrow = yield client.makeEndpoint('throw', instance);
-            should.exist(endpoint);
-            let result = yield endpointThrow(request);
-            should.not.exist(result.data);
-            should.exist(result.error);
-            should.equal(result.error.message, 'internal');
-            should.equal(result.error.details, errMessage);
-          });
+          it('should return an error when calling a unimplemented method',
+            function*() {
+              let endpointThrow = yield client.makeEndpoint('notImplemented',
+                instance);
+              should.exist(endpoint);
+              let result = yield endpointThrow(request);
+              should.not.exist(result.data);
+              should.exist(result.error);
+              should.equal(result.error.message, 'unimplemented');
+            });
+          it('should return an error when calling failing endpoint',
+            function*() {
+              let endpointThrow = yield client.makeEndpoint('throw', instance);
+              should.exist(endpoint);
+              let result = yield endpointThrow(request);
+              should.not.exist(result.data);
+              should.exist(result.error);
+              should.equal(result.error.message, 'internal');
+              should.equal(result.error.details, errMessage);
+            });
         });
       });
     });

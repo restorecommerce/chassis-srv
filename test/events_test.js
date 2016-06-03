@@ -1,15 +1,15 @@
 'use strict';
 
-var mocha = require('mocha')
-var coMocha = require('co-mocha')
-coMocha(mocha)
+var mocha = require('mocha');
+var coMocha = require('co-mocha');
+coMocha(mocha);
 
 var assert = require('assert');
 var should = require('should');
 var util = require('util');
 var co = require('co');
 var isGenerator = require('is-generator');
-var isGeneratorFn = require('is-generator').fn
+var isGeneratorFn = require('is-generator').fn;
 
 var Events = require('../lib/events').Events;
 var Kafka = require('../lib/events/provider/kafka').Kafka;
@@ -26,14 +26,14 @@ describe('events', function() {
           assert.ok(false, 'should not call then');
         }).catch(function(err) {
           assert(err);
-        })
+        });
         assert(result === undefined);
-      })
+      });
     });
   });
   describe('with kafka provider', function() {
     let logger = {
-      log: function(){
+      log: function() {
         let level = arguments[0].toLowerCase();
         if (level === 'error') {
           console.log.apply(this, arguments);
@@ -41,10 +41,10 @@ describe('events', function() {
       },
     };
     let config = {
-      "name": "kafka",
-      "groupId": "restore-chassis-example-test",
-      "clientId": "restore-chassis-example-test",
-      "connectionString": "localhost:9092",
+      'name': 'kafka',
+      'groupId': 'restore-chassis-example-test',
+      'clientId': 'restore-chassis-example-test',
+      'connectionString': 'localhost:9092',
     };
     let kafka = new Kafka(config, logger);
     let events = new Events(kafka);
@@ -80,7 +80,7 @@ describe('events', function() {
         topic.on(eventName, listener);
       });
       it('should allow sending', function*(done) {
-        callback = done
+        callback = done;
         try {
           yield topic.emit(eventName, testMessage);
         } catch (e) {
