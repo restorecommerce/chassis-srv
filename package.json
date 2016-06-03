@@ -34,15 +34,15 @@
   },
   "devDependencies": {
     "co-mocha": "^1.1.2",
+    "eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "is-generator": "^1.0.3",
     "istanbul": "^0.4.3",
-    "jscs": "^3.0.3",
     "jshint": "^2.9.2",
-    "mocha": "^2.4.5",
-    "should": "^8.3.2"
+    "mocha": "^2.5.3",
+    "should": "^9.0.0"
   },
   "scripts": {
-    "lint": "node ./node_modules/jshint/bin/jshint lib test example --exclude-path=.jshintignore",
+    "lint": "eslint *.json *.js lib/**",
     "test": "./node_modules/.bin/mocha -R nyan test && npm run-script lint",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test",
     "checkStyle": "./node_modules/.bin/jscs ./test ./lib ./example"
