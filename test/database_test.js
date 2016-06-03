@@ -79,6 +79,17 @@ providers.forEach(function(providerCfg) {
             result = yield db.find(collection, {id:document.id});
             result = result[0];
             result.should.deepEqual(document);
+
+            result = yield db.find(collection, {'$or':{id:document.id, value:'new'}});
+            result = result[0];
+            result.should.deepEqual(document);
+
+            result = yield db.find(collection, {id:document.id}, {limit:1});
+            result = result[0];
+            result.should.deepEqual(document);
+
+            result = yield db.find(collection, {id:document.id}, {limit:1, offset: 1});
+            result.should.be.empty();
           });
           it('should be updatable', function*(){
             let newDoc = _.clone(document);
