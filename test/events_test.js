@@ -1,78 +1,80 @@
 'use strict';
 
-var mocha = require('mocha');
-var coMocha = require('co-mocha');
+const mocha = require('mocha');
+const coMocha = require('co-mocha');
 coMocha(mocha);
 
-var assert = require('assert');
-var should = require('should');
-var util = require('util');
-var co = require('co');
-var isGenerator = require('is-generator');
-var isGeneratorFn = require('is-generator').fn;
-var logger = require('./logger_test.js');
+const should = require('should');
+const co = require('co');
+const isGeneratorFn = require('is-generator').fn;
+const logger = require('./logger_test.js');
 
-var Events = require('../lib/events').Events;
-var Kafka = require('../lib/events/provider/kafka').Kafka;
+const Events = require('../lib/events').Events;
+const Kafka = require('../lib/events/provider/kafka').Kafka;
 
-describe('events', function() {
-  describe('without a provider', function() {
-    let events = new Events();
-    let topicName = 'test';
-    describe('yielding subscribe', function() {
-      it('should throw an error', function*() {
-        let result = yield co(function*() {
+/* global describe it */
+
+describe('events', () => {
+  describe('without a provider', () => {
+    const topicName = 'test';
+    describe('yielding subscribe', () => {
+      it('should throw an error', function* checkGetTopic() {
+        const result = yield co(function* getTopic() {
+          const events = new Events();
           return yield events.topic(topicName);
-        }).then(function(result) {
-          assert.ok(false, 'should not call then');
-        }).catch(function(err) {
-          assert(err);
+        }).then((res) => {
+          should.ok(false, 'should not call then');
+        }).catch((err) => {
+          should.exist(err);
+          err.should.be.Error();
+          err.message.should.equal('provider does not exist');
         });
-        assert(result === undefined);
+        should.not.exist(result);
       });
     });
   });
-  describe('with kafka provider', function() {
-    let config = {
-      'name': 'kafka',
-      'groupId': 'restore-chassis-example-test',
-      'clientId': 'restore-chassis-example-test',
-      'connectionString': 'localhost:9092',
+  describe('with kafka provider', () => {
+    const config = {
+      name: 'kafka',
+      groupId: 'restore-chassis-example-test',
+      clientId: 'restore-chassis-example-test',
+      connectionString: 'localhost:9092',
     };
-    let kafka = new Kafka(config, logger);
-    let events = new Events(kafka);
-    let topicName = 'test';
+    const kafka = new Kafka(config, logger);
+    const events = new Events(kafka);
+    const topicName = 'test';
     let topic;
-    let eventName = 'test-event';
-    let testMessage = {
+    const eventName = 'test-event';
+    const testMessage = {
       value: 'test',
       count: 1,
     };
-    describe('yielding subscribe', function() {
-      it('should return a topic', function*() {
+    describe('yielding subscribe', () => {
+      it('should return a topic', function* checkGetTopic() {
         topic = yield events.topic(topicName);
-        assert(topic);
-        assert(topic.on);
-        assert(topic.emit);
-        assert(isGeneratorFn(topic.emit));
+        should.exist(topic);
+        should.exist(topic.on);
+        should.exist(topic.emit);
+        should.ok(isGeneratorFn(topic.emit));
       });
     });
-    describe('yielding kafka.start', function() {
+    describe('yielding kafka.start', () => {
       let callback;
-      let listener = function*(message) {
-        assert.deepEqual(testMessage, message);
+      const listener = function* makeListener(message) {
+        testMessage.value.should.equal(message.value);
+        testMessage.count.should.equal(message.count);
         if (callback) {
           callback();
           callback = undefined;
         }
       };
-      it('should connect to kafka cluster', function*() {
+      it('should connect to kafka cluster', function* connectToKafka() {
         yield kafka.start();
       });
-      it('should allow listening to events', function*() {
+      it('should allow listening to events', function* listenToEvents() {
         topic.on(eventName, listener);
       });
-      it('should allow sending', function*(done) {
+      it('should allow sending', function* sendEvents(done) {
         callback = done;
         try {
           yield topic.emit(eventName, testMessage);
@@ -80,8 +82,8 @@ describe('events', function() {
           done(e);
         }
       });
-      describe('yielding kafka.end', function() {
-        it('should close the kafka connection', function*() {
+      describe('yielding kafka.end', () => {
+        it('should close the kafka connection', function* disconnectFromKafka() {
           yield kafka.end();
         });
       });

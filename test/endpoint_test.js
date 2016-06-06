@@ -1,16 +1,14 @@
 'use strict';
 
-var mocha = require('mocha');
-var coMocha = require('co-mocha');
+const mocha = require('mocha');
+const coMocha = require('co-mocha');
 coMocha(mocha);
 
-var assert = require('assert');
-var should = require('should');
-var util = require('util');
-var co = require('co');
-var isGenerator = require('is-generator');
-var isGeneratorFn = require('is-generator').fn;
-var chain = require('../lib/endpoint').chain;
+const should = require('should');
+const isGeneratorFn = require('is-generator').fn;
+const chain = require('../lib/endpoint').chain;
+
+/* global describe it*/
 
 function* endpoint(request, context) {
   return yield {
@@ -19,20 +17,20 @@ function* endpoint(request, context) {
 }
 
 function makeMiddleware(n) {
-  return function*(next) {
-    return function*(request, context) {
+  return function* genMiddleware(next) {
+    return function* middleware(request, context) {
       context.chain.push(n);
       return yield next(request, context);
     };
   };
 }
 
-describe('endpoint.chain', function() {
+describe('endpoint.chain', () => {
   let middleware;
-  let tree = [];
+  const tree = [];
   let e;
-  it('should chain middleware', function*() {
-    let middlewares = [];
+  it('should chain middleware', function* checkChainMiddleware() {
+    const middlewares = [];
     for (let i = 0; i < 5; i++) {
       tree.push(i);
       middlewares.push(makeMiddleware(i));
@@ -40,15 +38,17 @@ describe('endpoint.chain', function() {
     middleware = chain(middlewares);
   });
   it('should return a generator function which yields an endpoint (generator)',
-    function*() {
-      assert(isGeneratorFn(middleware));
+    function* checkMiddlewareCreating() {
+      should.ok(isGeneratorFn(middleware));
       e = yield middleware(endpoint);
-      assert(isGeneratorFn(e));
+      should.ok(isGeneratorFn(e));
     });
-  it('should call middlewares in sequence from first to last', function*() {
-    let result = yield e({}, {
+  it('should call middlewares in sequence from first to last', function* checkMiddlewareCalling() {
+    const result = yield e({}, {
       chain: [],
     });
-    assert.deepEqual(tree, result.chain);
+    should.exist(result);
+    should.exist(result.chain);
+    result.chain.should.deepEqual(tree);
   });
 });

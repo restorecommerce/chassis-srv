@@ -1,38 +1,37 @@
 'use strict';
 
-var mocha = require('mocha');
-var coMocha = require('co-mocha');
+const mocha = require('mocha');
+const coMocha = require('co-mocha');
 coMocha(mocha);
 
-var assert = require('assert');
-var should = require('should');
-var util = require('util');
-var co = require('co');
-var _ = require('lodash');
-var isGenerator = require('is-generator');
-var isGeneratorFn = require('is-generator').fn;
-var logger = require('./logger_test.js');
-var Arangojs = require('arangojs');
+const should = require('should');
+const util = require('util');
+const co = require('co');
+const _ = require('lodash');
+const logger = require('./logger_test.js');
+const Arangojs = require('arangojs');
 
-var config = require('../lib/config');
-var database = require('../lib/database');
+const config = require('../lib/config');
+const database = require('../lib/database');
 
-var providers = [{
+/* global describe context it before*/
+
+const providers = [{
   name: 'arango',
-  init: function(cb) {
+  init: function init(cb) {
     config.load(process.cwd() + '/test');
-    let cfg = config.get();
-    let dbHost = cfg.get('database:arango:host');
-    let dbPort = cfg.get('database:arango:port');
-    let dbName = cfg.get('database:arango:database');
-    let db = new Arangojs('http://' + dbHost + ':' + dbPort);
-    db.dropDatabase(dbName).then(function(result) {
+    const cfg = config.get();
+    const dbHost = cfg.get('database:arango:host');
+    const dbPort = cfg.get('database:arango:port');
+    const dbName = cfg.get('database:arango:database');
+    const db = new Arangojs('http://' + dbHost + ':' + dbPort);
+    db.dropDatabase(dbName).then((result) => {
       if (result.error) {
         cb(result.error);
         return;
       }
       cb();
-    }).catch(function(err) {
+    }).catch((err) => {
       if (err.message === 'database not found') {
         cb();
         return;
@@ -40,36 +39,36 @@ var providers = [{
       cb(err);
     });
   },
-  loadInvalidConfig: function() {
+  loadInvalidConfig: function loadInvalidConfig() {
     config.load(process.cwd() + '/test');
-    let cfg = config.get();
+    const cfg = config.get();
     cfg.set('database:arango:autoCreate', false);
     cfg.set('database:arango:database', 'database_does_not_exist');
   }
 }];
-providers.forEach(function(providerCfg) {
-  before(function(done) {
+providers.forEach((providerCfg) => {
+  before((done) => {
     providerCfg.init(done);
   });
-  describe('calling database.get', function() {
+  describe('calling database.get', () => {
     context(util.format('with database provider %s', providerCfg.name),
-      function() {
-        context('and valid configuration', function() {
-          let collection = 'test';
-          let document = {
+      () => {
+        context('and valid configuration', () => {
+          const collection = 'test';
+          const document = {
             id: '/test/test',
           };
           let db;
           config.load(process.cwd() + '/test');
-          it('should return a database connection', function*() {
+          it('should return a database connection', function* getDB() {
             db = yield database.get(providerCfg.name, logger);
             should.exist(db);
           });
-          describe('inserting a document', function() {
-            it('should store a document', function*() {
+          describe('inserting a document', () => {
+            it('should store a document', function* insertDocument() {
               yield db.insert(collection, document);
             });
-            it('should be findable', function*() {
+            it('should be findable', function* checkFind() {
               let result = yield db.findByID(collection, document.id);
               result = result[0];
               result.should.deepEqual(document);
@@ -81,7 +80,7 @@ providers.forEach(function(providerCfg) {
               result.should.deepEqual(document);
 
               result = yield db.find(collection, {
-                '$or': {
+                $or: {
                   id: document.id,
                   value: 'new'
                 }
@@ -105,35 +104,35 @@ providers.forEach(function(providerCfg) {
               });
               result.should.be.empty();
             });
-            it('should be updatable', function*() {
-              let newDoc = _.clone(document);
+            it('should be updatable', function* checkUpdate() {
+              const newDoc = _.clone(document);
               newDoc.value = 'new';
               yield db.update(collection, newDoc);
               let result = yield db.findByID(collection, document.id);
               result = result[0];
               result.should.deepEqual(newDoc);
             });
-            it('should be deletable', function*() {
+            it('should be deletable', function* deleteDocument() {
               yield db.delete(collection, {
                 id: document.id
               });
-              let result = yield db.findByID(collection, document.id);
+              const result = yield db.findByID(collection, document.id);
               result.should.be.Array();
               result.should.be.length(0);
             });
           });
         });
-        context('and invalid configuration', function() {
-          it('should throw an error', function*() {
-            let errF = logger.error;
-            logger.error = function(){};
+        context('and invalid configuration', () => {
+          it('should throw an error', function* checkInvalidConfiguration() {
+            const errF = logger.error;
+            logger.error = function empty() {};
             providerCfg.loadInvalidConfig();
             let err;
-            let db = yield co(function*() {
+            const db = yield co(function* getDB() {
               return yield database.get(providerCfg.name, logger);
-            }).then(function(result) {
-              assert.ok(false, 'should not call then');
-            }).catch(function(e) {
+            }).then((result) => {
+              should.ok(false, 'should not call then');
+            }).catch((e) => {
               err = e;
             });
             should.not.exist(db);

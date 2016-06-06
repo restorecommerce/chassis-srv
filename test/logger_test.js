@@ -1,18 +1,20 @@
 'use strict';
 
+/* eslint no-console: ["error", { allow: ["error"] }] */
+
+// logger which only logs errors
 module.exports = {
-  silly: function(){},
-  verbose: function(){},
-  debug: function(){},
-  info: function(){},
-  warn: function(){},
-  error: function(){
-    console.log.apply(this, arguments);
+  silly() {},
+  verbose() {},
+  debug() {},
+  info() {},
+  warn() {},
+  error(...args) {
+    console.error.apply(this, args);
   },
-  log: function() {
-    let level = arguments[0].toLowerCase();
+  log(level, ...args) {
     if (level === 'error') {
-      console.log.apply(this, arguments);
+      console.error.apply(this, level, args);
     }
   },
 };
