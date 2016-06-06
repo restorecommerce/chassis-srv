@@ -1,39 +1,39 @@
 'use strict';
 
-var co = require('co');
-var util = require('util');
-var Server = require('../../lib/microservice').Server;
-var config = require('../../lib/config');
+const co = require('co');
+const util = require('util');
+const Server = require('../../lib/microservice').Server;
+const config = require('../../lib/config');
 
 function Service(userEvents, logger) {
   function* sendEmail(mail) {
-    logger.debug( 'pretending to send email', mail);
+    logger.debug('pretending to send email', mail);
   }
-  userEvents.on('created', function*(message) {
-    let name = message.name || message.id;
-    let msg = util.format('Hello user %s Your account has beeen created.',
+  userEvents.on('created', function* onCreated(message) {
+    const name = message.name || message.id;
+    const msg = util.format('Hello user %s Your account has beeen created.',
       name);
-    let email = {
+    const email = {
       to: message.email,
       body: msg,
     };
     yield sendEmail(email);
   });
-  userEvents.on('activated', function*(message) {
-    let name = message.name || message.id;
-    let msg = util.format('Hello user %s Your account has beeen activated.',
+  userEvents.on('activated', function* onActivated(message) {
+    const name = message.name || message.id;
+    const msg = util.format('Hello user %s Your account has beeen activated.',
       name);
-    let email = {
+    const email = {
       to: message.email,
       body: msg,
     };
     yield sendEmail(email);
   });
-  userEvents.on('deleted', function*(message) {
-    let name = message.name || message.id;
-    let msg = util.format('Hello user %s Your account has beeen deleted.',
+  userEvents.on('deleted', function* onDeleted(message) {
+    const name = message.name || message.id;
+    const msg = util.format('Hello user %s Your account has beeen deleted.',
       name);
-    let email = {
+    const email = {
       to: message.email,
       body: msg,
     };
@@ -41,24 +41,25 @@ function Service(userEvents, logger) {
   });
 }
 
-co(function*() {
+co(function* init() {
   config.load(process.cwd() + '/example/email');
 
   // Create a new microservice Server
-  let server = new Server();
+  const server = new Server();
 
   // Subscribe to events which the business logic requires
-  let userEvents = yield server.events.topic('user');
+  const userEvents = yield server.events.topic('user');
 
   // Create the business logic
-  let service = new Service(userEvents, server.logger);
+  const service = new Service(userEvents, server.logger);
 
   // Bind business logic to server
   yield server.bind(service);
 
   // Start server
   yield server.start();
-}).catch(function(err) {
-  console.log(err.stack);
+}).catch((err) => {
+  /* eslint no-console: ["error", { allow: ["error"] }] */
+  console.error('client error', err.stack);
   process.exit(1);
 });

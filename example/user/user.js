@@ -1,10 +1,8 @@
 'use strict';
 
-var co = require('co');
-var util = require('util');
-var Server = require('../../lib/microservice').Server;
-var Database = require('../../lib/database');
-var config = require('../../lib/config');
+const co = require('co');
+const Server = require('../../lib/microservice').Server;
+const config = require('../../lib/config');
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
@@ -17,49 +15,49 @@ function Service(userEvents, logger) {
   }];
 
   // will be an endpoint
-  this.register = function*(request, context) {
-    let guest = request.guest;
+  this.register = function* register(request, context) {
+    const guest = request.guest;
     let name = request.name;
-    let email = request.email;
-    let password = request.password;
+    const email = request.email;
+    const password = request.password;
     if (guest) {
       name = '';
     }
     if (!name) {
-      let err = new Error('invalid argument');
+      const err = new Error('invalid argument');
       err.details = 'argument name is empty';
       throw err;
     }
     if (!email) {
-      let err = new Error('invalid argument');
+      const err = new Error('invalid argument');
       err.details = 'argument email is empty';
       throw err;
     }
     if (!password) {
-      let err = new Error('invalid argument');
+      const err = new Error('invalid argument');
       err.details = 'argument password is empty';
       throw err;
     }
-    let user = {
+    const user = {
       id: '/users/' + name,
-      guest: guest,
-      name: name,
-      email: email,
-      password: password,
+      guest,
+      name,
+      email,
+      password,
     };
     this.data.push(user);
-    logger.info( 'user created', user);
+    logger.info('user created', user);
     // emits an event (kafka message)
     yield userEvents.emit('created', user);
     return user;
   };
 
   // will be an endpoint
-  this.get = function*(request, context) {
-    let id = request.id;
-    let name = request.name;
-    let email = request.email;
-    for (let entry of this.data) {
+  this.get = function* get(request, context) {
+    const id = request.id;
+    const name = request.name;
+    const email = request.email;
+    for (const entry of this.data) {
       if (entry.id === id && id ||
         entry.name === name && name ||
         entry.email === email && email) {
@@ -70,38 +68,38 @@ function Service(userEvents, logger) {
     throw new Error('not found');
   };
 
-  this.activate = function*() {
+  this.activate = function* activate() {
     throw new Error('not implemented');
-    return null;
   };
   this.changePassword = this.activate;
   this.unregister = this.activate;
 }
 
-co(function*() {
+co(function* init() {
   config.load(process.cwd() + '/example/user');
 
   // Create a new microservice Server
-  let server = new Server();
+  const server = new Server();
 
   // get gss
-  let db = yield Database.get('gss', server.logger);
+  // const db = yield Database.get('gss', server.logger);
 
   // Add middleware
   // server.middleware.push(makeLogging(server.logger));
 
   // Subscribe to events which the business logic requires
-  let userEvents = yield server.events.topic('user');
+  const userEvents = yield server.events.topic('user');
 
   // Create the business logic
-  let service = new Service(userEvents, server.logger);
+  const service = new Service(userEvents, server.logger);
 
   // Bind business logic to server
   yield server.bind(service);
 
   // Start server
   yield server.start();
-}).catch(function(err) {
-  console.log(err.stack);
+}).catch((err) => {
+  /* eslint no-console: ["error", { allow: ["error"] }] */
+  console.error('client error', err.stack);
   process.exit(1);
 });

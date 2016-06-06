@@ -1,18 +1,18 @@
 'use strict';
 
-var co = require('co');
-var util = require('util');
-var Client = require('../../lib/microservice').Client;
-var config = require('../../lib/config');
+const co = require('co');
+const util = require('util');
+const Client = require('../../lib/microservice').Client;
+const config = require('../../lib/config');
 
 // makeLogging returns a simple middleware which is called before each transport endpoint is called
 function makeLogging(logger) {
-  return function*(next) {
-    return function*(request, context) {
+  return function* makeMiddleware(next) {
+    return function* middleware(request, context) {
       logger.info(
         util.format('sending request attempt: %d/%d',
           context.currentAttempt, context.attempts), request);
-      let result = yield next(request, context);
+      const result = yield next(request, context);
       logger.info(
         util.format('received request attempt: %d/%d',
           context.currentAttempt, context.attempts), request);
@@ -21,14 +21,14 @@ function makeLogging(logger) {
   };
 }
 
-co(function*() {
+co(function* init() {
   config.load(process.cwd() + '/example/client');
 
-  let client = new Client('user');
+  const client = new Client('user');
   client.middleware.push(makeLogging(client.logger));
-  let user = yield client.connect();
+  const user = yield client.connect();
 
-  let results = yield [
+  const results = yield [
     user.register({
       guest: false,
       name: 'example',
@@ -54,23 +54,24 @@ co(function*() {
       timeout: 1000
     }),
   ];
-  client.logger.info( util.format('calls finished with %s results',
+  client.logger.info(util.format('calls finished with %s results',
     results.length));
   for (let i = 0; i < results.length; i++) {
-    let result = results[i];
+    const result = results[i];
     if (!result) {
-      console.error(util.format('result %d is undefined', i));
+      client.logger.error(util.format('result %d is undefined', i));
       continue;
     }
     if (result.error) {
-      console.error(
+      client.logger.error(
         util.format('result %d error:"%s" %s',
           i, result.error, result.error.details || ''));
     } else {
-      console.log(util.format('result %d: %j', i, result.data));
+      client.logger.info(util.format('result %d: %j', i, result.data));
     }
   }
-}).catch(function(err) {
+}).catch((err) => {
+  /* eslint no-console: ["error", { allow: ["error"] }] */
   console.error('client error', err.stack);
   process.exit(1);
 });
