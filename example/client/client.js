@@ -9,11 +9,11 @@ var config = require('../../lib/config');
 function makeLogging(logger) {
   return function*(next) {
     return function*(request, context) {
-      logger.log('INFO',
+      logger.info(
         util.format('sending request attempt: %d/%d',
           context.currentAttempt, context.attempts), request);
       let result = yield next(request, context);
-      logger.log('INFO',
+      logger.info(
         util.format('received request attempt: %d/%d',
           context.currentAttempt, context.attempts), request);
       return result;
@@ -54,7 +54,7 @@ co(function*() {
       timeout: 1000
     }),
   ];
-  client.logger.log('INFO', util.format('calls finished with %s results',
+  client.logger.info( util.format('calls finished with %s results',
     results.length));
   for (let i = 0; i < results.length; i++) {
     let result = results[i];

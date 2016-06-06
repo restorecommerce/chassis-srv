@@ -10,17 +10,9 @@ var util = require('util');
 var co = require('co');
 var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn;
+var logger = require('./logger_test.js');
 var grpc = require('../lib/transport/provider/grpc');
 
-let logger = {
-  log: function() {
-    let level = arguments[0].toLowerCase();
-    if (level == 'error') {
-      let args = Array.prototype.splice.apply(arguments, [1]);
-      console.log(level, args);
-    }
-  },
-};
 var providers = [{
   config: {
     service: 'test.Test',

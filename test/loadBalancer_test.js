@@ -8,6 +8,7 @@ var assert = require('assert');
 var should = require('should');
 var util = require('util');
 var co = require('co');
+var logger = require('./logger_test.js');
 var isGeneratorFn = require('is-generator').fn;
 var loadBalancer = require('../lib/loadbalancer');
 
@@ -34,15 +35,6 @@ describe('static publisher', function() {
   let factory = function*(instance) {
     assert.equal(instance, 'test');
     return endpoint;
-  };
-  let logger = {
-    log: function() {
-      let level = arguments[0].toLowerCase();
-      if (level == 'error') {
-        let args = Array.prototype.splice.apply(arguments, [1]);
-        console.log(level, args);
-      }
-    },
   };
   it('should always yield the same endpoints', function*() {
     let instances = ['test'];

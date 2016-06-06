@@ -10,6 +10,7 @@ var util = require('util');
 var co = require('co');
 var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn;
+var logger = require('./logger_test.js');
 
 var Events = require('../lib/events').Events;
 var Kafka = require('../lib/events/provider/kafka').Kafka;
@@ -32,14 +33,6 @@ describe('events', function() {
     });
   });
   describe('with kafka provider', function() {
-    let logger = {
-      log: function() {
-        let level = arguments[0].toLowerCase();
-        if (level === 'error') {
-          console.log.apply(this, arguments);
-        }
-      },
-    };
     let config = {
       'name': 'kafka',
       'groupId': 'restore-chassis-example-test',

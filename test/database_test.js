@@ -11,7 +11,7 @@ var co = require('co');
 var _ = require('lodash');
 var isGenerator = require('is-generator');
 var isGeneratorFn = require('is-generator').fn;
-
+var logger = require('./logger_test.js');
 var Arangojs = require('arangojs');
 
 var config = require('../lib/config');
@@ -47,9 +47,6 @@ var providers = [{
     cfg.set('database:arango:database', 'database_does_not_exist');
   }
 }];
-let logger = {
-  log: function() {},
-};
 providers.forEach(function(providerCfg) {
   before(function(done) {
     providerCfg.init(done);
@@ -128,6 +125,8 @@ providers.forEach(function(providerCfg) {
         });
         context('and invalid configuration', function() {
           it('should throw an error', function*() {
+            let errF = logger.error;
+            logger.error = function(){};
             providerCfg.loadInvalidConfig();
             let err;
             let db = yield co(function*() {
@@ -140,6 +139,7 @@ providers.forEach(function(providerCfg) {
             should.not.exist(db);
             should.exist(err);
             err.message.should.not.equal('should not call then');
+            logger.error = errF;
           });
         });
       });

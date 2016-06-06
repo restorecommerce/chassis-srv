@@ -7,7 +7,7 @@ var config = require('../../lib/config');
 
 function Service(userEvents, logger) {
   function* sendEmail(mail) {
-    logger.log('debug', 'pretending to send email', mail);
+    logger.debug( 'pretending to send email', mail);
   }
   userEvents.on('created', function*(message) {
     let name = message.name || message.id;

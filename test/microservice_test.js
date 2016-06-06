@@ -198,15 +198,6 @@ describe('microservice.Server', function() {
   });
 });
 
-let logger = {
-  log: function() {
-    let level = arguments[0].toLowerCase();
-    if (level === 'error') {
-      let args = Array.prototype.splice.apply(arguments, [1]);
-      console.log(level, args);
-    }
-  },
-};
 describe('microservice.Client', function() {
   let client;
   let server;
@@ -258,7 +249,7 @@ describe('microservice.Client', function() {
         addr: 'localhost:50051',
         timeout: 100,
       };
-      server = new grpc.Server(config, logger);
+      server = new grpc.Server(config, client.logger);
       yield server.bind(service);
       yield server.start();
     });
