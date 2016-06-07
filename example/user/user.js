@@ -8,10 +8,10 @@ const config = require('../../lib/config');
 function Service(userEvents, logger) {
   this.data = [{
     id: '/users/admin',
-    created: Date.now(),
+    created: Date.now().getValue(),
   }, {
     id: '/users/me',
-    created: Date.now(),
+    created: Date.now().getValue(),
   }];
 
   // will be an endpoint
