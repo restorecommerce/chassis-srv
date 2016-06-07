@@ -3,7 +3,7 @@
     "user": {
       "transports": {
         "grpc": {
-          "service": "io.restorecommerce.user.User",
+          "service": "io.restorecommerce.user.Service",
           "timeout": 3000
         }
       },
@@ -15,7 +15,7 @@
         "instances": ["grpc://localhost:50051"]
       },
       "endpoints": {
-        "get": {},
+        "find": {},
         "register": {}
       }
     }

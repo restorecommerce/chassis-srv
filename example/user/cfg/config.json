@@ -35,7 +35,7 @@
     },
     "transports": [{
       "name": "grpc",
-      "service": "io.restorecommerce.user.User",
+      "service": "io.restorecommerce.user.Service",
       "addr": "localhost:50051"
     }]
   }
