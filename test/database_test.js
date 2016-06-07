@@ -57,6 +57,7 @@ providers.forEach((providerCfg) => {
           const collection = 'test';
           const document = {
             id: '/test/test',
+            name: 'test',
           };
           let db;
           config.load(process.cwd() + '/test');
@@ -74,7 +75,7 @@ providers.forEach((providerCfg) => {
               result.should.deepEqual(document);
 
               result = yield db.find(collection, {
-                id: document.id
+                id: document.id,
               });
               result = result[0];
               result.should.deepEqual(document);
@@ -82,14 +83,23 @@ providers.forEach((providerCfg) => {
               result = yield db.find(collection, {
                 $or: {
                   id: document.id,
-                  value: 'new'
+                  value: 'new',
                 }
               });
               result = result[0];
               result.should.deepEqual(document);
 
               result = yield db.find(collection, {
-                id: document.id
+                $or: {
+                  id: 'wrong/id',
+                  name: 'test',
+                }
+              });
+              result = result[0];
+              result.should.deepEqual(document);
+
+              result = yield db.find(collection, {
+                id: document.id,
               }, {
                 limit: 1
               });
@@ -97,10 +107,10 @@ providers.forEach((providerCfg) => {
               result.should.deepEqual(document);
 
               result = yield db.find(collection, {
-                id: document.id
+                id: document.id,
               }, {
                 limit: 1,
-                offset: 1
+                offset: 1,
               });
               result.should.be.empty();
             });

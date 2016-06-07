@@ -44,6 +44,12 @@ co(function* init() {
       timeout: 1000,
     }),
     user.find({
+      name: 'example',
+      email: 'example@fails.com',
+    }, {
+      timeout: 1000,
+    }),
+    user.find({
       id: '/users/admin',
     }, {
       timeout: 1000,
