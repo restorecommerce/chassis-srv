@@ -38,20 +38,25 @@ co(function* init() {
       retry: 3,
       timeout: 1000
     }),
-    user.get({
-      id: '/users/admin'
+    user.find({
+      id: '/users/example',
     }, {
-      timeout: 1000
+      timeout: 1000,
     }),
-    user.get({
-      id: '/users/me'
+    user.find({
+      id: '/users/admin',
     }, {
-      timeout: 1000
+      timeout: 1000,
     }),
-    user.get({
-      id: '/users/does_not_exist'
+    user.find({
+      id: '/users/me',
     }, {
-      timeout: 1000
+      timeout: 1000,
+    }),
+    user.find({
+      id: '/users/does_not_exist',
+    }, {
+      timeout: 1000,
     }),
   ];
   client.logger.info(util.format('calls finished with %s results',
