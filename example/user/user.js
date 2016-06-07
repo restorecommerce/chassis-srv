@@ -8,10 +8,10 @@ const config = require('../../lib/config');
 function Service(userEvents, logger) {
   this.data = [{
     id: '/users/admin',
-    created: Date.now().getValue(),
+    created: Date.now(),
   }, {
     id: '/users/me',
-    created: Date.now().getValue(),
+    created: Date.now(),
   }];
 
   // will be an endpoint
@@ -53,7 +53,7 @@ function Service(userEvents, logger) {
   };
 
   // will be an endpoint
-  this.get = function* get(request, context) {
+  this.find = function* get(request, context) {
     const id = request.id;
     const name = request.name;
     const email = request.email;
@@ -62,7 +62,7 @@ function Service(userEvents, logger) {
         entry.name === name && name ||
         entry.email === email && email) {
         // Return a value for a successful request
-        return entry;
+        return {items:[entry]};
       }
     }
     throw new Error('not found');

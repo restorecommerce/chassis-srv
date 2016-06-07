@@ -23,7 +23,7 @@
       "changePassword": {
         "transport": ["grpc"]
       },
-      "get": {
+      "find": {
         "transport": ["grpc"]
       },
       "register": {
