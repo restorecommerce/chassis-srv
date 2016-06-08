@@ -82,21 +82,31 @@ describe('events', () => {
       it('should allow listening to events', function* listenToEvents() {
         yield topic.on(eventName, listener);
         yield topic.removeListener(eventName, listener);
+        const count = yield topic.listenerCount();
+        count.should.equal(0);
       });
       it('should allow removing all listeners', function* removeAllListeners() {
         yield topic.on(eventName, listener);
         yield topic.removeAllListeners(eventName);
+        const count = yield topic.listenerCount();
+        count.should.equal(0);
       });
       it('should allow removing a listener', function* removeListener() {
         yield topic.on(eventName, listener);
         yield topic.removeListener(eventName, listener);
+        const count = yield topic.listenerCount();
+        count.should.equal(0);
       });
       it('should allow counting listeners', function* countListeners() {
+        let count = yield topic.listenerCount();
+        count.should.equal(0);
         yield topic.on(eventName, listener);
-        const count = yield topic.listenerCount(eventName);
+        count = yield topic.listenerCount(eventName);
         should.exist(count);
         count.should.be.equal(1);
         yield topic.removeListener(eventName, listener);
+        count = yield topic.listenerCount();
+        count.should.equal(0);
       });
       it('should allow emitting', function* sendEvents(done) {
         yield topic.on(eventName, listener);
