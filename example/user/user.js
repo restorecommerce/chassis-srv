@@ -48,7 +48,7 @@ function Service(userEvents, logger) {
     this.data.push(user);
     logger.info('user created', user);
     // emits an event (kafka message)
-    yield userEvents.emit('created', user);
+    yield userEvents.emit('create', user);
     return user;
   };
 
@@ -88,7 +88,7 @@ co(function* init() {
   // server.middleware.push(makeLogging(server.logger));
 
   // Subscribe to events which the business logic requires
-  const userEvents = yield server.events.topic('user');
+  const userEvents = yield server.events.topic('io.restorecommerce.users.resource');
 
   // Create the business logic
   const service = new Service(userEvents, server.logger);

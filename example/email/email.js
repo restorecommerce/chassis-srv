@@ -9,7 +9,7 @@ function Service(userEvents, logger) {
   function* sendEmail(mail) {
     logger.debug('pretending to send email', mail);
   }
-  userEvents.on('created', function* onCreated(message) {
+  yield userEvents.on('create', function* onCreated(message) {
     const name = message.name || message.id;
     const msg = util.format('Hello user %s Your account has beeen created.',
       name);
@@ -19,7 +19,7 @@ function Service(userEvents, logger) {
     };
     yield sendEmail(email);
   });
-  userEvents.on('activated', function* onActivated(message) {
+  yield userEvents.on('activated', function* onActivated(message) {
     const name = message.name || message.id;
     const msg = util.format('Hello user %s Your account has beeen activated.',
       name);
@@ -29,7 +29,7 @@ function Service(userEvents, logger) {
     };
     yield sendEmail(email);
   });
-  userEvents.on('deleted', function* onDeleted(message) {
+  yield userEvents.on('deleted', function* onDeleted(message) {
     const name = message.name || message.id;
     const msg = util.format('Hello user %s Your account has beeen deleted.',
       name);
@@ -48,7 +48,7 @@ co(function* init() {
   const server = new Server();
 
   // Subscribe to events which the business logic requires
-  const userEvents = yield server.events.topic('user');
+  const userEvents = yield server.events.topic('io.restorecommerce.users.resource');
 
   // Create the business logic
   const service = new Service(userEvents, server.logger);

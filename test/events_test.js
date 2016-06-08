@@ -72,13 +72,14 @@ describe('events', () => {
         yield kafka.start();
       });
       it('should allow listening to events', function* listenToEvents() {
-        topic.on(eventName, listener);
+        yield topic.on(eventName, listener);
       });
       it('should allow sending', function* sendEvents(done) {
         callback = done;
         try {
           yield topic.emit(eventName, testMessage);
         } catch (e) {
+          console.log('error', e),
           done(e);
         }
       });
