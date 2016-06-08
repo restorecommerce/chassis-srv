@@ -9,3 +9,4 @@ module.exports.grpc = require('./lib/transport/provider/grpc');
 module.exports.endpoint = require('./lib/endpoint');
 module.exports.events = require('./lib/events');
 module.exports.kafka = require('./lib/events/provider/kafka');
+module.exports.local = require('./lib/events/provider/local');
