@@ -65,7 +65,7 @@ describe('events', () => {
         should.ok(isGeneratorFn(topic.removeAllListeners));
       });
     });
-    describe('yielding kafka.start', () => {
+    describe('yielding kafka.start', function startKafka() {
       let callback;
       const listener = function* listener(message) {
         should.exist(message);
@@ -76,6 +76,7 @@ describe('events', () => {
           callback = undefined;
         }
       };
+      this.timeout(5000);
       it('should connect to kafka cluster', function* connectToKafka() {
         yield kafka.start();
       });
@@ -101,6 +102,8 @@ describe('events', () => {
       it('should allow counting listeners', function* countListeners() {
         const count = yield topic.listenerCount(eventName);
         should.exist(count);
+        const hasListeners = yield topic.hasListeners(eventName);
+        hasListeners.should.equal(count > 0);
         yield topic.on(eventName, listener);
         let countAfter = yield topic.listenerCount(eventName);
         countAfter.should.equal(count + 1);
