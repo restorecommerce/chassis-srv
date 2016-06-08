@@ -30,7 +30,7 @@ describe('events', () => {
         }).catch((err) => {
           should.exist(err);
           err.should.be.Error();
-          err.message.should.equal('provider does not exist');
+          err.message.should.equal('missing argument provider');
         });
         should.not.exist(result);
       });
