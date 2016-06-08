@@ -2,10 +2,11 @@
 
 ## Features
 
-- Expose your busniss logic as RPC endpoints
+- Expose your business logic as RPC endpoints
 - Emit and listen to events from other microservices like if you would use NodeJS events
 - Middleware for client and server
 - Includes endpoint discovery, load balancing, retry and timeout
+- Uses ES6
 
 ## Install
 
@@ -42,14 +43,32 @@ An endpoint is one function of a service. At the client side an endpoint is an e
 The chassis provides a similar event API to [Node.js events](https://nodejs.org/api/events.html). An emitted event is broadcasted by a provider to listeners. The provider takes care of packaging the event and distributing it to listeners. The following events providers are available:
 
 - [Kafka](https://kafka.apache.org/)
+- Local (in-process events, designed for testing)
 
 ### Configuration
 
 Configuration is handled by [restore-server-config](https://github.com/restorecommerce/server-config) which uses [nconf](https://github.com/indexzero/nconf). The chassis loads the required configuration from files located in the subdirectory 'cfg' of the current working directory. Environment variables overwrite configuration values from files.
+The configuration file can be loaded from a different location via ``config.load``.
+
+```js
+const config = require('restore-chassis-srv').config;
+config.load(pathToTheParentOfCfg);
+```
 
 ### Logging
 
-Logging is handled by [restore-logger](https://github.com/restorecommerce/logger) which uses [winston](https://github.com/winstonjs/winston). A logger is created with each client and server. The logger can be configured.
+Logging is handled by [restore-logger](https://github.com/restorecommerce/logger) which uses [winston](https://github.com/winstonjs/winston). A logger is created with each client and server. The logger can be configured in the configuration file.
+A logger is stored as ``Client.logger`` or ``Server.logger``.
+
+Default logging levels are:
+- silly
+- verbose
+- debug
+- info
+- warn
+- error
+
+To create a log call ``logger.<level>(message, ...args)``. The ``level`` being one of the levels defined above, ``message`` is a string and ``...args `` is a list of objects.
 
 ### Client
 
@@ -224,4 +243,43 @@ In the following configuration only the events part of the server is configured.
     }
   }
 }
+```
+
+#### Service
+
+The business logic is an object with functions which get wrapped and served as endpoints.
+What functions are wrapped up is configured in the configuration file.
+
+#### Middleware
+
+Middleware is called before the service function. The middleware can call the next middleware until the last middleware calls the service function.
+
+```javascript
+function makeMiddleware() {
+  return function*(next) {
+    return function*(request, context){
+      return yield next(request, context);
+    };
+  };
+}
+server.middleware.push(makeMiddleware());
+```
+
+#### Events
+
+The following example subscribes to a topic named ``com.example.visits`` and
+listens to events called ``visit``.
+On an event the ``listener`` is called with the event message.
+The listener can be a generator function or a normal function.
+```js
+const topicName = 'com.example.visits';
+const eventName = 'visit';
+const listener = function*(message) {};
+const topic = yield server.events.topic(topicName);
+yield topic.on(eventName, listener);
+```
+
+To emit an event to the topic call:
+```js
+yield topic.emit(eventName, {url:'example.com'});
 ```
