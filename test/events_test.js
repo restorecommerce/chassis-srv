@@ -80,33 +80,33 @@ describe('events', () => {
         yield kafka.start();
       });
       it('should allow listening to events', function* listenToEvents() {
+        const count = yield topic.listenerCount(eventName);
         yield topic.on(eventName, listener);
-        yield topic.removeListener(eventName, listener);
-        const count = yield topic.listenerCount();
-        count.should.equal(0);
+        const countAfter = yield topic.listenerCount(eventName);
+        countAfter.should.equal(count + 1);
       });
       it('should allow removing all listeners', function* removeAllListeners() {
         yield topic.on(eventName, listener);
         yield topic.removeAllListeners(eventName);
-        const count = yield topic.listenerCount();
+        const count = yield topic.listenerCount(eventName);
         count.should.equal(0);
       });
       it('should allow removing a listener', function* removeListener() {
+        const count = yield topic.listenerCount(eventName);
         yield topic.on(eventName, listener);
         yield topic.removeListener(eventName, listener);
-        const count = yield topic.listenerCount();
-        count.should.equal(0);
+        const countAfter = yield topic.listenerCount(eventName);
+        countAfter.should.equal(count);
       });
       it('should allow counting listeners', function* countListeners() {
-        let count = yield topic.listenerCount();
-        count.should.equal(0);
-        yield topic.on(eventName, listener);
-        count = yield topic.listenerCount(eventName);
+        const count = yield topic.listenerCount(eventName);
         should.exist(count);
-        count.should.be.equal(1);
+        yield topic.on(eventName, listener);
+        let countAfter = yield topic.listenerCount(eventName);
+        countAfter.should.equal(count + 1);
         yield topic.removeListener(eventName, listener);
-        count = yield topic.listenerCount();
-        count.should.equal(0);
+        countAfter = yield topic.listenerCount(eventName);
+        countAfter.should.equal(count);
       });
       it('should allow emitting', function* sendEvents(done) {
         yield topic.on(eventName, listener);
