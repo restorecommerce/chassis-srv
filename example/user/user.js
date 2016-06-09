@@ -1,8 +1,10 @@
 'use strict';
 
 const co = require('co');
-const Server = require('../../lib/microservice').Server;
-const config = require('../../lib/config');
+const chassis =  require('../../');
+const Server = chassis.microservice.Server;
+const errors = chassis.errors;
+const config = chassis.config;
 
 // Service the business logic of this microservice.
 function Service(userEvents, logger) {
@@ -24,19 +26,13 @@ function Service(userEvents, logger) {
       name = '';
     }
     if (!name) {
-      const err = new Error('invalid argument');
-      err.details = 'argument name is empty';
-      throw err;
+      throw new errors.InvalidArgument('argument name is empty');
     }
     if (!email) {
-      const err = new Error('invalid argument');
-      err.details = 'argument email is empty';
-      throw err;
+      throw new errors.InvalidArgument('argument email is empty');
     }
     if (!password) {
-      const err = new Error('invalid argument');
-      err.details = 'argument password is empty';
-      throw err;
+      throw new errors.InvalidArgument('argument password is empty');
     }
     const user = {
       id: '/users/' + name,
@@ -65,11 +61,11 @@ function Service(userEvents, logger) {
         return {items:[entry]};
       }
     }
-    throw new Error('not found');
+    throw new errors.NotFound('user not found');
   };
 
   this.activate = function* activate() {
-    throw new Error('not implemented');
+    throw new errors.NotImplemented();
   };
   this.changePassword = this.activate;
   this.unregister = this.activate;
