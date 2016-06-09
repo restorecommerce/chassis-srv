@@ -7,6 +7,7 @@ coMocha(mocha);
 const should = require('should');
 const _ = require('lodash');
 const isGeneratorFn = require('is-generator').fn;
+const logger = require('./logger_test.js');
 const microservice = require('../lib/microservice');
 const config = require('../lib/config');
 const events = require('../lib/events');
@@ -47,7 +48,7 @@ describe('microservice.Server', () => {
     });
   describe('constructing the sever', () => {
     it('should throw an error when endpoints config is missing', () => {
-      config.load(process.cwd() + '/test');
+      config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('server:events', undefined);
       cfg.set('server:endpoints', undefined);
@@ -56,7 +57,7 @@ describe('microservice.Server', () => {
       }).should.throw('missing endpoints configuration');
     });
     it('should throw an error when transports config is missing', () => {
-      config.load(process.cwd() + '/test');
+      config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('server:events', undefined);
       cfg.set('server:transports', undefined);
@@ -65,7 +66,7 @@ describe('microservice.Server', () => {
       }).should.throw('missing transports configuration');
     });
     it('should throw an error when configuration does not exist', () => {
-      config.load(process.cwd() + '/test');
+      config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('server:events', undefined);
       cfg.set('server:endpoints', undefined);
@@ -75,7 +76,7 @@ describe('microservice.Server', () => {
       }).should.throw('missing server configuration');
     });
     it('should return a server when provided with config for events', () => {
-      config.load(process.cwd() + '/test');
+      config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('server:endpoints', undefined);
       cfg.set('server:transports', undefined);
@@ -100,7 +101,7 @@ describe('microservice.Server', () => {
     });
     it('should return a server when provided with config for endpoints',
       () => {
-        config.load(process.cwd() + '/test');
+        config.load(process.cwd() + '/test', logger);
         const cfg = config.get();
         cfg.set('server:events', undefined);
         server = new Server();
@@ -124,7 +125,7 @@ describe('microservice.Server', () => {
         server.transport.grpc.should.be.an.instanceof(grpc.Server);
       });
     it('should return a server when provided with correct config', () => {
-      config.load(process.cwd() + '/test');
+      config.load(process.cwd() + '/test', logger);
       server = new Server();
       should.exist(server);
       should.exist(server.logger);
@@ -175,7 +176,7 @@ describe('microservice.Server', () => {
       // 'test' endpoint
       const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
       let instance = cfg.get(testCfgPath);
-      const client = new grpc.Client(grpcConfig, server.logger);
+      const client = new grpc.Client(grpcConfig, logger);
       const testF = yield client.makeEndpoint('test', instance);
       let result = yield testF({
         value: 'hello',
@@ -241,13 +242,13 @@ describe('microservice.Client', () => {
   describe('constructing the client', () => {
     it('should create a client when providing correct configuration',
       () => {
-        config.load(process.cwd() + '/test');
+        config.load(process.cwd() + '/test', logger);
         client = new Client('test');
         should.exist(client);
         should.exist(client.logger);
       });
     it('should throw an error when providing no configuration', () => {
-      config.load(process.cwd() + '/test');
+      config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('client:test', null);
       (() => {
@@ -256,14 +257,14 @@ describe('microservice.Client', () => {
     });
     it('should throw an error when providing with invalid configuration',
       () => {
-        config.load(process.cwd() + '/test');
+        config.load(process.cwd() + '/test', logger);
         let cfg = config.get();
         cfg.set('client:test:endpoints', null);
         (() => {
           client = new Client('test');
         }).should.throw('no endpoints configured');
 
-        config.load(process.cwd() + '/test');
+        config.load(process.cwd() + '/test', logger);
         cfg = config.get();
         cfg.set('client:test:transports', null);
         (() => {

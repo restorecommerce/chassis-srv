@@ -19,7 +19,7 @@ const database = require('../lib/database');
 const providers = [{
   name: 'arango',
   init: function init(cb) {
-    config.load(process.cwd() + '/test');
+    config.load(process.cwd() + '/test', logger);
     const cfg = config.get();
     const dbHost = cfg.get('database:arango:host');
     const dbPort = cfg.get('database:arango:port');
@@ -40,7 +40,7 @@ const providers = [{
     });
   },
   loadInvalidConfig: function loadInvalidConfig() {
-    config.load(process.cwd() + '/test');
+    config.load(process.cwd() + '/test', logger);
     const cfg = config.get();
     cfg.set('database:arango:autoCreate', false);
     cfg.set('database:arango:database', 'database_does_not_exist');
@@ -60,7 +60,7 @@ providers.forEach((providerCfg) => {
             name: 'test',
           };
           let db;
-          config.load(process.cwd() + '/test');
+          config.load(process.cwd() + '/test', logger);
           it('should return a database connection', function* getDB() {
             db = yield database.get(providerCfg.name, logger);
             should.exist(db);
