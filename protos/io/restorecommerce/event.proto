@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package io.restorecommerce.event;
+
+/**
+ * A Kafka message event container.
+ */
+message Event {
+  /// Topic event name
+  string name = 1;
+  /// Event message
+  google.protobuf.Any payload = 2;
+}
+
+extend google.protobuf.MessageOptions {
+  repeated string event = 51234;
+}

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.restorecommerce.test.resource";
+option java_outer_classname = "TestProto";
+option objc_class_prefix = "Test";
+
+package test;
+
+service Test {
+  rpc Test (TestRequest) returns (TestResponse);
+  rpc Throw (TestRequest) returns (TestResponse);
+  rpc NotImplemented (TestRequest) returns (TestResponse);
+}
+
+message TestRequest {
+  string value = 1;
+}
+message TestResponse {
+  string result = 1;
+}
+
+message TestEvent {
+  option event = "test.test-event";
+  string value = 1;
+  int32 count = 2;
+};
