@@ -1,3 +1,0 @@
-[submodule "protos"]
-	path = protos
-	url = ssh://git@gitlab.n-fuse.de:10022/restorecommerce/protos.git
