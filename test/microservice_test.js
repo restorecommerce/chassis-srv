@@ -160,13 +160,26 @@ describe('microservice.Server', () => {
   });
   describe('calling bind', () => {
     it('should wrap a service and create endpoints for each object function',
-      function* bindService() {
+      function* bindService(done) {
+        server.on('bound', () => {
+          done();
+        });
         yield server.bind(service);
       });
   });
   describe('calling start', () => {
     it('should expose the created endpoints via transports', function* checkEndpoints() {
+      let serving = false;
+      let listening = false;
+      server.on('serving', () => {
+        serving = !serving;
+      });
+      server.on('listening', () => {
+        listening = !listening;
+      });
       yield server.start();
+      serving.should.equal(true);
+      listening.should.equal(true);
 
       const cfg = config.get();
       const grpcConfig = cfg.get('client:test:transports:grpc');
@@ -222,7 +235,10 @@ describe('microservice.Server', () => {
     });
   });
   describe('calling end', () => {
-    it('should stop the server and no longer provide endpoints', function* endServer() {
+    it('should stop the server and no longer provide endpoints', function* endServer(done) {
+      server.on('stopped', () => {
+        done();
+      });
       yield server.end();
     });
   });
@@ -288,6 +304,11 @@ describe('microservice.Client', () => {
     });
     describe('connect', () => {
       it('should return a service object with endpoint functions', function* connectToEndpoints() {
+        let connected = false;
+        client.on('connected', () => {
+          connected = !connected;
+        });
+
         const testService = yield client.connect();
         should.exist(testService);
         should.exist(testService.test);
@@ -296,6 +317,7 @@ describe('microservice.Client', () => {
         should.ok(isGeneratorFn(testService.throw));
         should.exist(testService.notImplemented);
         should.ok(isGeneratorFn(testService.notImplemented));
+        connected.should.equal(true);
 
         // test
         let result = yield testService.test({
@@ -361,7 +383,10 @@ describe('microservice.Client', () => {
         });
     });
     describe('end', () => {
-      it('should disconnect from all endpoints', function* disconn() {
+      it('should disconnect from all endpoints', function* disconn(done) {
+        client.on('disconnected', () => {
+          done();
+        });
         yield client.end();
       });
     });
