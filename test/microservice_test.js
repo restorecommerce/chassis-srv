@@ -202,7 +202,7 @@ describe('microservice.Server', () => {
       result.data.result.should.be.equal('welcome');
 
       // 'throw' endpoint
-      const throwCfgPath = 'client:test:endpoints:throw:publisher:instances:0';
+      const throwCfgPath = 'client:test:publisher:instances:0';
       instance = cfg.get(throwCfgPath);
       const throwF = yield client.makeEndpoint('throw', instance);
       result = yield throwF({
