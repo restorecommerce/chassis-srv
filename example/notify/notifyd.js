@@ -39,6 +39,36 @@ function Service(events, logger) {
     };
     return report;
   };
+
+  this.createStream = function* create(call, context) {
+    let req;
+    let stream = true;
+    while (stream) {
+      try {
+        req = yield call.read();
+        const id = guid();
+        const notification = {
+          id,
+          sender: req.sender,
+          title: req.title,
+          message: req.message,
+        };
+        yield events.emit('notification', notification);
+        const report = {
+          id,
+          send: true,
+        };
+        yield call.write(report);
+      } catch (err) {
+        stream = false;
+        if (err.message === 'stream end') {
+          yield call.end();
+          return;
+        }
+        context.logger.error(err);
+      }
+    }
+  };
 }
 
 co(function* init() {

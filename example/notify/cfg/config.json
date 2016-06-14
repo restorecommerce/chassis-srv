@@ -16,7 +16,8 @@
         "instances": ["grpc://localhost:50051"]
       },
       "endpoints": {
-        "create": {}
+        "create": {},
+        "createStream": {}
       }
     }
   },
@@ -32,6 +33,9 @@
     },
     "endpoints": {
       "create": {
+        "transport": ["grpc"]
+      },
+      "createStream": {
         "transport": ["grpc"]
       }
     },

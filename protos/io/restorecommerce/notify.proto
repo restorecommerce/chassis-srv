@@ -4,6 +4,7 @@ package io.restorecommerce.notify;
 
 service Notifyd {
   rpc Create (NotificationRequest) returns (Report);
+  rpc CreateStream (stream NotificationRequest) returns (stream Report);
 }
 
 message NotificationRequest {
