@@ -10,7 +10,7 @@ services:
   - docker
 before_install:
   - sudo apt-get update
-  - sudo apt-get install docker-engine
+  - sudo apt-get install -y docker-engine
   - 'npm config set loglevel error'
   - docker network create --driver bridge chassis_net
   - docker run --name chassis_zk -d --net=chassis_net -p 2181:2181 wurstmeister/zookeeper:3.4.6
