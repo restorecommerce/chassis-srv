@@ -18,16 +18,60 @@ const Client = microservice.Client;
 /* global describe context it before after*/
 
 const service = {
-  test(request, context) {
+  *test(request, context) {
     request.value.should.be.equal('hello');
     return {
       result: 'welcome',
     };
   },
-  throw (request, context) {
+  *throw (request, context) {
     throw new Error('forced error');
   },
   notImplemented: null,
+  *biStream(call, context) {
+    let req;
+    let stream = true;
+    while (stream) {
+      try {
+        req = yield call.read();
+      } catch (e) {
+        stream = false;
+        if (e.message === 'stream end') {
+          yield call.end();
+          return;
+        }
+      }
+      should.exist(req);
+      should.exist(req.value);
+      req.value.should.equal('ping');
+      yield call.write({ result: 'pong' });
+    }
+  },
+  *requestStream(call, context) {
+    let req;
+    let stream = true;
+    while (stream) {
+      try {
+        req = yield call.read();
+        should.exist(req);
+        should.exist(req.value);
+        req.value.should.equal('ping');
+      } catch (e) {
+        stream = false;
+      }
+    }
+    return { result: 'pong' };
+  },
+  *responseStream(call, context) {
+    const req = call.request;
+    should.exist(req);
+    should.exist(req.value);
+    req.value.should.equal('ping');
+    for (let i = 0; i < 3; i++) {
+      yield call.write({ result: `${i}` });
+    }
+    yield call.end();
+  },
 };
 
 describe('microservice.Server', () => {
@@ -231,7 +275,49 @@ describe('microservice.Server', () => {
       result.error.message.should.equal('unimplemented');
       should.not.exist(result.data);
 
-      yield client.end();
+      // 'biStream'
+      const biStreamCfgPath = 'client:test:publisher:instances:0';
+      instance = cfg.get(biStreamCfgPath);
+      const biStream = yield client.makeEndpoint('biStream', instance);
+      let call = yield biStream();
+      for (let i = 0; i < 3; i++) {
+        yield call.write({ value: 'ping' });
+      }
+      for (let i = 0; i < 3; i++) {
+        result = yield call.read();
+        should.ifError(result.error);
+        should.exist(result);
+        should.exist(result.result);
+        result.result.should.be.equal('pong');
+      }
+      yield call.end();
+
+      // 'requestStream'
+      const requestStreamCfgPath = 'client:test:publisher:instances:0';
+      instance = cfg.get(requestStreamCfgPath);
+      const requestStream = yield client.makeEndpoint('requestStream', instance);
+      call = yield requestStream();
+      for (let i = 0; i < 3; i++) {
+        yield call.write({ value: 'ping' });
+      }
+      result = yield call.end();
+      should.ifError(result.error);
+      should.exist(result);
+      should.exist(result.result);
+      result.result.should.be.equal('pong');
+
+      // 'responseStream'
+      const responseStreamCfgPath = 'client:test:publisher:instances:0';
+      instance = cfg.get(responseStreamCfgPath);
+      const responseStream = yield client.makeEndpoint('responseStream', instance);
+      call = yield responseStream({ value: 'ping' });
+      for (let i = 0; i < 3; i++) {
+        result = yield call.read();
+        should.ifError(result.error);
+        should.exist(result);
+        should.exist(result.result);
+        result.result.should.be.equal(`${i}`);
+      }
     });
   });
   describe('calling end', () => {

@@ -51,7 +51,10 @@
             "instances": ["grpc://localhost:50051"]
           }
         },
-        "throw": {}
+        "throw": {},
+        "biStream": {},
+        "requestStream": {},
+        "responseStream": {}
       }
     }
   },
@@ -80,6 +83,15 @@
         "transport": ["grpc"]
       },
       "notImplemented": {
+        "transport": ["grpc"]
+      },
+      "biStream": {
+        "transport": ["grpc"]
+      },
+      "requestStream": {
+        "transport": ["grpc"]
+      },
+      "responseStream": {
         "transport": ["grpc"]
       }
     },

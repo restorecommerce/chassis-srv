@@ -11,6 +11,9 @@ service Test {
   rpc Test (TestRequest) returns (TestResponse);
   rpc Throw (TestRequest) returns (TestResponse);
   rpc NotImplemented (TestRequest) returns (TestResponse);
+  rpc BiStream (stream TestRequest) returns (stream TestResponse);
+  rpc ResponseStream (TestRequest) returns (stream TestResponse);
+  rpc RequestStream (stream TestRequest) returns (TestResponse);
 }
 
 message TestRequest {
