@@ -24,6 +24,9 @@ before_script:
   - ./kafka_2.11-0.9.0.1/bin/kafka-topics.sh --create --zookeeper 127.0.0.1:2181 --replication-factor 1 --partitions 1 --topic test
   - sleep 10
   - docker ps -a
+  - docker logs chassis_adb
+  - docker logs chassis_zk
+  - docker logs chassis_kafka
 scripts:
   - 'npm test'
   - 'cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js'
