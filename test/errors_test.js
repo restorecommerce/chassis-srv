@@ -9,11 +9,14 @@ const _ = require('lodash');
 
 const errors = require('../').errors;
 
+/* global describe it */
+
 describe('error', () => {
-  _.forEach(errors, function(Error, name){
+  _.forEach(errors, (Error, name) => {
     describe(name, () => {
       it('should be an Error', () => {
         const error = new Error();
+        should.exist(error);
         error.should.be.Error();
       });
     });
