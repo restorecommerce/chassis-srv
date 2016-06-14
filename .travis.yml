@@ -1,0 +1,21 @@
+language: node_js
+sudo: false
+node_js:
+    - "6"
+env:
+  - COVERALLS=1
+git:
+  depth: 10
+services:
+  - docker
+before_install:
+  - 'npm config set loglevel error'
+  - docker network create --driver bridge chassis_net
+  - docker run --name chassis_zk -d --net=chassis_net -p 2181:2181 wurstmeister/zookeeper:3.4.6
+  - docker run --name chassis_kafka -d --net=chassis_net -p 9092:9092 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e KAFKA_ZOOKEEPER_CONNECT=zk:2181 -v /var/run/docker.sock:/var/run/docker.sock --link chassis_zk:zk wurstmeister/kafka:0.9.0.1
+  - docker run --name chassis_adb -d -p 127.0.0.1:8529:8529 -v /sync1/invcontainervolumes/chassis_adb:/var/lib/arangodb -e ARANGO_NO_AUTH=1 arangodb:2.8.9
+before_script:
+  - sleep 10
+after_success:
+  - 'npm test'
+  - 'cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js'
