@@ -1,4 +1,4 @@
-# restore-cassis
+# restore-cassis [![Build Status](https://travis-ci.org/restorecommerce/chassis-srv.svg?branch=master)](https://travis-ci.org/restorecommerce/chassis-srv)
 
 ## Features
 
