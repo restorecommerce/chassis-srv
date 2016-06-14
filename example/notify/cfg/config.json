@@ -1,0 +1,45 @@
+{
+  "client": {
+    "notify": {
+      "transports": {
+        "grpc": {
+          "service": "io.restorecommerce.notify.Notifyd",
+          "timeout": 3000,
+          "protoRoot": "../../protos/"
+        }
+      },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": ["grpc://localhost:50051"]
+      },
+      "endpoints": {
+        "create": {}
+      }
+    }
+  },
+  "server": {
+    "events": {
+      "provider": {
+        "name": "kafka",
+        "groupId": "notifyd",
+        "clientId": "notifyd",
+        "connectionString": "localhost:9092",
+        "protoRoot": "../../protos/"
+      }
+    },
+    "endpoints": {
+      "create": {
+        "transport": ["grpc"]
+      }
+    },
+    "transports": [{
+      "name": "grpc",
+      "service": "io.restorecommerce.notify.Notifyd",
+      "addr": "localhost:50051",
+      "protoRoot": "../../protos/"
+    }]
+  }
+}

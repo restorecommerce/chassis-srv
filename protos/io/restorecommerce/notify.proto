@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package io.restorecommerce.notify;
+
+service Notifyd {
+  rpc Create (NotificationRequest) returns (Report);
+}
+
+message NotificationRequest {
+  string sender = 1;
+  string title = 2;
+  string message = 3;
+}
+
+message Report {
+  string id = 1;
+  bool send = 2;
+}
+
+message Notification {
+  option event = "io.restorecommerce.notify.notification";
+  string id = 1;
+  string sender = 2;
+  string title = 3;
+  string message = 4;
+}
