@@ -43,7 +43,7 @@
   },
   "scripts": {
     "lint": "eslint *.json *.js lib/**",
-    "test": "./node_modules/.bin/mocha -R nyan test && npm run-script lint",
+    "test": "./node_modules/.bin/mocha -R spec test && npm run-script lint",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test",
     "checkStyle": "./node_modules/.bin/jscs ./test ./lib ./example"
   },
