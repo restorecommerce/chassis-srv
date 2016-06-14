@@ -18,7 +18,8 @@ const Client = microservice.Client;
 /* global describe context it before after*/
 
 const service = {
-  *test(request, context) {
+  *test(call, context) {
+    const request = call.request;
     request.value.should.be.equal('hello');
     return {
       result: 'welcome',

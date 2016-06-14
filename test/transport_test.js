@@ -138,7 +138,8 @@ providers.forEach((provider) => {
           const errMessage = 'forced error';
           let server;
           const service = {
-            test(req, context) {
+            test(call, context) {
+              const req = call.request;
               should.deepEqual(request, req);
               return response;
             },
