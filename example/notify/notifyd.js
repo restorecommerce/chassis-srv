@@ -82,7 +82,7 @@ co(function* init() {
   const service = new Service(events, server.logger);
 
   // Bind business logic to server
-  yield server.bind(service);
+  yield server.bind('notifyd', service);
 
   // Start server
   yield server.start();

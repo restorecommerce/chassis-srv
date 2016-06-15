@@ -92,14 +92,14 @@ describe('microservice.Server', () => {
       Server.prototype.middleware.should.have.iterable();
     });
   describe('constructing the sever', () => {
-    it('should throw an error when endpoints config is missing', () => {
+    it('should throw an error when services config is missing', () => {
       config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('server:events', undefined);
-      cfg.set('server:endpoints', undefined);
+      cfg.set('server:services', undefined);
       (() => {
         server = new Server();
-      }).should.throw('missing endpoints configuration');
+      }).should.throw('missing services configuration');
     });
     it('should throw an error when transports config is missing', () => {
       config.load(process.cwd() + '/test', logger);
@@ -114,7 +114,7 @@ describe('microservice.Server', () => {
       config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
       cfg.set('server:events', undefined);
-      cfg.set('server:endpoints', undefined);
+      cfg.set('server:services', undefined);
       cfg.set('server:transports', undefined);
       (() => {
         server = new Server();
@@ -123,7 +123,7 @@ describe('microservice.Server', () => {
     it('should return a server when provided with config for events', () => {
       config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
-      cfg.set('server:endpoints', undefined);
+      cfg.set('server:services', undefined);
       cfg.set('server:transports', undefined);
       server = new Server();
       should.exist(server);
@@ -209,7 +209,11 @@ describe('microservice.Server', () => {
         server.on('bound', () => {
           done();
         });
-        yield server.bind(service);
+        try {
+          yield server.bind('test', service);
+        } catch (err) {
+          done(err);
+        }
       });
   });
   describe('calling start', () => {

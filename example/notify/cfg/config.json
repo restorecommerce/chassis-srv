@@ -31,12 +31,14 @@
         "protoRoot": "../../protos/"
       }
     },
-    "endpoints": {
-      "create": {
-        "transport": ["grpc"]
-      },
-      "createStream": {
-        "transport": ["grpc"]
+    "services": {
+      "notifyd": {
+        "create": {
+          "transport": ["grpc"]
+        },
+        "createStream": {
+          "transport": ["grpc"]
+        }
       }
     },
     "transports": [{

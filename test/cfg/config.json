@@ -75,24 +75,26 @@
         "connectionString": "localhost:9092"
       }
     },
-    "endpoints": {
+    "services": {
       "test": {
-        "transport": ["grpc"]
-      },
-      "throw": {
-        "transport": ["grpc"]
-      },
-      "notImplemented": {
-        "transport": ["grpc"]
-      },
-      "biStream": {
-        "transport": ["grpc"]
-      },
-      "requestStream": {
-        "transport": ["grpc"]
-      },
-      "responseStream": {
-        "transport": ["grpc"]
+        "test": {
+          "transport": ["grpc"]
+        },
+        "throw": {
+          "transport": ["grpc"]
+        },
+        "notImplemented": {
+          "transport": ["grpc"]
+        },
+        "biStream": {
+          "transport": ["grpc"]
+        },
+        "requestStream": {
+          "transport": ["grpc"]
+        },
+        "responseStream": {
+          "transport": ["grpc"]
+        }
       }
     },
     "transports": [{

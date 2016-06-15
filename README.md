@@ -1,5 +1,7 @@
 # restore-cassis [![Build Status](https://travis-ci.org/restorecommerce/chassis-srv.svg?branch=master)](https://travis-ci.org/restorecommerce/chassis-srv)
 
+In development. The API is not stable.
+
 ## Features
 
 - Expose your business logic as RPC endpoints
@@ -195,6 +197,14 @@ Extended example config file
 
 A server can provide service endpoints, listen to events, emit events. Each business logic function is exposed via a transport as an endpoint. Clients connect to these endpoints. When a client calls a server endpoint it traverses from the transport through possible middleware to the business logic function. The business logic processes the request and respond with either a result or an error. The response is transported back to the client.
 
+The following code starts a server and provides the service endpoints.
+```js
+const server = new Server();
+const service = new Service();
+yield server.bind('serviceName', service);
+yield server.start();
+```
+
 #### Config
 
 In the following configuration only the endpoint part is configured. Listening and emitting events is not possible. Each configured endpoint specifies which transport to use to provide an endpoint. Every transport, specified in the endpoints section, needs to be listed in the transports with it's configuration.
@@ -202,21 +212,23 @@ In the following configuration only the endpoint part is configured. Listening a
 ```json
 {
   "server": {
-    "endpoints": {
-      "activate": {
-        "transport": ["grpc"]
-      },
-      "changePassword": {
-        "transport": ["grpc"]
-      },
-      "get": {
-        "transport": ["grpc"]
-      },
-      "register": {
-        "transport": ["grpc"]
-      },
-      "unregister": {
-        "transport": ["grpc"]
+    "services": {
+      "user": {
+        "activate": {
+          "transport": ["grpc"]
+        },
+        "changePassword": {
+          "transport": ["grpc"]
+        },
+        "get": {
+          "transport": ["grpc"]
+        },
+        "register": {
+          "transport": ["grpc"]
+        },
+        "unregister": {
+          "transport": ["grpc"]
+        }
       }
     },
     "transports": [{
