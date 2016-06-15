@@ -215,24 +215,25 @@ In the following configuration only the endpoint part is configured. Listening a
     "services": {
       "user": {
         "activate": {
-          "transport": ["grpc"]
+          "transport": ["grpcUser"]
         },
         "changePassword": {
-          "transport": ["grpc"]
+          "transport": ["grpcUser"]
         },
         "get": {
-          "transport": ["grpc"]
+          "transport": ["grpcUser"]
         },
         "register": {
-          "transport": ["grpc"]
+          "transport": ["grpcUser"]
         },
         "unregister": {
-          "transport": ["grpc"]
+          "transport": ["grpcUser"]
         }
       }
     },
     "transports": [{
-      "name": "grpc",
+      "name": "grpcUser",
+      "provider": "grpc",
       "package": "io.restorecommerce.user.User",
       "addr": "localhost:50051"
     }]

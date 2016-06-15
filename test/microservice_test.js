@@ -166,8 +166,8 @@ describe('microservice.Server', () => {
         });
         should.not.exist(server.events);
         should.exist(server.transport);
-        should.exist(server.transport.grpc);
-        server.transport.grpc.should.be.an.instanceof(grpc.Server);
+        should.exist(server.transport.grpcTest);
+        server.transport.grpcTest.should.be.an.instanceof(grpc.Server);
       });
     it('should return a server when provided with correct config', () => {
       config.load(process.cwd() + '/test', logger);
@@ -189,8 +189,8 @@ describe('microservice.Server', () => {
       should.exist(server.events);
       server.events.should.be.an.instanceof(events.Events);
       should.exist(server.transport);
-      should.exist(server.transport.grpc);
-      server.transport.grpc.should.be.an.instanceof(grpc.Server);
+      should.exist(server.transport.grpcTest);
+      server.transport.grpcTest.should.be.an.instanceof(grpc.Server);
     });
     it('should be possible to get an event topic', function* checkGetEventTopic() {
       should.exist(server.events.topic);

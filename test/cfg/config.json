@@ -78,27 +78,28 @@
     "services": {
       "test": {
         "test": {
-          "transport": ["grpc"]
+          "transport": ["grpcTest"]
         },
         "throw": {
-          "transport": ["grpc"]
+          "transport": ["grpcTest"]
         },
         "notImplemented": {
-          "transport": ["grpc"]
+          "transport": ["grpcTest"]
         },
         "biStream": {
-          "transport": ["grpc"]
+          "transport": ["grpcTest"]
         },
         "requestStream": {
-          "transport": ["grpc"]
+          "transport": ["grpcTest"]
         },
         "responseStream": {
-          "transport": ["grpc"]
+          "transport": ["grpcTest"]
         }
       }
     },
     "transports": [{
-      "name": "grpc",
+      "name": "grpcTest",
+      "provider": "grpc",
       "service": "test.Test",
       "addr": "localhost:50051"
     }]
