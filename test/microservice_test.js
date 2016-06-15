@@ -206,11 +206,17 @@ describe('microservice.Server', () => {
   describe('calling bind', () => {
     it('should wrap a service and create endpoints for each object function',
       function* bindService(done) {
+        const boundServices = 2;
+        let currentBoundServices = 0;
         server.on('bound', () => {
-          done();
+          currentBoundServices++;
+          if (currentBoundServices === boundServices) {
+            done();
+          }
         });
         try {
           yield server.bind('test', service);
+          yield server.bind('stream', service);
         } catch (err) {
           done(err);
         }
@@ -231,14 +237,14 @@ describe('microservice.Server', () => {
       listening.should.equal(true);
 
       const cfg = config.get();
-      const grpcConfig = cfg.get('client:test:transports:grpc');
+      let grpcConfig = cfg.get('client:test:transports:grpc');
       should.exist(grpcConfig);
       should.exist(grpcConfig.service);
 
       // 'test' endpoint
       const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
       let instance = cfg.get(testCfgPath);
-      const client = new grpc.Client(grpcConfig, logger);
+      let client = new grpc.Client(grpcConfig, logger);
       const testF = yield client.makeEndpoint('test', instance);
       let result = yield testF({
         value: 'hello',
@@ -280,8 +286,12 @@ describe('microservice.Server', () => {
       result.error.message.should.equal('unimplemented');
       should.not.exist(result.data);
 
+      grpcConfig = cfg.get('client:stream:transports:grpc');
+      yield client.end();
+      client = new grpc.Client(grpcConfig, logger);
+
       // 'biStream'
-      const biStreamCfgPath = 'client:test:publisher:instances:0';
+      const biStreamCfgPath = 'client:stream:publisher:instances:0';
       instance = cfg.get(biStreamCfgPath);
       const biStream = yield client.makeEndpoint('biStream', instance);
       let call = yield biStream();
@@ -298,7 +308,7 @@ describe('microservice.Server', () => {
       yield call.end();
 
       // 'requestStream'
-      const requestStreamCfgPath = 'client:test:publisher:instances:0';
+      const requestStreamCfgPath = 'client:stream:publisher:instances:0';
       instance = cfg.get(requestStreamCfgPath);
       const requestStream = yield client.makeEndpoint('requestStream', instance);
       call = yield requestStream();
@@ -312,7 +322,7 @@ describe('microservice.Server', () => {
       result.result.should.be.equal('pong');
 
       // 'responseStream'
-      const responseStreamCfgPath = 'client:test:publisher:instances:0';
+      const responseStreamCfgPath = 'client:stream:publisher:instances:0';
       instance = cfg.get(responseStreamCfgPath);
       const responseStream = yield client.makeEndpoint('responseStream', instance);
       call = yield responseStream({ value: 'ping' });
@@ -323,6 +333,8 @@ describe('microservice.Server', () => {
         should.exist(result.result);
         result.result.should.be.equal(`${i}`);
       }
+
+      yield client.end();
     });
   });
   describe('calling end', () => {
@@ -382,12 +394,14 @@ describe('microservice.Client', () => {
   context('with running server', () => {
     before(function* initServer() {
       const cfg = {
-        service: 'test.Test',
+        services: {
+          test: 'test.Test',
+        },
         addr: 'localhost:50051',
         timeout: 100,
       };
       server = new grpc.Server(cfg, client.logger);
-      yield server.bind(service);
+      yield server.bind('test', service);
       yield server.start();
     });
     after(function* stopServer() {

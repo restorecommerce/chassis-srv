@@ -51,7 +51,32 @@
             "instances": ["grpc://localhost:50051"]
           }
         },
-        "throw": {},
+        "throw": {}
+      }
+    },
+    "stream": {
+      "logger": {
+        "console": {
+          "handleExceptions": false,
+          "level": "error",
+          "colorize": true,
+          "prettyPrint": true
+        }
+      },
+      "transports": {
+        "grpc": {
+          "service": "test.Stream",
+          "timeout": 3000
+        }
+      },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": ["grpc://localhost:50051"]
+      },
+      "endpoints": {
         "biStream": {},
         "requestStream": {},
         "responseStream": {}
@@ -85,7 +110,9 @@
         },
         "notImplemented": {
           "transport": ["grpcTest"]
-        },
+        }
+      },
+      "stream": {
         "biStream": {
           "transport": ["grpcTest"]
         },
@@ -100,7 +127,10 @@
     "transports": [{
       "name": "grpcTest",
       "provider": "grpc",
-      "service": "test.Test",
+      "services": {
+        "test": "test.Test",
+        "stream": "test.Stream"
+      },
       "addr": "localhost:50051"
     }]
   }

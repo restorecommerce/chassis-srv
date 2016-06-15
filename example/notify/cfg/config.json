@@ -44,7 +44,9 @@
     "transports": [{
       "name": "notifydGRPC",
       "provider": "grpc",
-      "service": "io.restorecommerce.notify.Notifyd",
+      "services": {
+        "notifyd": "io.restorecommerce.notify.Notifyd"
+      },
       "addr": "localhost:50051",
       "protoRoot": "../../protos/"
     }]

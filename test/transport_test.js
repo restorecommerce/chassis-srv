@@ -15,7 +15,9 @@ const grpc = require('../lib/transport/provider/grpc');
 
 const providers = [{
   config: {
-    service: 'test.Test',
+    services: {
+      test: 'test.Test',
+    },
     addr: 'localhost:50051',
     timeout: 100,
   },
@@ -47,7 +49,7 @@ providers.forEach((provider) => {
               addr: provider.config.addr,
               package: provider.config.package,
               proto: provider.config.proto,
-              service: provider.config.service,
+              services: provider.config.services,
             };
             server = new Server(config, logger);
             should.exist(server);
@@ -55,7 +57,7 @@ providers.forEach((provider) => {
         });
       describe('binding a service', () => {
         it('should result in a wrapped service', function* bindService() {
-          yield server.bind(service);
+          yield server.bind('test', service);
         });
       });
       describe('start', () => {
@@ -93,7 +95,7 @@ providers.forEach((provider) => {
             const config = {
               package: provider.config.package,
               proto: provider.config.proto,
-              service: provider.config.service,
+              service: provider.config.services.test,
               timeout: provider.config.timeout,
             };
             client = new Client(config, logger);
@@ -133,7 +135,7 @@ providers.forEach((provider) => {
             addr: provider.config.addr,
             package: provider.config.package,
             proto: provider.config.proto,
-            service: provider.config.service,
+            services: provider.config.services,
           };
           const errMessage = 'forced error';
           let server;
@@ -149,7 +151,7 @@ providers.forEach((provider) => {
           };
           before(function* startServer() {
             server = new provider.Server(config, logger);
-            yield server.bind(service);
+            yield server.bind('test', service);
             yield server.start();
           });
           after(function* stopServer() {
