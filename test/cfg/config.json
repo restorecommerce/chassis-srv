@@ -51,7 +51,8 @@
             "instances": ["grpc://localhost:50051"]
           }
         },
-        "throw": {}
+        "throw": {},
+        "notFound": {}
       }
     },
     "stream": {
@@ -109,6 +110,9 @@
           "transport": ["grpcTest"]
         },
         "notImplemented": {
+          "transport": ["grpcTest"]
+        },
+        "notFound": {
           "transport": ["grpcTest"]
         }
       },

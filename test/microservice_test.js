@@ -8,12 +8,14 @@ const should = require('should');
 const _ = require('lodash');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
-const microservice = require('../lib/microservice');
-const config = require('../lib/config');
-const events = require('../lib/events');
-const grpc = require('../lib/transport/provider/grpc');
-const Server = microservice.Server;
-const Client = microservice.Client;
+const chassis = require('../');
+const config = chassis.config;
+const events = chassis.events;
+const grpc = chassis.grpc;
+const Server = chassis.microservice.Server;
+const Client = chassis.microservice.Client;
+
+const errors = chassis.errors;
 
 /* global describe context it before after*/
 
@@ -27,6 +29,9 @@ const service = {
   },
   *throw(request, context) {
     throw new Error('forced error');
+  },
+  *notFound(request, context) {
+    throw new errors.NotFound('test not found');
   },
   notImplemented: null,
   *biStream(call, context) {
@@ -273,6 +278,21 @@ describe('microservice.Server', () => {
       result.error.should.be.Error();
       result.error.message.should.equal('internal');
       result.error.details.should.equal('forced error');
+      should.not.exist(result.data);
+
+      // 'notFound' endpoint
+      const notFoundCfgPath = 'client:test:publisher:instances:0';
+      instance = cfg.get(notFoundCfgPath);
+      const notFound = yield client.makeEndpoint('notFound', instance);
+      result = yield notFound({
+        value: 'hello',
+      }, {
+        test: true,
+      });
+      should.exist(result.error);
+      result.error.should.be.Error();
+      result.error.message.should.equal('not found');
+      result.error.details.should.equal('test not found');
       should.not.exist(result.data);
 
       // 'notImplemented' endpoint
