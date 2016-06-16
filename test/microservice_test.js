@@ -25,7 +25,7 @@ const service = {
       result: 'welcome',
     };
   },
-  *throw (request, context) {
+  *throw(request, context) {
     throw new Error('forced error');
   },
   notImplemented: null,
@@ -241,12 +241,16 @@ describe('microservice.Server', () => {
       should.exist(grpcConfig);
       should.exist(grpcConfig.service);
 
+      let client = new grpc.Client(grpcConfig, logger);
+      let instance;
+      let result;
+      should.exist(client);
+
       // 'test' endpoint
       const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
-      let instance = cfg.get(testCfgPath);
-      let client = new grpc.Client(grpcConfig, logger);
+      instance = cfg.get(testCfgPath);
       const testF = yield client.makeEndpoint('test', instance);
-      let result = yield testF({
+      result = yield testF({
         value: 'hello',
       }, {
         test: true,
