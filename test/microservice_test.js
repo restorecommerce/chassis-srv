@@ -446,6 +446,8 @@ describe('microservice.Client', () => {
         should.ok(isGeneratorFn(testService.throw));
         should.exist(testService.notImplemented);
         should.ok(isGeneratorFn(testService.notImplemented));
+        should.exist(testService.notFound);
+        should.ok(isGeneratorFn(testService.notFound));
         connected.should.equal(true);
 
         // test
