@@ -470,6 +470,14 @@ describe('microservice.Client', () => {
         should.exist(result.data);
         should.exist(result.data.result);
         result.data.result.should.equal('welcome');
+
+         // 'notFound' endpoint
+        result = yield testService.notFound();
+        should.exist(result.error);
+        result.error.should.be.Error();
+        result.error.message.should.equal('not found');
+        result.error.details.should.equal('test not found');
+        should.not.exist(result.data);
       });
     });
     describe('end', () => {
