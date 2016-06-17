@@ -95,7 +95,7 @@ describe('events', () => {
             callback = undefined;
           }
         };
-        this.timeout(5000);
+        this.timeout(8000);
         it('should setup the provider', function* connectToKafka() {
           yield provider.start();
         });
