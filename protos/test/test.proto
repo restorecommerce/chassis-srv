@@ -32,3 +32,11 @@ message TestEvent {
   string value = 1;
   int32 count = 2;
 };
+
+message ExtendMe {
+  extensions 100 to 199;
+}
+
+extend ExtendMe {
+  optional int32 bar = 126;
+}

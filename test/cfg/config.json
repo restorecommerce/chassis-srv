@@ -82,6 +82,24 @@
         "requestStream": {},
         "responseStream": {}
       }
+    },
+    "reflection": {
+      "transports": {
+        "grpc": {
+          "service": "grpc.reflection.v1alpha.ServerReflection",
+          "timeout": 3000
+        }
+      },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": ["grpc://localhost:50051"]
+      },
+      "endpoints": {
+        "serverReflectionInfo": {}
+      }
     }
   },
   "server": {
@@ -126,6 +144,11 @@
         "responseStream": {
           "transport": ["grpcTest"]
         }
+      },
+      "reflection": {
+        "serverReflectionInfo": {
+          "transport": ["grpcTest"]
+        }
       }
     },
     "transports": [{
@@ -133,7 +156,8 @@
       "provider": "grpc",
       "services": {
         "test": "test.Test",
-        "stream": "test.Stream"
+        "stream": "test.Stream",
+        "reflection": "grpc.reflection.v1alpha.ServerReflection"
       },
       "addr": "localhost:50051"
     }]
