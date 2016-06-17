@@ -5,6 +5,7 @@ const coMocha = require('co-mocha');
 coMocha(mocha);
 
 const should = require('should');
+const _ = require('lodash');
 
 const chassis = require('../');
 const grpc = chassis.grpc;
@@ -109,7 +110,9 @@ describe('binding the grpc.ServerReflection service', () => {
         should.exist(resp);
         should.exist(resp.listServicesResponse);
         should.exist(resp.listServicesResponse.service);
-        resp.listServicesResponse.service.should.be.length(3);
+        const cfg = chassis.config.get();
+        const services = cfg.get('server:services');
+        resp.listServicesResponse.service.should.be.length(_.size(services));
       });
     });
   });
