@@ -117,7 +117,9 @@ providers.forEach((providerCfg) => {
             it('should be updatable', function* checkUpdate() {
               const newDoc = _.clone(document);
               newDoc.value = 'new';
-              yield db.update(collection, newDoc);
+              yield db.update(collection, {
+                id: document.id,
+              }, newDoc);
               let result = yield db.findByID(collection, document.id);
               result = result[0];
               result.should.deepEqual(newDoc);
