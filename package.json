@@ -39,7 +39,7 @@
     "istanbul": "^0.4.3",
     "jshint": "^2.9.2",
     "mocha": "^2.5.3",
-    "should": "^9.0.0"
+    "should": "^9.0.2"
   },
   "scripts": {
     "lint": "eslint *.json *.js lib/** test/** example/**",
