@@ -22,6 +22,9 @@
         "grpc": {
           "service": "test.Test",
           "timeout": 3000
+        },
+        "pipe": {
+          "service": "test"
         }
       },
       "loadbalancer": {
@@ -29,7 +32,7 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051"]
+        "instances": ["grpc://localhost:50051", "piplineAddr"]
       },
       "endpoints": {
         "test": {
@@ -140,16 +143,16 @@
     "services": {
       "test": {
         "test": {
-          "transport": ["grpcTest"]
+          "transport": ["grpcTest", "pipeline"]
         },
         "throw": {
-          "transport": ["grpcTest"]
+          "transport": ["grpcTest", "pipeline"]
         },
         "notImplemented": {
-          "transport": ["grpcTest"]
+          "transport": ["grpcTest", "pipeline"]
         },
         "notFound": {
-          "transport": ["grpcTest"]
+          "transport": ["grpcTest", "pipeline"]
         }
       },
       "stream": {
@@ -170,7 +173,7 @@
       },
       "health": {
         "check": {
-          "transport": ["grpcTest"]
+          "transport": ["grpcTest", "pipeline"]
         }
       }
     },
@@ -184,6 +187,10 @@
         "health": "grpc.health.v1.Health"
       },
       "addr": "localhost:50051"
+    }, {
+      "name": "pipeline",
+      "provider": "pipe",
+      "addr": "piplineAddr"
     }]
   }
 }

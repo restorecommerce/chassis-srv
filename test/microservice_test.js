@@ -417,14 +417,9 @@ describe('microservice.Client', () => {
   });
   context('with running server', () => {
     before(function* initServer() {
-      const cfg = {
-        services: {
-          test: 'test.Test',
-        },
-        addr: 'localhost:50051',
-        timeout: 100,
-      };
-      server = new grpc.Server(cfg, client.logger);
+      config.load(process.cwd() + '/test', logger);
+      const cfg = config.get();
+      server = new Server(cfg.get('server'));
       yield server.bind('test', service);
       yield server.start();
     });

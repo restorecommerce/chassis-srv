@@ -9,23 +9,51 @@ const util = require('util');
 const co = require('co');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
-const grpc = require('../lib/transport/provider/grpc');
+const chassis = require('../');
+const grpc = chassis.grpc;
+const pipe = chassis.transport.provider.pipe;
 
 /* global describe it before after*/
 
 const providers = [{
   config: {
-    services: {
-      test: 'test.Test',
+    client: {
+      name: 'grpcTest',
+      provider: 'grpc',
+      service: 'test.Test',
+      addr: 'grpc://localhost:50051',
+      timeout: 100,
     },
-    addr: 'localhost:50051',
-    timeout: 100,
+    server: {
+      name: 'grpcTest',
+      provider: 'grpc',
+      services: {
+        test: 'test.Test',
+      },
+      addr: 'localhost:50051'
+    },
   },
   name: 'grpc',
   Client: grpc.Client,
   Server: grpc.Server,
+}, {
+  config: {
+    client: {
+      service: 'test',
+      addr: 'piplineAddr'
+    },
+    server: {
+      name: 'pipeline',
+      provider: 'pipe',
+      addr: 'piplineAddr'
+    },
+  },
+  name: 'pipeline',
+  Client: pipe.Client,
+  Server: pipe.Server,
 }];
 providers.forEach((provider) => {
+  logger.level = 'silly';
   describe(util.format('transport provider %s', provider.name), () => {
     describe('the server', () => {
       const Server = provider.Server;
@@ -45,13 +73,7 @@ providers.forEach((provider) => {
       describe('constructing the server provider with proper config',
         () => {
           it('should result in a server transport provider', () => {
-            const config = {
-              addr: provider.config.addr,
-              package: provider.config.package,
-              proto: provider.config.proto,
-              services: provider.config.services,
-            };
-            server = new Server(config, logger);
+            server = new Server(provider.config.server, logger);
             should.exist(server);
           });
         });
@@ -76,7 +98,7 @@ providers.forEach((provider) => {
       let client;
       const methodName = 'test';
       const methodNameFail = 'this_method_does_not_exist';
-      const instance = 'grpc://' + provider.config.addr;
+      const instance = provider.config.client.addr;
       let endpoint;
       const response = {
         result: 'abcd',
@@ -92,13 +114,7 @@ providers.forEach((provider) => {
       describe('constructing the client provider with proper config',
         () => {
           it('should result in a client transport provider', () => {
-            const config = {
-              package: provider.config.package,
-              proto: provider.config.proto,
-              service: provider.config.services.test,
-              timeout: provider.config.timeout,
-            };
-            client = new Client(config, logger);
+            client = new Client(provider.config.client, logger);
             should.exist(client);
           });
         });
@@ -127,16 +143,9 @@ providers.forEach((provider) => {
             });
             should.not.exist(endpoint);
             should.exist(err);
-            should.equal(err.message, 'Failed to connect before the deadline');
           });
         });
         describe('with running server', () => {
-          const config = {
-            addr: provider.config.addr,
-            package: provider.config.package,
-            proto: provider.config.proto,
-            services: provider.config.services,
-          };
           const errMessage = 'forced error';
           let server;
           const service = {
@@ -150,7 +159,7 @@ providers.forEach((provider) => {
             },
           };
           before(function* startServer() {
-            server = new provider.Server(config, logger);
+            server = new provider.Server(provider.config.server, logger);
             yield server.bind('test', service);
             yield server.start();
           });
@@ -163,13 +172,13 @@ providers.forEach((provider) => {
           });
           it('should succeed when calling with empty context', function* checkWithEmptyContext() {
             const result = yield endpoint(request, {});
-            should.deepEqual(response, result.data);
             should.ifError(result.error);
+            should.deepEqual(response, result.data);
           });
           it('should succeed when calling without context', function* checkWithoutContext() {
             const result = yield endpoint(request);
-            should.deepEqual(response, result.data);
             should.ifError(result.error);
+            should.deepEqual(response, result.data);
           });
           it('should return an error when calling a unimplemented method',
             function* checkUnimplemented() {
