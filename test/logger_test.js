@@ -13,7 +13,7 @@ module.exports = {
     console.error.apply(this, args);
   },
   log(level, ...args) {
-    if (level === 'error') {
+    if (level === 'error' && this) {
       console.error.apply(this, level, args);
     }
   },
