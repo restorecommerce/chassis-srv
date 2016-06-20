@@ -31,7 +31,7 @@ describe('binding the Health service', () => {
         const health = yield client.connect();
         should.exist(health.check);
 
-        // check itself, should serve
+        // check health service, should serve
         let resp = yield health.check({
           service: 'health',
         });
@@ -40,7 +40,7 @@ describe('binding the Health service', () => {
         should.exist(resp.data.status);
         resp.data.status.should.equal('SERVING');
 
-        // check none bound, should not serve
+        // check none bound service, should not serve
         resp = yield health.check({
           service: 'test',
         });
@@ -49,13 +49,22 @@ describe('binding the Health service', () => {
         should.exist(resp.data.status);
         resp.data.status.should.equal('NOT_SERVING');
 
-        // check none existing, should throw error
+        // check none existing service, should throw error
         resp = yield health.check({
           service: 'does_not_exist',
         });
         should.not.exist(resp.data);
         should.exist(resp.error);
         resp.error.message.should.equal('not found');
+
+        // check server, should serve
+        resp = yield health.check({
+          service: '',
+        });
+        should.not.exist(resp.error);
+        should.exist(resp.data);
+        should.exist(resp.data.status);
+        resp.data.status.should.equal('SERVING');
       });
     });
   });
