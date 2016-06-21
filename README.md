@@ -17,13 +17,13 @@ To install the chassis just run ``npm install``.
 ## Examples
 
 Code examples can be found in directory example.
-The examples require the protos directory to be in the current working directory.
-They also require a running Kafka instance for the event messaging.
+The examples require a running Kafka instance.
 Commands to run the examples:
 ```
-node example/client/client.js
-node example/user/user.js
-node example/email/email.js
+cd example/notify
+node notifyd.js
+node listen.js
+node emit.js
 ```
 
 ## Architecture
@@ -35,6 +35,7 @@ The chassis is split into a server and a client part. Both parts require configu
 A transport communicates between a server and a client. It handles encoding/decoding of data and sending/receving. The following transport providers are available:
 
 - [gRPC](http://www.grpc.io) (Client,Server)
+- pipe (in-process communication, designed for testing)
 
 ### Endpoint
 
@@ -138,7 +139,7 @@ Short example config file.
     "user": {
       "transports": {
         "grpc": {
-          "package": "io.restorecommerce.user.User",
+          "service": "io.restorecommerce.notify.Notifyd",
           "timeout": 3000
         }
       },
@@ -147,8 +148,8 @@ Short example config file.
         "instances": ["grpc://localhost:50051"]
       },
       "endpoints": {
-        "get": {},
-        "register": {}
+        "create": {},
+        "createStream": {}
       }
     }
   }
@@ -163,12 +164,12 @@ Extended example config file
     "user": {
       "transports": {
         "grpc": {
-          "package": "io.restorecommerce.user.User",
+          "service": "io.restorecommerce.notify.Notifyd",
           "timeout": 3000
         }
       },
       "endpoints": {
-        "get": {
+        "create": {
           "loadbalancer": {
             "name": "roundRobin"
           },
@@ -177,7 +178,7 @@ Extended example config file
             "instances": ["grpc://localhost:50051"]
           }
         },
-        "register": {
+        "createStream": {
           "loadbalancer": {
             "name": "random",
             "seed": 1
@@ -213,29 +214,23 @@ In the following configuration only the endpoint part is configured. Listening a
 {
   "server": {
     "services": {
-      "user": {
-        "activate": {
-          "transport": ["grpcUser"]
+      "notifyd": {
+        "create": {
+          "transport": ["notifydGRPC"]
         },
-        "changePassword": {
-          "transport": ["grpcUser"]
-        },
-        "get": {
-          "transport": ["grpcUser"]
-        },
-        "register": {
-          "transport": ["grpcUser"]
-        },
-        "unregister": {
-          "transport": ["grpcUser"]
+        "createStream": {
+          "transport": ["notifydGRPC"]
         }
       }
     },
     "transports": [{
-      "name": "grpcUser",
+      "name": "notifydGRPC",
       "provider": "grpc",
-      "package": "io.restorecommerce.user.User",
-      "addr": "localhost:50051"
+      "services": {
+        "notifyd": "io.restorecommerce.notify.Notifyd"
+      },
+      "addr": "localhost:50051",
+      "protoRoot": "../../protos/"
     }]
   }
 }
@@ -249,9 +244,10 @@ In the following configuration only the events part of the server is configured.
     "events": {
       "provider": {
         "name": "kafka",
-        "groupId": "restore-chassis-example-server",
-        "clientId": "restore-chassis-example-server",
+        "groupId": "notifyd",
+        "clientId": "notifyd",
         "connectionString": "localhost:9092",
+        "protoRoot": "../../protos/"
       }
     }
   }
@@ -270,8 +266,8 @@ Middleware is called before the service function. The middleware can call the ne
 ```javascript
 function makeMiddleware() {
   return function*(next) {
-    return function*(request, context){
-      return yield next(request, context);
+    return function*(call, context){
+      return yield next(call, context);
     };
   };
 }
@@ -294,5 +290,5 @@ yield topic.on(eventName, listener);
 
 To emit an event to the topic call:
 ```js
-yield topic.emit(eventName, {url:'example.com'});
+yield topic.emit(eventName, { url:'example.com' });
 ```
