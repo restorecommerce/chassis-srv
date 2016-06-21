@@ -6,6 +6,15 @@
       "port": 8529,
       "database": "chassis-test",
       "autoCreate": true
+    },
+    "nedb": {
+      "provider": "nedb",
+      "collections": {
+        "test": {
+          "fileName": "test.db",
+          "inMemoryOnly": false
+        }
+      }
     }
   },
   "client": {
