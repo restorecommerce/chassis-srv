@@ -11,8 +11,6 @@
       "provider": "nedb",
       "collections": {
         "test": {
-          "fileName": "test.db",
-          "inMemoryOnly": false
         }
       }
     }
