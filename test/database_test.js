@@ -54,7 +54,7 @@ const providers = [{
   loadInvalidConfig: function loadInvalidConfig() {
     config.load(process.cwd() + '/test', logger);
     const cfg = config.get();
-    cfg.set('database:nedb:test:fileName', 'path/to/file');
+    cfg.set('database:nedb:collections', undefined);
   }
 }];
 providers.forEach((providerCfg) => {
