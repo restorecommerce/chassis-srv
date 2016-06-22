@@ -28,29 +28,41 @@ node emit.js
 
 ## Architecture
 
-The chassis is split into a server and a client part. Both parts require configuration file(s). The client connects via transports to other servers and provides these endpoints. A Server exposes endpoints via transports, it can also listen to evens and emit them.
+The chassis is split into a server, client and events part.
+All parts need configuration file(s).
+The client connects via transports to other servers and offers these endpoints.
+A Server exposes endpoints via transports.
+The events provide a pub/sub model like the NodeJS events module.
 
 ### Transport
 
-A transport communicates between a server and a client. It handles encoding/decoding of data and sending/receving. The following transport providers are available:
+A transport communicates between a server and a client.
+It handles encoding/decoding of data and sending/receving.
+The following transport providers are available:
 
 - [gRPC](http://www.grpc.io) (Client,Server)
 - pipe (in-process communication, designed for testing)
 
 ### Endpoint
 
-An endpoint is one function of a service. At the client side an endpoint is an exposed service function of one server. On the server it is one exposed business logic function. Endpoints are connected via transports.
+An endpoint is one function of a service. At the client side an endpoint is an exposed service function of one server.
+On the server it is one exposed business logic function. Endpoints are connected via transports.
 
 ### Events
 
-The chassis provides a similar event API to [Node.js events](https://nodejs.org/api/events.html). An emitted event is broadcasted by a provider to listeners. The provider takes care of packaging the event and distributing it to listeners. The following events providers are available:
+The chassis provides a similar event API to [Node.js events](https://nodejs.org/api/events.html).
+An emitted event is broadcasted by a provider to listeners.
+The provider takes care of packaging the event and distributing it to listeners.
+The following events providers are available:
 
 - [Kafka](https://kafka.apache.org/)
 - Local (in-process events, designed for testing)
 
 ### Configuration
 
-Configuration is handled by [restore-server-config](https://github.com/restorecommerce/server-config) which uses [nconf](https://github.com/indexzero/nconf). The chassis loads the required configuration from files located in the subdirectory 'cfg' of the current working directory. Environment variables overwrite configuration values from files.
+Configuration is handled by [restore-server-config](https://github.com/restorecommerce/server-config) which uses [nconf](https://github.com/indexzero/nconf).
+The chassis loads the required configuration from files located in the subdirectory 'cfg' of the current working directory.
+Environment variables overwrite configuration values from files.
 The configuration file can be loaded from a different location via ``config.load``.
 
 ```js
@@ -60,7 +72,9 @@ config.load(pathToTheParentOfCfg);
 
 ### Logging
 
-Logging is handled by [restore-logger](https://github.com/restorecommerce/logger) which uses [winston](https://github.com/winstonjs/winston). A logger is created with each client and server. The logger can be configured in the configuration file.
+Logging is handled by [restore-logger](https://github.com/restorecommerce/logger) which uses [winston](https://github.com/winstonjs/winston).
+A logger is created with each client and server.
+The logger can be configured in the configuration file.
 A logger is stored as ``Client.logger`` or ``Server.logger``.
 
 Default logging levels are:
@@ -156,7 +170,7 @@ Short example config file.
 }
 ```
 
-Extended example config file
+Extended example configuration file
 
 ```json
 {
@@ -196,7 +210,9 @@ Extended example config file
 
 ### Server
 
-A server can provide service endpoints, listen to events, emit events. Each business logic function is exposed via a transport as an endpoint. Clients connect to these endpoints. When a client calls a server endpoint it traverses from the transport through possible middleware to the business logic function. The business logic processes the request and respond with either a result or an error. The response is transported back to the client.
+A server provides service endpoints. Each business logic function is exposed via a transport as an endpoint. Clients connect to these endpoints.
+When a client calls a server endpoint it traverses from the transport through possible middleware to the business logic function.
+The business logic processes the request and respond with either a result or an error. The response is transported back to the client.
 
 The following code starts a server and provides the service endpoints.
 ```js
@@ -208,7 +224,7 @@ yield server.start();
 
 #### Config
 
-In the following configuration only the endpoint part is configured. Listening and emitting events is not possible. Each configured endpoint specifies which transport to use to provide an endpoint. Every transport, specified in the endpoints section, needs to be listed in the transports with it's configuration.
+Each configured endpoint specifies which transport to use, to provide an endpoint. Every transport, specified in the endpoint's section, needs to be listed in the ``transports`` with it's configuration.
 
 ```json
 {
@@ -236,24 +252,6 @@ In the following configuration only the endpoint part is configured. Listening a
 }
 ```
 
-In the following configuration only the events part of the server is configured. No endpoints are provided by the server. Only listening and emitting events is possible. The event provider is Kafka.
-
-```json
-{
-  "server": {
-    "events": {
-      "provider": {
-        "name": "kafka",
-        "groupId": "notifyd",
-        "clientId": "notifyd",
-        "connectionString": "localhost:9092",
-        "protoRoot": "../../protos/"
-      }
-    }
-  }
-}
-```
-
 #### Service
 
 The business logic is an object with functions which get wrapped and served as endpoints.
@@ -274,7 +272,7 @@ function makeMiddleware() {
 server.middleware.push(makeMiddleware());
 ```
 
-#### Events
+### Events
 
 The following example subscribes to a topic named ``com.example.visits`` and
 listens to events called ``visit``.
@@ -283,8 +281,9 @@ The listener can be a generator function or a normal function.
 ```js
 const topicName = 'com.example.visits';
 const eventName = 'visit';
+const events = new Events('example');
 const listener = function*(message) {};
-const topic = yield server.events.topic(topicName);
+const topic = yield events.topic(topicName);
 yield topic.on(eventName, listener);
 ```
 

@@ -10,7 +10,6 @@ const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
 const config = chassis.config;
-const events = chassis.events;
 const grpc = chassis.grpc;
 const Server = chassis.microservice.Server;
 const Client = chassis.microservice.Client;
@@ -82,8 +81,6 @@ const service = {
 
 describe('microservice.Server', () => {
   let server;
-  const topicName = 'test';
-  let topic;
   it('should be a constructor and have specific prototype functions',
     () => {
       should.exist(Server.constructor);
@@ -100,7 +97,6 @@ describe('microservice.Server', () => {
     it('should throw an error when services config is missing', () => {
       config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
-      cfg.set('server:events', undefined);
       cfg.set('server:services', undefined);
       (() => {
         server = new Server();
@@ -109,7 +105,6 @@ describe('microservice.Server', () => {
     it('should throw an error when transports config is missing', () => {
       config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
-      cfg.set('server:events', undefined);
       cfg.set('server:transports', undefined);
       (() => {
         server = new Server();
@@ -118,62 +113,12 @@ describe('microservice.Server', () => {
     it('should throw an error when configuration does not exist', () => {
       config.load(process.cwd() + '/test', logger);
       const cfg = config.get();
-      cfg.set('server:events', undefined);
       cfg.set('server:services', undefined);
       cfg.set('server:transports', undefined);
       (() => {
         server = new Server();
       }).should.throw('missing server configuration');
     });
-    it('should return a server when provided with config for events', () => {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
-      cfg.set('server:services', undefined);
-      cfg.set('server:transports', undefined);
-      server = new Server();
-      should.exist(server);
-      should.exist(server.logger);
-      should.exist(server.logger.log);
-      const levels = [
-        'silly',
-        'verbose',
-        'debug',
-        'info',
-        'warn',
-        'error'
-      ];
-      _.forEach(levels, (level) => {
-        should.exist(server.logger[level]);
-      });
-      should.exist(server.events);
-      server.events.should.be.an.instanceof(events.Events);
-      should.not.exist(server.transport);
-    });
-    it('should return a server when provided with config for endpoints',
-      () => {
-        config.load(process.cwd() + '/test', logger);
-        const cfg = config.get();
-        cfg.set('server:events', undefined);
-        server = new Server();
-        should.exist(server);
-        should.exist(server.logger);
-        should.exist(server.logger.log);
-        const levels = [
-          'silly',
-          'verbose',
-          'debug',
-          'info',
-          'warn',
-          'error'
-        ];
-        _.forEach(levels, (level) => {
-          should.exist(server.logger[level]);
-        });
-        should.not.exist(server.events);
-        should.exist(server.transport);
-        should.exist(server.transport.grpcTest);
-        server.transport.grpcTest.should.be.an.instanceof(grpc.Server);
-      });
     it('should return a server when provided with correct config', () => {
       config.load(process.cwd() + '/test', logger);
       server = new Server();
@@ -191,21 +136,9 @@ describe('microservice.Server', () => {
       _.forEach(levels, (level) => {
         should.exist(server.logger[level]);
       });
-      should.exist(server.events);
-      server.events.should.be.an.instanceof(events.Events);
       should.exist(server.transport);
       should.exist(server.transport.grpcTest);
       server.transport.grpcTest.should.be.an.instanceof(grpc.Server);
-    });
-    it('should be possible to get an event topic', function* checkGetEventTopic() {
-      should.exist(server.events.topic);
-      should.ok(isGeneratorFn(server.events.topic));
-      topic = yield server.events.topic(topicName);
-      should.exist(topic);
-      should.exist(topic.on);
-      should.exist(topic.emit);
-      should.ok(isGeneratorFn(topic.emit));
-      topic.name.should.equal(topicName);
     });
   });
   describe('calling bind', () => {
@@ -230,16 +163,11 @@ describe('microservice.Server', () => {
   describe('calling start', () => {
     it('should expose the created endpoints via transports', function* checkEndpoints() {
       let serving = false;
-      let listening = false;
       server.on('serving', () => {
         serving = !serving;
       });
-      server.on('listening', () => {
-        listening = !listening;
-      });
       yield server.start();
       serving.should.equal(true);
-      listening.should.equal(true);
 
       const cfg = config.get();
       let grpcConfig = cfg.get('client:test:transports:grpc');

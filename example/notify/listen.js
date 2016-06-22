@@ -2,32 +2,28 @@
 
 const co = require('co');
 const chassis = require('../../');
-const Server = chassis.microservice.Server;
+const Events = chassis.events.Events;
 
 co(function* init() {
-  const serverConfig = {
-    events: {
-      provider: {
-        name: 'kafka',
-        groupId: 'notify-listen',
-        clientId: 'notify-listen',
-        connectionString: 'localhost:9092',
-        protoRoot: '../../protos/',
-      },
-    },
+  const config = {
+    provider: 'kafka',
+    groupId: 'notify-listen',
+    clientId: 'notify-listen',
+    connectionString: 'localhost:9092',
+    protoRoot: '../../protos/',
   };
   // Create a new microservice Server
-  const server = new Server(serverConfig);
+  const events = new Events('kafka', config);
 
   // Subscribe to events which the business logic requires
-  const events = yield server.events.topic('io.restorecommerce.notify');
+  const notificationEvents = yield events.topic('io.restorecommerce.notify');
 
-  yield events.on('notification', function* listen(notification) {
-    server.logger.info('notification', notification);
+  yield notificationEvents.on('notification', function* listen(notification) {
+    events.logger.info('notification', notification);
   });
 
-  // Start server
-  yield server.start();
+  // Start listening to events
+  yield events.start();
 }).catch((err) => {
   /* eslint no-console: ["error", { allow: ["error"] }] */
   console.error('init error', err.stack);

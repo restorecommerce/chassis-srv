@@ -130,6 +130,17 @@
       }
     }
   },
+  "events": {
+    "kafkaTest": {
+      "provider": "kafka",
+      "groupId": "restore-chassis-test-server",
+      "clientId": "restore-chassis-test-server",
+      "connectionString": "localhost:9092"
+    },
+    "localTest": {
+      "provider": "local"
+    }
+  },
   "server": {
     "logger": {
       "console": {
@@ -137,14 +148,6 @@
         "level": "error",
         "colorize": true,
         "prettyPrint": true
-      }
-    },
-    "events": {
-      "provider": {
-        "name": "kafka",
-        "groupId": "restore-chassis-test-server",
-        "clientId": "restore-chassis-test-server",
-        "connectionString": "localhost:9092"
       }
     },
     "services": {

@@ -12,8 +12,6 @@ const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 
 const Events = require('../lib/events').Events;
-const Kafka = require('../lib/events/provider/kafka').Kafka;
-const Local = require('../lib/events/provider/local').Local;
 
 /* global describe it */
 
@@ -30,35 +28,16 @@ describe('events', () => {
         }).catch((err) => {
           should.exist(err);
           err.should.be.Error();
-          err.message.should.equal('missing argument provider');
+          err.message.should.equal('missing argument name');
         });
         should.not.exist(result);
       });
     });
   });
-  const providers = [
-    {
-      name: 'Kafka',
-      provider() {
-        return new Kafka({
-          name: 'kafka',
-          groupId: 'restore-chassis-example-test',
-          clientId: 'restore-chassis-example-test',
-          connectionString: 'localhost:9092',
-        }, logger);
-      }
-    },
-    {
-      name: 'Local',
-      provider() {
-        return new Local();
-      }
-    },
-  ];
-  _.forEach(providers, (providerTest) => {
-    describe(util.format('with %s provider', providerTest.name), () => {
-      const provider = providerTest.provider();
-      const events = new Events(provider);
+  const providers = ['kafkaTest', 'localTest'];
+  _.forEach(providers, (eventsName) => {
+    describe(util.format(`testing config ${eventsName}`), () => {
+      const events = new Events(eventsName, null, logger);
       const topicName = 'test';
       let topic;
       const eventName = 'test-event';
@@ -97,7 +76,7 @@ describe('events', () => {
         };
         this.timeout(8000);
         it('should setup the provider', function* connectToKafka() {
-          yield provider.start();
+          yield events.start();
         });
         it('should allow listening to events', function* listenToEvents() {
           const count = yield topic.listenerCount(eventName);
@@ -141,7 +120,7 @@ describe('events', () => {
         });
         describe('yielding provider.end', () => {
           it('should stop the event provider', function* endProvider() {
-            yield provider.end();
+            yield events.end();
           });
         });
       });

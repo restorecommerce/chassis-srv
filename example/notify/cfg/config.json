@@ -21,16 +21,16 @@
       }
     }
   },
+  "events": {
+    "kafka": {
+      "provider": "kafka",
+      "groupId": "notifyd",
+      "clientId": "notifyd",
+      "connectionString": "localhost:9092",
+      "protoRoot": "../../protos/"
+    }
+  },
   "server": {
-    "events": {
-      "provider": {
-        "name": "kafka",
-        "groupId": "notifyd",
-        "clientId": "notifyd",
-        "connectionString": "localhost:9092",
-        "protoRoot": "../../protos/"
-      }
-    },
     "services": {
       "notifyd": {
         "create": {

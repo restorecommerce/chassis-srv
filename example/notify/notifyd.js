@@ -3,6 +3,7 @@
 const co = require('co');
 const chassis = require('../../');
 const Server = chassis.microservice.Server;
+const Events = chassis.events.Events;
 
 function guid() {
   function s4() {
@@ -75,11 +76,15 @@ co(function* init() {
   // Create a new microservice Server
   const server = new Server();
 
+  // Create events
+  const events = new Events('kafka');
+  yield events.start();
+
   // Subscribe to events which the business logic requires
-  const events = yield server.events.topic('io.restorecommerce.notify');
+  const notificationEvents = yield events.topic('io.restorecommerce.notify');
 
   // Create the business logic
-  const service = new Service(events, server.logger);
+  const service = new Service(notificationEvents, server.logger);
 
   // Bind business logic to server
   yield server.bind('notifyd', service);
