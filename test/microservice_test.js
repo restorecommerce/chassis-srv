@@ -81,18 +81,6 @@ const service = {
 
 describe('microservice.Server', () => {
   let server;
-  it('should be a constructor and have specific prototype functions',
-    () => {
-      should.exist(Server.constructor);
-      should.exist(Server.prototype.bind);
-      should.ok(isGeneratorFn(Server.prototype.bind));
-      should.exist(Server.prototype.start);
-      should.ok(isGeneratorFn(Server.prototype.start));
-      should.exist(Server.prototype.end);
-      should.ok(isGeneratorFn(Server.prototype.end));
-      should.exist(Server.prototype.middleware);
-      Server.prototype.middleware.should.have.iterable();
-    });
   describe('constructing the sever', () => {
     it('should throw an error when services config is missing', () => {
       config.load(process.cwd() + '/test', logger);
@@ -302,14 +290,6 @@ describe('microservice.Server', () => {
 describe('microservice.Client', () => {
   let client;
   let server;
-  it('should be a constructor and have specific prototype functions',
-    () => {
-      should.exist(Client.constructor);
-      should.exist(Client.prototype.connect);
-      should.ok(isGeneratorFn(Client.prototype.connect));
-      should.exist(Client.prototype.middleware);
-      Client.prototype.middleware.should.have.iterable();
-    });
   describe('constructing the client', () => {
     it('should create a client when providing correct configuration',
       () => {
@@ -317,6 +297,8 @@ describe('microservice.Client', () => {
         client = new Client('test');
         should.exist(client);
         should.exist(client.logger);
+        should.exist(client.middleware);
+        client.middleware.should.have.iterable();
       });
     it('should throw an error when providing no configuration', () => {
       config.load(process.cwd() + '/test', logger);
