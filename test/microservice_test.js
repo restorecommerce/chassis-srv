@@ -285,8 +285,17 @@ describe('microservice.Server', () => {
       yield server.end();
     });
   });
+  describe('calling end followed by start', () => {
+    it('should restart the server', function* restart() {
+      try {
+        yield server.start();
+        yield server.end();
+      } catch (error) {
+        should.doesNotThrow(() => { throw error; });
+      }
+    });
+  });
 });
-
 describe('microservice.Client', () => {
   let client;
   let server;
