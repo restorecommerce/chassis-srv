@@ -91,22 +91,35 @@ providers.forEach((providerCfg) => {
             });
           });
           describe('find', () => {
+            const testData = [
+              { id: '/test/sort0', value: 'c', include: true },
+              { id: '/test/sort1', include: false },
+              { id: '/test/sort2', include: false },
+              { id: '/test/sort3', value: 'a', include: true },
+              { id: '/test/sort4', value: 'b', include: true },
+              { id: '/test/sort5', include: false },
+            ];
             context('with sort', () => {
               it('should return documents sorted', function* checkSorting() {
-                const testData = [
-                  { id: '/test/sort0', value: 'c', include: true },
-                  { id: '/test/sort1', include: false },
-                  { id: '/test/sort2', include: false },
-                  { id: '/test/sort3', value: 'a', include: true },
-                  { id: '/test/sort4', value: 'b', include: true },
-                  { id: '/test/sort5', include: false },
-                ];
                 yield db.insert(collection, testData);
                 const result = yield db.find(collection,
                   { include: true },
                   { sort: { value: 1 } }); // sort ascending
                 should.exist(result);
                 result.should.deepEqual([testData[3], testData[4], testData[0]]);
+              });
+            });
+            context('with field limiting', () => {
+              it('should return documents with selected fields', function* checkSorting() {
+                const result = yield db.find(collection,
+                  { include: true },
+                  { fields: { include: 0 } }); // exclude field include
+                should.exist(result);
+                const compareData = _.map([testData[3], testData[4], testData[0]], (e) => {
+                  _.unset(e, 'include');
+                  return e;
+                });
+                _.sortBy(result, 'id').should.deepEqual(_.sortBy(compareData, 'id'));
               });
             });
           });
