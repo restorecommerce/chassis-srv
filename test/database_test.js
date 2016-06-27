@@ -90,6 +90,26 @@ providers.forEach((providerCfg) => {
               result.should.deepEqual([newDoc]);
             });
           });
+          describe('find', () => {
+            context('with sort', () => {
+              it('should return documents sorted', function* checkSorting() {
+                const testData = [
+                  { id: '/test/sort0', value: 'c', include: true },
+                  { id: '/test/sort1', include: false },
+                  { id: '/test/sort2', include: false },
+                  { id: '/test/sort3', value: 'a', include: true },
+                  { id: '/test/sort4', value: 'b', include: true },
+                  { id: '/test/sort5', include: false },
+                ];
+                yield db.insert(collection, testData);
+                const result = yield db.find(collection,
+                  { include: true },
+                  { sort: { value: 1 } }); // sort ascending
+                should.exist(result);
+                result.should.deepEqual([testData[3], testData[4], testData[0]]);
+              });
+            });
+          });
           describe('inserting a document', () => {
             it('should store a document', function* insertDocument() {
               yield db.insert(collection, document);
