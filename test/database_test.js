@@ -76,6 +76,20 @@ providers.forEach((providerCfg) => {
             db = yield database.get(providerCfg.name, logger);
             should.exist(db);
           });
+          describe('upsert', () => {
+            it('should insert a new document if it does not exist', function* checkUpsert() {
+              const newDoc = {
+                id: '/test/testnew',
+                name: 'test',
+              };
+              let result = yield db.upsert(collection, newDoc);
+              should.exist(result);
+              result.should.deepEqual([newDoc]);
+              newDoc.name = 'changed';
+              result = yield db.upsert(collection, newDoc);
+              result.should.deepEqual([newDoc]);
+            });
+          });
           describe('inserting a document', () => {
             it('should store a document', function* insertDocument() {
               yield db.insert(collection, document);
