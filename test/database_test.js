@@ -162,11 +162,13 @@ providers.forEach((providerCfg) => {
                       },
                       {
                         value: {
-                          $gt: 10,
-                        }
-                      }
+                          $not: {
+                            $gt: 10,
+                          },
+                        },
+                      },
                     ],
-                  }
+                  },
                 ],
               });
               should.exist(result);
