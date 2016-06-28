@@ -23,7 +23,7 @@
     "co-assert-timeout": "0.0.5",
     "co-emitter": "^0.2.3",
     "glob": "^7.0.5",
-    "grpc": "^0.14.1",
+    "grpc": "^0.15.0",
     "lodash": "^4.13.1",
     "nedb": "^1.8.0",
     "no-kafka": "^2.5.5",
