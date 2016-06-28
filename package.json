@@ -17,12 +17,12 @@
   ],
   "dependencies": {
     "aqb": "^2.1.0",
-    "arangojs": "^5.0.1",
+    "arangojs": "^5.0.2",
     "bluebird": "^3.4.1",
     "co": "^4.6.0",
     "co-assert-timeout": "0.0.5",
     "co-emitter": "^0.2.3",
-    "glob": "^7.0.4",
+    "glob": "^7.0.5",
     "grpc": "^0.14.1",
     "lodash": "^4.13.1",
     "nedb": "^1.8.0",
@@ -37,7 +37,7 @@
     "co-mocha": "^1.1.2",
     "eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "is-generator": "^1.0.3",
-    "istanbul": "^0.4.3",
+    "istanbul": "^0.4.4",
     "jshint": "^2.9.2",
     "mocha": "^2.5.3",
     "should": "^9.0.2"
