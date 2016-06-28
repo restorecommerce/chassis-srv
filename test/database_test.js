@@ -45,18 +45,19 @@ const providers = [{
     cfg.set('database:arango:autoCreate', false);
     cfg.set('database:arango:database', 'database_does_not_exist');
   }
-}, {
-  name: 'nedb',
-  init: function init(cb) {
-    config.load(process.cwd() + '/test', logger);
-    cb();
-  },
-  loadInvalidConfig: function loadInvalidConfig() {
-    config.load(process.cwd() + '/test', logger);
-    const cfg = config.get();
-    cfg.set('database:nedb:collections', undefined);
-  }
-}];
+},
+  {
+    name: 'nedb',
+    init: function init(cb) {
+      config.load(process.cwd() + '/test', logger);
+      cb();
+    },
+    loadInvalidConfig: function loadInvalidConfig() {
+      config.load(process.cwd() + '/test', logger);
+      const cfg = config.get();
+      cfg.set('database:nedb:collections', undefined);
+    }
+  }];
 providers.forEach((providerCfg) => {
   before((done) => {
     providerCfg.init(done);
@@ -150,28 +151,45 @@ providers.forEach((providerCfg) => {
               result = yield db.find(collection, {
                 $or: [
                   {
-                    id: 'wrong/id'
+                    id: document.id,
                   },
-                  { name: 'test' }
-                ]
+                  {
+                    $and: [
+                      {
+                        name: {
+                          $in: ['test'],
+                        },
+                      },
+                      {
+                        value: {
+                          $gt: 10,
+                        }
+                      }
+                    ],
+                  }
+                ],
               });
+              should.exist(result);
+              result.should.be.length(1);
               result = result[0];
               result.should.deepEqual(document);
 
               result = yield db.find(collection, {
                 id: document.id,
-              }, {
-                limit: 1
-              });
+              },
+                {
+                  limit: 1
+                });
               result = result[0];
               result.should.deepEqual(document);
 
               result = yield db.find(collection, {
                 id: document.id,
-              }, {
-                limit: 1,
-                offset: 1,
-              });
+              },
+                {
+                  limit: 1,
+                  offset: 1,
+                });
               result.should.be.empty();
             });
             it('should be updatable', function* checkUpdate() {
