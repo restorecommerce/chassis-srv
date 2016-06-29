@@ -277,6 +277,36 @@ describe('microservice.Server', () => {
       yield client.end();
     });
   });
+  describe('connecting with multiple clients', () => {
+    it('should be possible', function* checkMultipleClients() {
+      const numClients = 10;
+      const conns = [];
+      const clients = [];
+      for (let i = 0; i < numClients; i++) {
+        const conn = new Client('test');
+        conns.push(conn);
+        const c = yield conn.connect();
+        clients.push(c);
+      }
+      const reqs = [];
+      for (let i = 0; i < numClients; i++) {
+        reqs.push(clients[i].test({
+          value: 'hello',
+        }));
+      }
+      const resps = yield reqs;
+      for (let i = 0; i < resps.length; i++) {
+        const result = resps[i];
+        should.ifError(result.error);
+        should.exist(result.data);
+        should.exist(result.data.result);
+        result.data.result.should.be.equal('welcome');
+      }
+      for (let i = 0; i < numClients; i++) {
+        yield conns[i].end();
+      }
+    });
+  });
   describe('calling end', () => {
     it('should stop the server and no longer provide endpoints', function* endServer(done) {
       server.on('stopped', () => {
