@@ -116,6 +116,10 @@ providers.forEach((providerCfg) => {
                   { include: true },
                   { fields: { include: 0 } }); // exclude field include
                 should.exist(result);
+                const resultKeep = yield db.find(collection,
+                  { include: true },
+                  { fields: { id: 1, value: 1 } }); // exclude field include
+                resultKeep.should.deepEqual(result);
                 const compareData = _.map([testData[3], testData[4], testData[0]], (e) => {
                   _.unset(e, 'include');
                   return e;
