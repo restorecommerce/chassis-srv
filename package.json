@@ -39,7 +39,6 @@
     "eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "is-generator": "^1.0.3",
     "istanbul": "^0.4.4",
-    "jshint": "^2.9.2",
     "mocha": "^2.5.3",
     "should": "^9.0.2"
   },
