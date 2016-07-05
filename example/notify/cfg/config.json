@@ -5,6 +5,7 @@
         "grpc": {
           "service": "io.restorecommerce.notify.Notifyd",
           "timeout": 3000,
+          "protos": ["io/restorecommerce/notify.proto"],
           "protoRoot": "../../protos/"
         }
       },
@@ -27,6 +28,7 @@
       "groupId": "notifyd",
       "clientId": "notifyd",
       "connectionString": "localhost:9092",
+      "protos": ["io/restorecommerce/notify.proto"],
       "protoRoot": "../../protos/"
     }
   },
@@ -48,6 +50,7 @@
         "notifyd": "io.restorecommerce.notify.Notifyd"
       },
       "addr": "localhost:50051",
+      "protos": ["io/restorecommerce/notify.proto"],
       "protoRoot": "../../protos/"
     }]
   }

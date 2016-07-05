@@ -10,6 +10,7 @@ co(function* init() {
     groupId: 'notify-listen',
     clientId: 'notify-listen',
     connectionString: 'localhost:9092',
+    protos: ['io/restorecommerce/notify.proto'],
     protoRoot: '../../protos/',
   };
   // Create a new microservice Server

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package io.restorecommerce.notify;
 
+import "io/restorecommerce/event.proto";
+
 service Notifyd {
   rpc Create (NotificationRequest) returns (Report);
   rpc CreateStream (stream NotificationRequest) returns (stream Report);

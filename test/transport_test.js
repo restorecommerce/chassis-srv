@@ -21,6 +21,8 @@ const providers = [{
       name: 'grpcTest',
       provider: 'grpc',
       service: 'test.Test',
+      protos: ['test/test.proto'],
+      protoRoot: 'protos/',
       addr: 'grpc://localhost:50051',
       timeout: 100,
     },
@@ -30,6 +32,8 @@ const providers = [{
       services: {
         test: 'test.Test',
       },
+      protos: ['test/test.proto'],
+      protoRoot: 'protos/',
       addr: 'localhost:50051'
     },
   },

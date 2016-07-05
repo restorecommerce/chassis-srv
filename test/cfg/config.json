@@ -28,6 +28,8 @@
       "transports": {
         "grpc": {
           "service": "test.Test",
+          "protos": ["test/test.proto"],
+          "protoRoot": "protos/",
           "timeout": 3000
         },
         "pipe": {
@@ -77,6 +79,8 @@
       "transports": {
         "grpc": {
           "service": "test.Stream",
+          "protos": ["test/test.proto"],
+          "protoRoot": "protos/",
           "timeout": 3000
         }
       },
@@ -97,6 +101,8 @@
       "transports": {
         "grpc": {
           "service": "grpc.reflection.v1alpha.ServerReflection",
+          "protos": ["grpc/reflection/v1alpha/reflection.proto"],
+          "protoRoot": "protos/",
           "timeout": 3000
         }
       },
@@ -115,6 +121,8 @@
       "transports": {
         "grpc": {
           "service": "grpc.health.v1.Health",
+          "protos": ["grpc/health/v1/health.proto"],
+          "protoRoot": "protos/",
           "timeout": 3000
         }
       },
@@ -135,7 +143,9 @@
       "provider": "kafka",
       "groupId": "restore-chassis-test-server",
       "clientId": "restore-chassis-test-server",
-      "connectionString": "localhost:9092"
+      "connectionString": "localhost:9092",
+      "protos": ["test/test.proto"],
+      "protoRoot": "protos/"
     },
     "localTest": {
       "provider": "local"
@@ -196,6 +206,8 @@
         "reflection": "grpc.reflection.v1alpha.ServerReflection",
         "health": "grpc.health.v1.Health"
       },
+      "protos": ["test/test.proto", "grpc/reflection/v1alpha/reflection.proto", "google/protobuf/descriptor.proto", "grpc/health/v1/health.proto"],
+      "protoRoot": "protos/",
       "addr": "localhost:50051"
     }, {
       "name": "pipeline",

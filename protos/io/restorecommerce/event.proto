@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package io.restorecommerce.event;
 
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/any.proto";
+
 /**
  * A Kafka message event container.
  */
