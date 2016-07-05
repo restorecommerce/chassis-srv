@@ -7,6 +7,7 @@ module.exports.config = require('./lib/config');
 module.exports.database = require('./lib/database');
 module.exports.database.provider = {
   arango: require('./lib/database/provider/arango'),
+  nedb: require('./lib/database/provider/nedb'),
 };
 
 // RPC
