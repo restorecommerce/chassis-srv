@@ -21,7 +21,7 @@ message Report {
 }
 
 message Notification {
-  option event = "io.restorecommerce.notify.notification";
+  option (io.restorecommerce.event.event) = "io.restorecommerce.notify.notification";
   string id = 1;
   string sender = 2;
   string title = 3;

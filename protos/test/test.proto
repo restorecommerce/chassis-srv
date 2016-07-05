@@ -30,7 +30,7 @@ message TestResponse {
 }
 
 message TestEvent {
-  option event = "test.test-event";
+  option (io.restorecommerce.event.event) = "test.test-event";
   string value = 1;
   int32 count = 2;
 };
