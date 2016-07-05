@@ -11,16 +11,19 @@ module.exports.database.provider = {
 };
 
 // RPC
-module.exports.microservice = require('./lib/microservice');
-module.exports.microservice.endpoint = require('./lib/endpoint');
-module.exports.microservice.loadbalancer = require('./lib/loadbalancer');
-module.exports.microservice.errors = require('./lib/microservice/errors');
-module.exports.microservice.plugins = require('./lib/service');
-module.exports.microservice.transport = {
-  provider: {
-    grpc: require('./lib/transport/provider/grpc'),
-    pipe: require('./lib/transport/provider/pipe'),
-  },
+module.exports.microservice = {
+  Client: require('./lib/microservice/client').Client,
+  Server: require('./lib/microservice/server').Server,
+  endpoint: require('./lib/microservice/endpoint'),
+  loadbalancer: require('./lib/microservice/loadbalancer'),
+  plugins: require('./lib/microservice/plugins'),
+  errors: require('./lib/microservice/errors'),
+  transport: {
+    provider: {
+      grpc: require('./lib/microservice/transport/provider/grpc'),
+      pipe: require('./lib/microservice/transport/provider/pipe'),
+    },
+  }
 };
 
 // Events
