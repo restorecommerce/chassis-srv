@@ -6,7 +6,7 @@ coMocha(mocha);
 
 const should = require('should');
 const isGeneratorFn = require('is-generator').fn;
-const chain = require('../lib/endpoint').chain;
+const chain = require('../').microservice.endpoint.chain;
 
 /* global describe it*/
 

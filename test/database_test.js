@@ -11,8 +11,9 @@ const _ = require('lodash');
 const logger = require('./logger_test.js');
 const Arangojs = require('arangojs');
 
-const config = require('../lib/config');
-const database = require('../lib/database');
+const chassis = require('../');
+const config = chassis.config;
+const database = chassis.database;
 
 /* global describe context it before*/
 

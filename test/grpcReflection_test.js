@@ -8,7 +8,7 @@ const should = require('should');
 const _ = require('lodash');
 
 const chassis = require('../');
-const grpc = chassis.grpc;
+const grpc = chassis.microservice.transport.provider.grpc;
 const Server = chassis.microservice.Server;
 const Client = chassis.microservice.Client;
 

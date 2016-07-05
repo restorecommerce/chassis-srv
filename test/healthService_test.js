@@ -7,7 +7,7 @@ coMocha(mocha);
 const should = require('should');
 
 const chassis = require('../');
-const Health = chassis.service.health.Health;
+const Health = chassis.microservice.plugins.health.Health;
 const Server = chassis.microservice.Server;
 const Client = chassis.microservice.Client;
 

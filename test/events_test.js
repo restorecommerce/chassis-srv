@@ -11,7 +11,7 @@ const _ = require('lodash');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 
-const Events = require('../lib/events').Events;
+const Events = require('../').events.Events;
 
 /* global describe it */
 

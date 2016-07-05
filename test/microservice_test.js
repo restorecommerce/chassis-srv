@@ -10,11 +10,11 @@ const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
 const config = chassis.config;
-const grpc = chassis.grpc;
+const grpc = chassis.microservice.transport.provider.grpc;
 const Server = chassis.microservice.Server;
 const Client = chassis.microservice.Client;
 
-const errors = chassis.errors;
+const errors = chassis.microservice.errors;
 
 /* global describe context it before after*/
 

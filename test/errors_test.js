@@ -7,7 +7,7 @@ coMocha(mocha);
 const should = require('should');
 const _ = require('lodash');
 
-const errors = require('../').errors;
+const errors = require('../').microservice.errors;
 
 /* global describe it */
 

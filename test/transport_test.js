@@ -10,8 +10,8 @@ const co = require('co');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
-const grpc = chassis.grpc;
-const pipe = chassis.transport.provider.pipe;
+const grpc = chassis.microservice.transport.provider.grpc;
+const pipe = chassis.microservice.transport.provider.pipe;
 
 /* global describe it before after*/
 

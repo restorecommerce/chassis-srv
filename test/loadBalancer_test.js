@@ -9,7 +9,7 @@ const util = require('util');
 const co = require('co');
 const logger = require('./logger_test.js');
 const isGeneratorFn = require('is-generator').fn;
-const loadBalancer = require('../lib/loadbalancer');
+const loadBalancer = require('../').microservice.loadbalancer;
 
 /* global describe it */
 
