@@ -5,10 +5,10 @@ In development. The API is not stable.
 ## Features
 
 - Expose your business logic as RPC endpoints
-- Emit and listen to events from other microservices like if you would use NodeJS events
+- Emit and listen to events from other microservices like when you would use NodeJS events
 - Middleware for client and server
-- Includes endpoint discovery, load balancing, retry and timeout
-- Uses ES6
+- Includes endpoint discovery, load balancing, retry and timeout logic
+- Uses ES6 features
 
 ## Install
 
