@@ -95,7 +95,7 @@ Clients connect to servers via transports and provide endpoints. When calling an
 
 Failing endpoints can be retried with the retry mechanism. When providing multiple instances of the endpoint to the publisher, depending on the used load balancer, the retried endpoint is not the same instance. The retry number specifies the amount of additional attempts.
 
-```javascript
+```js
 yield service.endpoint({}, {retry:3}),
 ```
 
@@ -103,7 +103,7 @@ yield service.endpoint({}, {retry:3}),
 
 Endpoints can be called with a timeout. The timeout number is in milliseconds.
 
-```javascript
+```js
 yield service.endpoint({}, {timeout:100}),
 ```
 
@@ -111,7 +111,7 @@ yield service.endpoint({}, {timeout:100}),
 
 Middleware is called before the endpoint. The middleware can call the next middleware until the last middleware calls the endpoint.
 
-```javascript
+```js
 function makeMiddleware() {
   return function*(next) {
     return function*(request, context){
@@ -154,6 +154,8 @@ Short example config file.
       "transports": {
         "grpc": {
           "service": "io.restorecommerce.notify.Notifyd",
+          "protoRoot": "protos/",
+          "protos": ["io/restorecommerce/notify.proto"],
           "timeout": 3000
         }
       },
@@ -179,6 +181,8 @@ Extended example configuration file
       "transports": {
         "grpc": {
           "service": "io.restorecommerce.notify.Notifyd",
+          "protoRoot": "protos/",
+          "protos": ["io/restorecommerce/notify.proto"],
           "timeout": 3000
         }
       },
@@ -215,12 +219,15 @@ When a client calls a server endpoint it traverses from the transport through po
 The business logic processes the request and respond with either a result or an error. The response is transported back to the client.
 
 The following code starts a server and provides the service endpoints.
+
 ```js
 const server = new Server();
 const service = new Service();
 yield server.bind('serviceName', service);
 yield server.start();
 ```
+
+It is possible to bind different service to one server by calling ``yield server.bind(serviceName, service);`` multiple times.
 
 #### Config
 
@@ -246,7 +253,8 @@ Each configured endpoint specifies which transport to use, to provide an endpoin
         "notifyd": "io.restorecommerce.notify.Notifyd"
       },
       "addr": "localhost:50051",
-      "protoRoot": "../../protos/"
+      "protoRoot": "protos/",
+      "protos": ["io/restorecommerce/notify.proto"],
     }]
   }
 }
@@ -261,7 +269,7 @@ What functions are wrapped up is configured in the configuration file.
 
 Middleware is called before the service function. The middleware can call the next middleware until the last middleware calls the service function.
 
-```javascript
+```js
 function makeMiddleware() {
   return function*(next) {
     return function*(call, context){
@@ -289,5 +297,5 @@ yield topic.on(eventName, listener);
 
 To emit an event to the topic call:
 ```js
-yield topic.emit(eventName, { url:'example.com' });
+yield topic.emit(eventName, { url: 'example.com' });
 ```
