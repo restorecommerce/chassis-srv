@@ -44,7 +44,8 @@
   "scripts": {
     "lint": "eslint *.json *.js lib/** test/** example/**",
     "test": "./node_modules/.bin/mocha -R spec test && npm run-script lint",
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test"
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test",
+    "pretest": "sh setupKafka.sh"
   },
   "engines": {
     "node": ">= 6.0.0"
