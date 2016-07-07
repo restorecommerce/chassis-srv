@@ -3,6 +3,7 @@
 const co = require('co');
 const chassis = require('../../');
 const Events = chassis.events.Events;
+const database = chassis.database;
 
 co(function* init() {
   const config = {
@@ -17,6 +18,7 @@ co(function* init() {
   const events = new Events('kafka', config);
   yield events.start();
   const logger = events.logger;
+  const db = yield database.get('ephemeral', logger);
 
   // Subscribe to events which the business logic requires
   const topicName = 'io.restorecommerce.notify';
@@ -27,7 +29,11 @@ co(function* init() {
 
   // Start listening to events
   yield notificationEvents.on('notification', function* listen(notification) {
+    yield db.insert('notifications', notification);
     logger.info('notification', notification);
+
+    const notifications = yield db.find('notifications', {});
+    logger.info(`received ${notifications.length} notifications`);
   });
 }).catch((err) => {
   /* eslint no-console: ["error", { allow: ["error"] }] */

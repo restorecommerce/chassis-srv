@@ -5,7 +5,9 @@
         "grpc": {
           "service": "io.restorecommerce.notify.Notifyd",
           "timeout": 3000,
-          "protos": ["io/restorecommerce/notify.proto"],
+          "protos": [
+            "io/restorecommerce/notify.proto"
+          ],
           "protoRoot": "../../protos/"
         }
       },
@@ -14,11 +16,21 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051"]
+        "instances": [
+          "grpc://localhost:50051"
+        ]
       },
       "endpoints": {
         "create": {},
         "createStream": {}
+      }
+    }
+  },
+  "database": {
+    "ephemeral": {
+      "provider": "nedb",
+      "collections": {
+        "notifications": {}
       }
     }
   },
@@ -28,7 +40,9 @@
       "groupId": "notifyd",
       "clientId": "notifyd",
       "connectionString": "localhost:9092",
-      "protos": ["io/restorecommerce/notify.proto"],
+      "protos": [
+        "io/restorecommerce/notify.proto"
+      ],
       "protoRoot": "../../protos/"
     }
   },
@@ -36,22 +50,30 @@
     "services": {
       "notifyd": {
         "create": {
-          "transport": ["notifydGRPC"]
+          "transport": [
+            "notifydGRPC"
+          ]
         },
         "createStream": {
-          "transport": ["notifydGRPC"]
+          "transport": [
+            "notifydGRPC"
+          ]
         }
       }
     },
-    "transports": [{
-      "name": "notifydGRPC",
-      "provider": "grpc",
-      "services": {
-        "notifyd": "io.restorecommerce.notify.Notifyd"
-      },
-      "addr": "localhost:50051",
-      "protos": ["io/restorecommerce/notify.proto"],
-      "protoRoot": "../../protos/"
-    }]
+    "transports": [
+      {
+        "name": "notifydGRPC",
+        "provider": "grpc",
+        "services": {
+          "notifyd": "io.restorecommerce.notify.Notifyd"
+        },
+        "addr": "localhost:50051",
+        "protos": [
+          "io/restorecommerce/notify.proto"
+        ],
+        "protoRoot": "../../protos/"
+      }
+    ]
   }
 }
