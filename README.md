@@ -299,3 +299,37 @@ To emit an event to the topic call:
 ```js
 yield topic.emit(eventName, { url: 'example.com' });
 ```
+
+### database
+
+Database provider are available for the following databases:
+
+* ArangoDB
+* NeDB
+
+All providers follow the same API which is similar to the NeDB/MongoDB API.
+
+The following code creates a database connection and inserts a new document.
+```js
+const database = require('restore-chassis-srv').database;
+const db = yield database.get('ephemeral');
+const notification = {
+  id: 'unique',
+};
+yield db.insert('notifications', notification);
+```
+The configuration file.
+```json
+{
+  "database": {
+    "ephemeral": {
+      "provider": "nedb",
+      "collections": {
+        "notifications": {}
+      }
+    }
+  }
+}
+```
+
+The main unique identifier is mapped from the field ``id`` to the equivalent unique ID in each database provider.
