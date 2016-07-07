@@ -15,16 +15,20 @@ co(function* init() {
   };
   // Create a new microservice Server
   const events = new Events('kafka', config);
+  yield events.start();
+  const logger = events.logger;
 
   // Subscribe to events which the business logic requires
-  const notificationEvents = yield events.topic('io.restorecommerce.notify');
+  const topicName = 'io.restorecommerce.notify';
+  const notificationEvents = yield events.topic(topicName);
 
-  yield notificationEvents.on('notification', function* listen(notification) {
-    events.logger.info('notification', notification);
-  });
+  const offset = yield notificationEvents.$offset();
+  logger.verbose(`Current offset for topic ${topicName} is ${offset}`);
 
   // Start listening to events
-  yield events.start();
+  yield notificationEvents.on('notification', function* listen(notification) {
+    logger.info('notification', notification);
+  });
 }).catch((err) => {
   /* eslint no-console: ["error", { allow: ["error"] }] */
   console.error('init error', err.stack);
