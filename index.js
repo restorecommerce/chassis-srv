@@ -9,7 +9,7 @@ module.exports.database.provider = {
   nedb: require('./lib/database/provider/nedb'),
 };
 
-module.exports.logger = require('./lib/logger');
+module.exports.Logger = require('./lib/logger');
 
 module.exports.microservice = {
   Client: require('./lib/microservice/client').Client,
