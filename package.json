@@ -38,6 +38,7 @@
     "eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "is-generator": "^1.0.3",
     "istanbul": "^0.4.4",
+    "jsdoc": "^3.4.0",
     "mocha": "^2.5.3",
     "should": "^9.0.2"
   },
@@ -45,9 +46,15 @@
     "lint": "eslint *.json *.js lib/** test/** example/**",
     "test": "./node_modules/.bin/mocha -R spec test && npm run-script lint",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test",
-    "pretest": "bash setupKafka.sh"
+    "pretest": "bash setupKafka.sh",
+    "prepublish": "npm test",
+    "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
   "engines": {
     "node": ">= 6.0.0"
+  },
+  "browser": {
+    "fs": false,
+    "path": false
   }
 }

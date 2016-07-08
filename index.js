@@ -1,19 +1,16 @@
 'use strict';
 
-// Config
 module.exports.config = require('./lib/config');
 
-// Database
 module.exports.database = require('./lib/database');
+
 module.exports.database.provider = {
   arango: require('./lib/database/provider/arango'),
   nedb: require('./lib/database/provider/nedb'),
 };
 
-// Logger
 module.exports.logger = require('./lib/logger');
 
-// RPC
 module.exports.microservice = {
   Client: require('./lib/microservice/client').Client,
   Server: require('./lib/microservice/server').Server,
@@ -29,8 +26,8 @@ module.exports.microservice = {
   }
 };
 
-// Events
 module.exports.events = require('./lib/events');
+
 module.exports.events.provider = {
   kafka: require('./lib/events/provider/kafka'),
   local: require('./lib/events/provider/local'),
