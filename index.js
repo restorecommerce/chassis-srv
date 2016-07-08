@@ -10,6 +10,9 @@ module.exports.database.provider = {
   nedb: require('./lib/database/provider/nedb'),
 };
 
+// Logger
+module.exports.logger = require('./lib/logger');
+
 // RPC
 module.exports.microservice = {
   Client: require('./lib/microservice/client').Client,
