@@ -11,8 +11,9 @@ const util = require('util');
 const _ = require('lodash');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
-
-const Events = require('../').events.Events;
+const chassis = require('../');
+const config = chassis.config;
+const Events = chassis.events.Events;
 
 /* global describe it */
 
@@ -38,6 +39,7 @@ describe('events', () => {
   const providers = ['kafkaTest', 'localTest'];
   _.forEach(providers, (eventsName) => {
     describe(util.format(`testing config ${eventsName}`), () => {
+      config.load(process.cwd() + '/test', logger);
       const events = new Events(eventsName, null, logger);
       const topicName = 'test';
       let topic;
