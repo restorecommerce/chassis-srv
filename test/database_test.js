@@ -98,6 +98,24 @@ function testProvider(providerCfg) {
       result.should.equal(1);
     });
   });
+  describe('truncate', () => {
+    it('should delete all collection', function* checkTruncate() {
+      yield db.truncate();
+      /*
+      const result = yield db.count(collection, {});
+      should.exist(result);
+      result.should.equal(0);
+      */
+    });
+    it('should delete all documents in provided collection', function* checkTruncate() {
+      yield db.truncate(collection);
+      /*
+      const result = yield db.count(collection, {});
+      should.exist(result);
+      result.should.equal(0);
+      */
+    });
+  });
   describe('findByID', () => {
     it('should find documents', function* checkFind() {
       const result = yield db.findByID(collection, document.id);
