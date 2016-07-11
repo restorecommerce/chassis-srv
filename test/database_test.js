@@ -21,7 +21,10 @@ const providers = [
     init: function* init() {
       config.load(process.cwd() + '/test', logger);
       const db = yield database.get(this.name, logger);
-      yield db.$db.truncate();
+      const c = yield db.$db.listCollections();
+      if (!_.isNil(c)) {
+        yield db.$db.truncate();
+      }
       return db;
     }
   },
