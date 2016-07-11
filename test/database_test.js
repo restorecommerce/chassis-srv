@@ -85,6 +85,19 @@ function testProvider(providerCfg) {
       result.should.deepEqual([newDoc]);
     });
   });
+  describe('count', () => {
+    it(`should return the number of documents
+    in the collection with blank filter`, function* checkCount() {
+      const result = yield db.count(collection, {});
+      should.exist(result);
+      result.should.equal(testData.length);
+    });
+    it('should return one for filtering based on id', function* checkCount() {
+      const result = yield db.count(collection, { id: testData[0].id });
+      should.exist(result);
+      result.should.equal(1);
+    });
+  });
   describe('findByID', () => {
     it('should find documents', function* checkFind() {
       const result = yield db.findByID(collection, document.id);
