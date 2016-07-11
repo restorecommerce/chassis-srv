@@ -9,6 +9,8 @@ const should = require('should');
 const _ = require('lodash');
 const logger = require('./logger_test.js');
 
+const Arangojs = require('arangojs');
+
 const chassis = require('../');
 const config = chassis.config;
 const database = chassis.database;
@@ -20,12 +22,23 @@ const providers = [
     name: 'arango',
     init: function* init() {
       config.load(process.cwd() + '/test', logger);
-      const db = yield database.get(this.name, logger);
-      const c = yield db.$db.listCollections();
-      if (!_.isNil(c) && _.size(c) > 0) {
-        yield db.$db.truncate();
-      }
-      return db;
+      const cfg = config.get();
+      const dbHost = cfg.get('database:arango:host');
+      const dbPort = cfg.get('database:arango:port');
+      const dbName = cfg.get('database:arango:database');
+      const db = new Arangojs('http://' + dbHost + ':' + dbPort);
+      yield db.dropDatabase(dbName).then((result) => {
+        if (result.error) {
+          throw result.error;
+        }
+        return result;
+      }).catch((err) => {
+        if (err.message === 'database not found') {
+          return {};
+        }
+        throw err;
+      });
+      return yield database.get(this.name, logger);
     }
   },
   {
