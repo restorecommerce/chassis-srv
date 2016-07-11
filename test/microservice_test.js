@@ -1,5 +1,6 @@
 'use strict';
 
+/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
 coMocha(mocha);
@@ -19,21 +20,21 @@ const errors = chassis.microservice.errors;
 /* global describe context it before after*/
 
 const service = {
-  *test(call, context) {
+  * test(call, context) {
     const request = call.request;
     request.value.should.be.equal('hello');
     return {
       result: 'welcome',
     };
   },
-  *throw(request, context) {
+  * throw(request, context) {
     throw new Error('forced error');
   },
-  *notFound(request, context) {
+  * notFound(request, context) {
     throw new errors.NotFound('test not found');
   },
   notImplemented: null,
-  *biStream(call, context) {
+  * biStream(call, context) {
     let req;
     let stream = true;
     while (stream) {
@@ -52,7 +53,7 @@ const service = {
       yield call.write({ result: 'pong' });
     }
   },
-  *requestStream(call, context) {
+  * requestStream(call, context) {
     let req;
     let stream = true;
     while (stream) {
@@ -67,7 +68,7 @@ const service = {
     }
     return { result: 'pong' };
   },
-  *responseStream(call, context) {
+  * responseStream(call, context) {
     const req = call.request;
     should.exist(req);
     should.exist(req.value);
