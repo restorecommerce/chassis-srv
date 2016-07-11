@@ -22,7 +22,7 @@ const providers = [
       config.load(process.cwd() + '/test', logger);
       const db = yield database.get(this.name, logger);
       const c = yield db.$db.listCollections();
-      if (!_.isNil(c)) {
+      if (!_.isNil(c) && _.size(c) > 0) {
         yield db.$db.truncate();
       }
       return db;
@@ -42,13 +42,6 @@ providers.forEach((providerCfg) => {
 });
 
 function testProvider(providerCfg) {
-  describe('database.get', () => {
-    it('should return a database connection with valid configuration', function* getDB() {
-      config.load(process.cwd() + '/test', logger);
-      const db = yield database.get(providerCfg.name, logger);
-      should.exist(db);
-    });
-  });
   let db;
   const collection = 'test';
   const testData = [
@@ -63,11 +56,12 @@ function testProvider(providerCfg) {
   beforeEach(function* initDB() {
     db = yield providerCfg.init();
     yield db.insert(collection, testData);
+    should.exist(db);
   });
   describe('upsert', () => {
     it('should insert a new document if it does not exist', function* checkUpsert() {
       const newDoc = {
-        id: '/test/testnew',
+        id: '/test/testupsert',
         name: 'test',
       };
       let result = yield db.upsert(collection, newDoc);

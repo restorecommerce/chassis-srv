@@ -27,39 +27,44 @@ describe('binding the Health service', () => {
   });
   describe('provides an endpoint Check', () => {
     describe('when called with an service', () => {
-      it('should return the status', function* checkHealth() {
+      let health;
+      beforeEach(function* init() {
         const client = new Client('health');
-        const health = yield client.connect();
+        health = yield client.connect();
         should.exist(health.check);
-
+      });
+      it('should return SERVING for service health', function* checkHealth() {
         // check health service, should serve
-        let resp = yield health.check({
+        const resp = yield health.check({
           service: 'health',
         });
         should.not.exist(resp.error);
         should.exist(resp.data);
         should.exist(resp.data.status);
         resp.data.status.should.equal('SERVING');
-
+      });
+      it('should return NOT_SERVING for service test', function* checkHealth() {
         // check none bound service, should not serve
-        resp = yield health.check({
+        const resp = yield health.check({
           service: 'test',
         });
         should.not.exist(resp.error);
         should.exist(resp.data);
         should.exist(resp.data.status);
         resp.data.status.should.equal('NOT_SERVING');
-
+      });
+      it('should return error not found for service does_not_exist', function* checkHealth() {
         // check none existing service, should throw error
-        resp = yield health.check({
+        const resp = yield health.check({
           service: 'does_not_exist',
         });
         should.not.exist(resp.data);
         should.exist(resp.error);
         resp.error.message.should.equal('not found');
-
+      });
+      it('should return SERVING for server', function* checkHealth() {
         // check server, should serve
-        resp = yield health.check({
+        const resp = yield health.check({
           service: '',
         });
         should.not.exist(resp.error);
