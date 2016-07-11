@@ -1,0 +1,24 @@
+
+{
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "source": {
+    "include": [ "index.js", "lib" ],
+    "includePattern": ".+\\.js(doc)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "opts": {
+    "package": "package.json",
+    "readme": "README.md",
+    "destination": "docs"
+  },
+  "plugins": [],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "default": {
+      "outputSourceFiles": true
+    }
+  }
+}
