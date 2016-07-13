@@ -220,6 +220,21 @@ function testProvider(providerCfg) {
             offset: 1,
           });
         result.should.be.empty();
+
+        result = yield db.find(collection, {
+          id: {
+            $startswith: '/test',
+          },
+        });
+        result.should.be.length(testData.length);
+
+        result = yield db.find(collection, {
+          id: {
+            $endswith: '0',
+          },
+        });
+        result.should.be.length(1);
+        result[0].should.deepEqual(testData[0]);
       });
     });
   });
