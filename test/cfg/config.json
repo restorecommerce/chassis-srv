@@ -15,6 +15,21 @@
       }
     }
   },
+  "cache": {
+    "one": [
+      {
+        "provider": "memory"
+      }
+    ],
+    "many": [
+      {
+        "provider": "memory"
+      },
+      {
+        "provider": "memory"
+      }
+    ]
+  },
   "client": {
     "test": {
       "logger": {

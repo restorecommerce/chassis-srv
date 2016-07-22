@@ -1,5 +1,7 @@
 'use strict';
 
+module.exports.cache = require('./lib/cache');
+
 module.exports.config = require('./lib/config');
 
 module.exports.database = require('./lib/database');
