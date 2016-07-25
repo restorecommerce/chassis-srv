@@ -23,11 +23,19 @@ describe('cache', () => {
       const c = yield cache.get('one', logger);
       should.exist(c);
       should.exist(c.get);
+
+      yield c.set('test', 'testvalue');
+      const res = yield c.get('test');
+      res.should.equal('testvalue');
     });
     it('should return one multiCaching store with the config for many stores', function* getMany() {
       const c = yield cache.get('many', logger);
       should.exist(c);
       should.exist(c.get);
+
+      yield c.set('test', 'testvalue');
+      const res = yield c.get('test');
+      res.should.equal('testvalue');
     });
   });
 });
