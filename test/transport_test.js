@@ -6,7 +6,6 @@ const coMocha = require('co-mocha');
 coMocha(mocha);
 
 const should = require('should');
-const util = require('util');
 const co = require('co');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
@@ -59,7 +58,7 @@ const providers = [{
 }];
 providers.forEach((provider) => {
   logger.level = 'silly';
-  describe(util.format('transport provider %s', provider.name), () => {
+  describe(`transport provider ${provider.name}`, () => {
     describe('the server', () => {
       const Server = provider.Server;
       let server;

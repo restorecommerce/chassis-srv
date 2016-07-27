@@ -7,7 +7,6 @@ coMocha(mocha);
 
 const should = require('should');
 const co = require('co');
-const util = require('util');
 const _ = require('lodash');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
@@ -38,7 +37,7 @@ describe('events', () => {
   });
   const providers = ['kafkaTest', 'localTest'];
   _.forEach(providers, (eventsName) => {
-    describe(util.format(`testing config ${eventsName}`), () => {
+    describe(`testing config ${eventsName}`, () => {
       config.load(process.cwd() + '/test', logger);
       let events;
       const topicName = 'test';

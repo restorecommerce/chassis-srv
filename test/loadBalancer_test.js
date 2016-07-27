@@ -6,7 +6,6 @@ const coMocha = require('co-mocha');
 coMocha(mocha);
 
 const should = require('should');
-const util = require('util');
 const co = require('co');
 const logger = require('./logger_test.js');
 const isGeneratorFn = require('is-generator').fn;
@@ -87,7 +86,7 @@ const tests = [{
 }];
 
 tests.forEach((test) => {
-  describe(util.format('%s loadBalancer', test.name), () => {
+  describe(`${test.name} loadBalancer`, () => {
     const zeroEndpoints = [];
     const oneEndpoints = [endpoint];
     const endpoints = [endpoint, endpoint, endpoint];
