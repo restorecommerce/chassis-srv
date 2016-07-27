@@ -59,7 +59,6 @@ describe('events', () => {
       describe('yielding subscribe', () => {
         it('should return a topic', function* checkGetTopic() {
           topic = yield events.topic(topicName);
-          topic.someValue = 'from events_test.js';
           should.exist(topic);
           should.exist(topic.on);
           should.exist(topic.emit);
