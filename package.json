@@ -17,17 +17,17 @@
   ],
   "dependencies": {
     "aqb": "^2.1.0",
-    "arangojs": "^5.0.2",
+    "arangojs": "^5.0.3",
     "bluebird": "^3.4.1",
     "cache-manager": "^2.1.2",
     "co": "^4.6.0",
     "co-assert-timeout": "0.0.5",
     "co-emitter": "^0.2.3",
-    "grpc": "^0.15.0",
+    "grpc": "^1.0.0-pre1",
     "is-generator": "^1.0.3",
-    "lodash": "^4.13.1",
+    "lodash": "^4.14.0",
     "nedb": "^1.8.0",
-    "no-kafka": "^2.5.5",
+    "no-kafka": "^2.5.6",
     "protobufjs": "^5.0.1",
     "random-js": "^1.0.8",
     "restore-logger": "git+https://github.com/restorecommerce/logger.git",
@@ -41,7 +41,7 @@
     "istanbul": "^0.4.4",
     "jsdoc": "^3.4.0",
     "mocha": "^2.5.3",
-    "should": "^9.0.2"
+    "should": "^10.0.0"
   },
   "scripts": {
     "lint": "eslint *.json *.js lib/** test/** example/**",
