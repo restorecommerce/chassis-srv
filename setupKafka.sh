@@ -8,7 +8,7 @@ then
 fi
 
 topicsInKafka=$(./kafka_2.11-0.9.0.1/bin/kafka-topics.sh --list --zookeeper 127.0.0.1:2181)
-topics=("test" "io.restorecommerce.notify")
+topics=("test" "test.wait" "io.restorecommerce.notify")
 
 for topic in "${topics[@]}"
 do

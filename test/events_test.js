@@ -15,7 +15,7 @@ const chassis = require('../');
 const config = chassis.config;
 const Events = chassis.events.Events;
 
-/* global describe it */
+/* global describe it before after */
 
 describe('events', () => {
   describe('without a provider', () => {
@@ -40,7 +40,7 @@ describe('events', () => {
   _.forEach(providers, (eventsName) => {
     describe(util.format(`testing config ${eventsName}`), () => {
       config.load(process.cwd() + '/test', logger);
-      const events = new Events(eventsName, null, logger);
+      let events;
       const topicName = 'test';
       let topic;
       const eventName = 'test-event';
@@ -48,6 +48,14 @@ describe('events', () => {
         value: 'test',
         count: 1,
       };
+      before(function* start() {
+        events = new Events(eventsName, null, logger);
+        yield events.start();
+      });
+      after(function* start() {
+        yield events.end();
+        events = null;
+      });
       describe('yielding subscribe', () => {
         it('should return a topic', function* checkGetTopic() {
           topic = yield events.topic(topicName);
@@ -68,7 +76,7 @@ describe('events', () => {
       });
       describe('yielding Provider.start', function startKafka() {
         let callback;
-        const listener = function* listener(message) {
+        const listener = function* listener(message, context) {
           should.exist(message);
           testMessage.value.should.equal(message.value);
           testMessage.count.should.equal(message.count);
@@ -77,10 +85,7 @@ describe('events', () => {
             callback = undefined;
           }
         };
-        this.timeout(8000);
-        it('should setup the provider', function* connectToKafka() {
-          yield events.start();
-        });
+        this.timeout(20000);
         it('should allow listening to events', function* listenToEvents() {
           const count = yield topic.listenerCount(eventName);
           yield topic.on(eventName, listener);
@@ -120,11 +125,6 @@ describe('events', () => {
           } catch (e) {
             done(e);
           }
-        });
-        describe('yielding provider.end', () => {
-          it('should stop the event provider', function* endProvider() {
-            yield events.end();
-          });
         });
       });
     });
