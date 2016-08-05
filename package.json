@@ -40,11 +40,14 @@
     "istanbul": "^0.4.4",
     "jsdoc": "^3.4.0",
     "mocha": "^2.5.3",
+    "nsp": "^2.6.1",
     "should": "^10.0.0"
   },
   "scripts": {
     "lint": "eslint *.json *.js lib/** test/** example/**",
-    "test": "./node_modules/.bin/mocha -R spec test && npm run-script lint",
+    "test": "npm run lint && npm run nsp && npm run mocha",
+    "mocha": "./node_modules/.bin/mocha -R spec test",
+    "nsp": "nsp check --output checkstyle",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- -R nyan test",
     "pretest": "bash setupKafka.sh",
     "prepublish": "npm test",
