@@ -14,7 +14,7 @@ const chassis = require('../');
 const config = chassis.config;
 const Events = chassis.events.Events;
 
-/* global describe it before after */
+/* global describe it before beforeEach after */
 
 describe('events', () => {
   describe('without a provider', () => {
@@ -75,6 +75,7 @@ describe('events', () => {
       });
       describe('yielding Provider.start', function startKafka() {
         let callback;
+        let received = false;
         const listener = function* listener(message, context) {
           should.exist(message);
           testMessage.value.should.equal(message.value);
@@ -82,8 +83,13 @@ describe('events', () => {
           if (callback) {
             callback();
             callback = undefined;
+          } else {
+            received = true;
           }
         };
+        beforeEach(() => {
+          received = false;
+        });
         this.timeout(20000);
         it('should allow listening to events', function* listenToEvents() {
           const count = yield topic.listenerCount(eventName);
@@ -116,14 +122,18 @@ describe('events', () => {
           countAfter = yield topic.listenerCount(eventName);
           countAfter.should.equal(count);
         });
-        it('should allow emitting', function* sendEvents(done) {
+        it('should allow emitting', function* sendEvents() {
           yield topic.on(eventName, listener);
-          callback = done;
-          try {
-            yield topic.emit(eventName, testMessage);
-          } catch (e) {
-            done(e);
-          }
+          yield topic.emit(eventName, testMessage);
+          yield (() => {
+            return (cb) => {
+              if (received) {
+                cb();
+              } else {
+                callback = cb;
+              }
+            };
+          })();
         });
       });
     });

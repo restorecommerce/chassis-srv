@@ -132,21 +132,31 @@ describe('microservice.Server', () => {
   });
   describe('calling bind', () => {
     it('should wrap a service and create endpoints for each object function',
-      function* bindService(done) {
+      function* bindService() {
         const boundServices = 2;
+        let done;
+        let called = false;
         let currentBoundServices = 0;
         server.on('bound', () => {
           currentBoundServices++;
           if (currentBoundServices === boundServices) {
-            done();
+            called = true;
+            if (done) {
+              done();
+            }
           }
         });
-        try {
-          yield server.bind('test', service);
-          yield server.bind('stream', service);
-        } catch (err) {
-          done(err);
-        }
+        yield server.bind('test', service);
+        yield server.bind('stream', service);
+        yield (() => {
+          return (cb) => {
+            if (called) {
+              cb();
+            } else {
+              done = cb;
+            }
+          };
+        })();
       });
   });
   describe('calling start', () => {
@@ -174,9 +184,10 @@ describe('microservice.Server', () => {
       const testF = yield client.makeEndpoint('test', instance);
       result = yield testF({
         value: 'hello',
-      }, {
-        test: true,
-      });
+      },
+        {
+          test: true,
+        });
       should.ifError(result.error);
       should.exist(result.data);
       should.exist(result.data.result);
@@ -188,9 +199,10 @@ describe('microservice.Server', () => {
       const throwF = yield client.makeEndpoint('throw', instance);
       result = yield throwF({
         value: 'hello',
-      }, {
-        test: true,
-      });
+      },
+        {
+          test: true,
+        });
       should.exist(result.error);
       result.error.should.be.Error();
       result.error.message.should.equal('internal');
@@ -203,9 +215,10 @@ describe('microservice.Server', () => {
       const notFound = yield client.makeEndpoint('notFound', instance);
       result = yield notFound({
         value: 'hello',
-      }, {
-        test: true,
-      });
+      },
+        {
+          test: true,
+        });
       should.exist(result.error);
       result.error.should.be.Error();
       result.error.message.should.equal('not found');
@@ -219,9 +232,10 @@ describe('microservice.Server', () => {
         instance);
       result = yield notImplementedF({
         value: 'hello',
-      }, {
-        test: true,
-      });
+      },
+        {
+          test: true,
+        });
       should.exist(result.error);
       result.error.should.be.Error();
       result.error.message.should.equal('unimplemented');
@@ -309,11 +323,25 @@ describe('microservice.Server', () => {
     });
   });
   describe('calling end', () => {
-    it('should stop the server and no longer provide endpoints', function* endServer(done) {
+    it('should stop the server and no longer provide endpoints', function* endServer() {
+      let called;
+      let done;
       server.on('stopped', () => {
-        done();
+        called = true;
+        if (done) {
+          done();
+        }
       });
       yield server.end();
+      yield (() => {
+        return cb => {
+          if (called) {
+            cb();
+          } else {
+            done = cb;
+          }
+        };
+      })();
     });
   });
 });
@@ -399,17 +427,18 @@ describe('microservice.Client', () => {
         // test with timeout and retry
         result = yield testService.test({
           value: 'hello',
-        }, {
-          timeout: 500,
-          retry: 2,
-        });
+        },
+          {
+            timeout: 500,
+            retry: 2,
+          });
         should.exist(result);
         should.not.exist(result.error);
         should.exist(result.data);
         should.exist(result.data.result);
         result.data.result.should.equal('welcome');
 
-         // 'notFound' endpoint
+        // 'notFound' endpoint
         result = yield testService.notFound();
         should.exist(result.error);
         result.error.should.be.Error();
@@ -440,9 +469,10 @@ describe('microservice.Client', () => {
           // test
           const result = yield testService.test({
             value: 'hello',
-          }, {
-            timeout: 100,
-          });
+          },
+            {
+              timeout: 100,
+            });
           should.exist(result);
           should.exist(result.error);
           if (_.isArray(result.error)) {
@@ -458,11 +488,25 @@ describe('microservice.Client', () => {
         });
     });
     describe('end', () => {
-      it('should disconnect from all endpoints', function* disconn(done) {
+      it('should disconnect from all endpoints', function* disconn() {
+        let called;
+        let done;
         client.on('disconnected', () => {
-          done();
+          called = true;
+          if (done) {
+            done();
+          }
         });
         yield client.end();
+        yield (() => {
+          return cb => {
+            if (called) {
+              cb();
+            } else {
+              done = cb;
+            }
+          };
+        })();
       });
     });
   });
