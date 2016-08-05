@@ -21,7 +21,6 @@
     "bluebird": "^3.4.1",
     "cache-manager": "^2.1.2",
     "co": "^4.6.0",
-    "co-assert-timeout": "0.0.5",
     "co-emitter": "^0.2.3",
     "grpc": "^1.0.0-pre1",
     "is-generator": "^1.0.3",
