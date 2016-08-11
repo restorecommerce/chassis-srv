@@ -347,7 +347,7 @@ describe('microservice.Client', () => {
       cfg.set('client:test', null);
       (() => {
         client = new Client('test');
-      }).should.throw('no client:test config');
+      }).should.throw('client:test config does not exist');
     });
     it('should throw an error when providing with invalid configuration',
       () => {
