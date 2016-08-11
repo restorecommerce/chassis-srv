@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "co-mocha": "^1.1.3",
+    "eslint": "^3.2.2",
     "eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "is-generator": "^1.0.3",
     "istanbul": "^0.4.4",
