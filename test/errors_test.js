@@ -19,6 +19,8 @@ describe('error', () => {
         const error = new Error();
         should.exist(error);
         error.should.be.Error();
+        error.name.should.equal(name);
+        should.exist(error.stack);
       });
     });
   });
