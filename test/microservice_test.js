@@ -7,6 +7,8 @@ coMocha(mocha);
 
 const should = require('should');
 const _ = require('lodash');
+const co = require('co');
+const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
@@ -134,29 +136,19 @@ describe('microservice.Server', () => {
     it('should wrap a service and create endpoints for each object function',
       function* bindService() {
         const boundServices = 2;
-        let done;
-        let called = false;
+        const mutex = new sync.Mutex();
         let currentBoundServices = 0;
         server.on('bound', () => {
           currentBoundServices++;
           if (currentBoundServices === boundServices) {
-            called = true;
-            if (done) {
-              done();
-            }
+            mutex.unlock();
           }
         });
-        yield server.bind('test', service);
-        yield server.bind('stream', service);
-        yield (() => {
-          return (cb) => {
-            if (called) {
-              cb();
-            } else {
-              done = cb;
-            }
-          };
-        })();
+        co(function* bind() {
+          yield server.bind('test', service);
+          yield server.bind('stream', service);
+        });
+        yield mutex.lock();
       });
   });
   describe('calling start', () => {
@@ -324,24 +316,14 @@ describe('microservice.Server', () => {
   });
   describe('calling end', () => {
     it('should stop the server and no longer provide endpoints', function* endServer() {
-      let called;
-      let done;
+      const mutex = new sync.Mutex();
       server.on('stopped', () => {
-        called = true;
-        if (done) {
-          done();
-        }
+        mutex.unlock();
       });
-      yield server.end();
-      yield (() => {
-        return cb => {
-          if (called) {
-            cb();
-          } else {
-            done = cb;
-          }
-        };
-      })();
+      co(function* end() {
+        yield server.end();
+      });
+      yield mutex.lock();
     });
   });
 });
@@ -489,24 +471,14 @@ describe('microservice.Client', () => {
     });
     describe('end', () => {
       it('should disconnect from all endpoints', function* disconn() {
-        let called;
-        let done;
+        const mutex = new sync.Mutex();
         client.on('disconnected', () => {
-          called = true;
-          if (done) {
-            done();
-          }
+          mutex.unlock();
         });
-        yield client.end();
-        yield (() => {
-          return cb => {
-            if (called) {
-              cb();
-            } else {
-              done = cb;
-            }
-          };
-        })();
+        co(function* end() {
+          yield client.end();
+        });
+        yield mutex.lock();
       });
     });
   });

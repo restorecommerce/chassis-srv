@@ -25,6 +25,7 @@
     "cache-manager": "^2.1.2",
     "co": "^4.6.0",
     "co-emitter": "^0.2.3",
+    "gostd": "github:restorecommerce/gostd",
     "grpc": "^0.15.0",
     "is-generator": "^1.0.3",
     "lodash": "^4.14.1",

@@ -8,13 +8,14 @@ coMocha(mocha);
 const should = require('should');
 const co = require('co');
 const _ = require('lodash');
+const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
 const config = chassis.config;
 const Events = chassis.events.Events;
 
-/* global describe it before beforeEach after */
+/* global describe it before after */
 
 describe('events', () => {
   describe('without a provider', () => {
@@ -74,36 +75,29 @@ describe('events', () => {
         });
       });
       describe('yielding Provider.start', function startKafka() {
-        let callback;
-        let received = false;
-        const listener = function* listener(message, context) {
-          should.exist(message);
-          testMessage.value.should.equal(message.value);
-          testMessage.count.should.equal(message.count);
-          if (callback) {
-            callback();
-            callback = undefined;
-          } else {
-            received = true;
-          }
-        };
-        beforeEach(() => {
-          received = false;
-        });
-        this.timeout(20000);
+        this.timeout(5000);
         it('should allow listening to events', function* listenToEvents() {
+          const listener = function* listener() {
+            // void listener
+          };
           const count = yield topic.listenerCount(eventName);
           yield topic.on(eventName, listener);
           const countAfter = yield topic.listenerCount(eventName);
           countAfter.should.equal(count + 1);
         });
         it('should allow removing all listeners', function* removeAllListeners() {
+          const listener = function* listener() {
+            // void listener
+          };
           yield topic.on(eventName, listener);
           yield topic.removeAllListeners(eventName);
           const count = yield topic.listenerCount(eventName);
           count.should.equal(0);
         });
         it('should allow removing a listener', function* removeListener() {
+          const listener = function* listener() {
+            // void listener
+          };
           const count = yield topic.listenerCount(eventName);
           yield topic.on(eventName, listener);
           yield topic.removeListener(eventName, listener);
@@ -111,6 +105,9 @@ describe('events', () => {
           countAfter.should.equal(count);
         });
         it('should allow counting listeners', function* countListeners() {
+          const listener = function* listener() {
+            // void listener
+          };
           const count = yield topic.listenerCount(eventName);
           should.exist(count);
           const hasListeners = yield topic.hasListeners(eventName);
@@ -123,17 +120,20 @@ describe('events', () => {
           countAfter.should.equal(count);
         });
         it('should allow emitting', function* sendEvents() {
+          const mutex = new sync.Mutex();
+          const listener = function* listener(message, context) {
+            should.exist(message);
+            testMessage.value.should.equal(message.value);
+            testMessage.count.should.equal(message.count);
+            mutex.unlock();
+          };
           yield topic.on(eventName, listener);
-          yield topic.emit(eventName, testMessage);
-          yield (() => {
-            return (cb) => {
-              if (received) {
-                cb();
-              } else {
-                callback = cb;
-              }
-            };
-          })();
+          setImmediate(() => {
+            co(function* emit() {
+              yield topic.emit(eventName, testMessage);
+            });
+          });
+          yield mutex.lock();
         });
       });
     });
