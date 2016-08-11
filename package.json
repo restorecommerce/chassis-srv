@@ -55,7 +55,7 @@
     "mocha": "./node_modules/.bin/mocha -R spec test",
     "nsp": "nsp check --output checkstyle",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "pretest": "bash setupKafka.sh",
+    "pretest": "bash ensureKafkaTopics.bash test test.wait io.restorecommerce.notify",
     "prepublish": "npm test",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },

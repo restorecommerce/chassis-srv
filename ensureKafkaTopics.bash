@@ -1,5 +1,3 @@
-echo "setting up Kafka for chassis-srv"
-
 file="kafka_2.11-0.9.0.1.tgz"
 if ! [ -f "$file" ]
 then
@@ -8,9 +6,8 @@ then
 fi
 
 topicsInKafka=$(./kafka_2.11-0.9.0.1/bin/kafka-topics.sh --list --zookeeper 127.0.0.1:2181)
-topics=("test" "test.wait" "io.restorecommerce.notify")
 
-for topic in "${topics[@]}"
+for topic in "$@"
 do
   :
   if echo $topicsInKafka | grep -q $topic
