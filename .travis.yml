@@ -25,4 +25,6 @@ before_install:
   - docker logs chassis_kafka
 scripts:
   - 'npm test'
-after_success: npm run coveralls
+after_success:
+  - sleep 30
+  - npm run coveralls
