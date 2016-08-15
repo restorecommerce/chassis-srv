@@ -16,7 +16,7 @@ To install the chassis just run ``npm install``.
 
 ## Examples
 
-Code examples can be found in directory example.
+Code examples are in the example directory.
 The examples require a running Kafka instance.
 Commands to run the examples:
 ```
@@ -46,12 +46,12 @@ The following transport providers are available:
 ### Endpoint
 
 An endpoint is one function of a service. At the client side an endpoint is an exposed service function of one server.
-On the server it is one exposed business logic function. Endpoints are connected via transports.
+On the server it is one exposed business logic function. Endpoints connect to each other via transports.
 
 ### Events
 
 The chassis provides a similar event API to [Node.js events](https://nodejs.org/api/events.html).
-An emitted event is broadcasted by a provider to listeners.
+A provider broadcasts emitted events to listeners.
 The provider takes care of packaging the event and distributing it to listeners.
 The following events providers are available:
 
@@ -60,10 +60,10 @@ The following events providers are available:
 
 ### Configuration
 
-Configuration is handled by [restore-server-config](https://github.com/restorecommerce/server-config) which uses [nconf](https://github.com/indexzero/nconf).
+[restore-server-config](https://github.com/restorecommerce/server-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
 The chassis loads the required configuration from files located in the subdirectory 'cfg' of the current working directory.
 Environment variables overwrite configuration values from files.
-The configuration file can be loaded from a different location via ``config.load``.
+``config.load`` loads the configuration file from a different location.
 
 ```js
 const config = require('restore-chassis-srv').config;
@@ -72,10 +72,10 @@ config.load(pathToTheParentOfCfg);
 
 ### Logging
 
-Logging is handled by [restore-logger](https://github.com/restorecommerce/logger) which uses [winston](https://github.com/winstonjs/winston).
-A logger is created with each client and server.
-The logger can be configured in the configuration file.
-A logger is stored as ``Client.logger`` or ``Server.logger``.
+[restore-logger](https://github.com/restorecommerce/logger) provides logging which uses [winston](https://github.com/winstonjs/winston).
+Clients and server provide the logger.
+The configuration file contains logger settings.
+The logger is available from ``Client.logger`` or ``Server.logger``.
 
 Default logging levels are:
 - silly
@@ -93,7 +93,7 @@ Clients connect to servers via transports and provide endpoints. When calling an
 
 #### Retry
 
-Failing endpoints can be retried with the retry mechanism. When providing multiple instances of the endpoint to the publisher, depending on the used load balancer, the retried endpoint is not the same instance. The retry number specifies the amount of additional attempts.
+Failing endpoints retry calling with the retry mechanism. When providing multiple instances of the endpoint to the publisher, depending on the used load balancer, the retried endpoint is not the same instance. The retry number specifies the amount of additional attempts.
 
 ```js
 yield service.endpoint({}, {retry:3}),
@@ -101,7 +101,7 @@ yield service.endpoint({}, {retry:3}),
 
 #### Timeout
 
-Endpoints can be called with a timeout. The timeout number is in milliseconds.
+It is possible to add a timeout to an endpoint call. The timeout number is in milliseconds.
 
 ```js
 yield service.endpoint({}, {timeout:100}),
@@ -109,7 +109,7 @@ yield service.endpoint({}, {timeout:100}),
 
 #### Middleware
 
-Middleware is called before the endpoint. The middleware can call the next middleware until the last middleware calls the endpoint.
+The call traverses middleware before calling the endpoint. The middleware can call the next middleware until the last middleware calls the endpoint.
 
 ```js
 function makeMiddleware() {
@@ -143,7 +143,9 @@ LoadBalancers:
 
 The client requires a configuration file which specifies to which services to connect, what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
 
-By default the client uses the roundRobin loadbalancer. A different default loadbalancer can be set by adding a config value config.loadbalancer. Providing a client.publisher config value, sets a default publisher for all endpoints. Each endpoint can overwrite the default loadbalancer and publisher.
+By default the client uses the roundRobin loadbalancer.
+Setting the config value config.loadbalancer enables a different default loadbalancers.
+Providing a client.publisher config value, sets a default publisher for all endpoints. Each endpoint can overwrite the default loadbalancer and publisher.
 
 Short example config file.
 
@@ -214,9 +216,9 @@ Extended example configuration file
 
 ### Server
 
-A server provides service endpoints. Each business logic function is exposed via a transport as an endpoint. Clients connect to these endpoints.
+A server provides service endpoints. Endpoints expose each business logic function via a transports. Clients connect to these endpoints.
 When a client calls a server endpoint it traverses from the transport through possible middleware to the business logic function.
-The business logic processes the request and respond with either a result or an error. The response is transported back to the client.
+The business logic processes the request and respond with either a result or an error. The transport transports the response back to the client.
 
 The following code starts a server and provides the service endpoints.
 
@@ -231,7 +233,8 @@ It is possible to bind different service to one server by calling ``yield server
 
 #### Config
 
-Each configured endpoint specifies which transport to use, to provide an endpoint. Every transport, specified in the endpoint's section, needs to be listed in the ``transports`` with it's configuration.
+Each configured endpoint specifies which transport to use, to provide an endpoint.
+Configuration for specified endpoints goes into the ``transports`` section.
 
 ```json
 {
@@ -263,11 +266,12 @@ Each configured endpoint specifies which transport to use, to provide an endpoin
 #### Service
 
 The business logic is an object with functions which get wrapped and served as endpoints.
-What functions are wrapped up is configured in the configuration file.
+Functions get wrapped up based on the configuration file.
 
 #### Middleware
 
-Middleware is called before the service function. The middleware can call the next middleware until the last middleware calls the service function.
+The request traverses the middleware before reaching the service function.
+The middleware can call the next middleware until the last middleware calls the service function.
 
 ```js
 function makeMiddleware() {
@@ -285,7 +289,7 @@ server.middleware.push(makeMiddleware());
 The following example subscribes to a topic named ``com.example.visits`` and
 listens to events called ``visit``.
 On an event the ``listener`` is called with the event message.
-The listener can be a generator function or a normal function.
+The listener is either a generator function or a normal function.
 ```js
 const topicName = 'com.example.visits';
 const eventName = 'visit';
@@ -332,4 +336,5 @@ The configuration file.
 }
 ```
 
-The main unique identifier is mapped from the field ``id`` to the equivalent unique ID in each database provider.
+The field ``id`` is the main unique identifier.
+Conversion happens between the main unique identifier and the equivalent unique ID in each database provider.
