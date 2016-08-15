@@ -16,8 +16,8 @@ const Events = chassis.events.Events;
 describe('Kafka events provider', () => {
   let events;
   before(function* setupProvider() {
-    config.load(process.cwd() + '/test', logger);
-    const cfg = chassis.config.get();
+    yield config.load(process.cwd() + '/test', logger);
+    const cfg = yield chassis.config.get();
     events = new Events(cfg.get('events:kafkaTest'), logger);
     yield events.start();
   });

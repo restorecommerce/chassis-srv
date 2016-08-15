@@ -19,8 +19,8 @@ const Client = chassis.microservice.Client;
 describe('binding the Health service', () => {
   let server;
   chassis.config.load(process.cwd() + '/test', logger);
-  const cfg = chassis.config.get();
   beforeEach(function* start() {
+    const cfg = yield chassis.config.get();
     server = new Server(cfg.get('server'));
     const healthSrv = new Health(server, server.$config);
     yield server.bind('health', healthSrv);
@@ -33,6 +33,7 @@ describe('binding the Health service', () => {
     describe('when called with an service', () => {
       let health;
       beforeEach(function* init() {
+        const cfg = yield chassis.config.get();
         const client = new Client(cfg.get('client:health'));
         health = yield client.connect();
         should.exist(health.check);

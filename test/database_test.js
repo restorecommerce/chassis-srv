@@ -21,8 +21,8 @@ const providers = [
   {
     name: 'arango',
     init: function* init() {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
+      yield config.load(process.cwd() + '/test', logger);
+      const cfg = yield config.get();
       const dbHost = cfg.get('database:arango:host');
       const dbPort = cfg.get('database:arango:port');
       const dbName = cfg.get('database:arango:database');
@@ -44,8 +44,8 @@ const providers = [
   {
     name: 'nedb',
     init: function* init() {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
+      yield config.load(process.cwd() + '/test', logger);
+      const cfg = yield config.get();
       return yield database.get(cfg.get('database:nedb'), logger);
     }
   }];

@@ -85,34 +85,36 @@ const service = {
 describe('microservice.Server', () => {
   let server;
   describe('constructing the sever', () => {
-    it('should throw an error when services config is missing', () => {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
-      cfg.set('server:services', undefined);
-      (() => {
-        server = new Server(cfg.get('server'));
-      }).should.throw('missing services configuration');
-    });
-    it('should throw an error when transports config is missing', () => {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
-      cfg.set('server:transports', undefined);
-      (() => {
-        server = new Server(cfg.get('server'));
-      }).should.throw('missing transports configuration');
-    });
-    it('should throw an error when configuration does not exist', () => {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
+    it('should throw an error when services config is missing',
+      function* throwErrorOnMissingConfig() {
+        yield config.load(process.cwd() + '/test', logger);
+        const cfg = yield config.get();
+        cfg.set('server:services', undefined);
+        (() => {
+          server = new Server(cfg.get('server'));
+        }).should.throw('missing services configuration');
+      });
+    it('should throw an error when transports config is missing',
+      function* throwErrorOnMissingTransportConfig() {
+        yield config.load(process.cwd() + '/test', logger);
+        const cfg = yield config.get();
+        cfg.set('server:transports', undefined);
+        (() => {
+          server = new Server(cfg.get('server'));
+        }).should.throw('missing transports configuration');
+      });
+    it('should throw an error when configuration does not exist', function* throwNoConfig() {
+      yield config.load(process.cwd() + '/test', logger);
+      const cfg = yield config.get();
       cfg.set('server:services', undefined);
       cfg.set('server:transports', undefined);
       (() => {
         server = new Server(cfg.get('server'));
       }).should.throw('missing server configuration');
     });
-    it('should return a server when provided with correct config', () => {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
+    it('should return a server when provided with correct config', function* correctConfig() {
+      yield config.load(process.cwd() + '/test', logger);
+      const cfg = yield config.get();
       server = new Server(cfg.get('server'));
       should.exist(server);
       should.exist(server.logger);
@@ -162,7 +164,7 @@ describe('microservice.Server', () => {
       yield server.start();
       serving.should.equal(true);
 
-      const cfg = config.get();
+      const cfg = yield config.get();
       let grpcConfig = cfg.get('client:test:transports:grpc');
       should.exist(grpcConfig);
       should.exist(grpcConfig.service);
@@ -291,7 +293,7 @@ describe('microservice.Server', () => {
       const numClients = 10;
       const conns = [];
       const clients = [];
-      const cfg = chassis.config.get();
+      const cfg = yield chassis.config.get();
       for (let i = 0; i < numClients; i++) {
         const conn = new Client(cfg.get('client:test'));
         conns.push(conn);
@@ -337,34 +339,34 @@ describe('microservice.Client', () => {
   let server;
   describe('constructing the client', () => {
     it('should create a client when providing correct configuration',
-      () => {
-        config.load(process.cwd() + '/test', logger);
-        const cfg = chassis.config.get();
+      function* correctConfig() {
+        yield config.load(process.cwd() + '/test', logger);
+        const cfg = yield chassis.config.get();
         client = new Client(cfg.get('client:test'));
         should.exist(client);
         should.exist(client.logger);
         should.exist(client.middleware);
         client.middleware.should.have.iterable();
       });
-    it('should throw an error when providing no configuration', () => {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = chassis.config.get();
+    it('should throw an error when providing no configuration', function* errorOnNoConfig() {
+      yield config.load(process.cwd() + '/test', logger);
+      const cfg = yield chassis.config.get();
       cfg.set('client:test', null);
       (() => {
         client = new Client();
       }).should.throw('missing config argument');
     });
     it('should throw an error when providing with invalid configuration',
-      () => {
-        config.load(process.cwd() + '/test', logger);
-        let cfg = config.get();
+      function* errorInvalidConfig() {
+        yield config.load(process.cwd() + '/test', logger);
+        let cfg = yield config.get();
         cfg.set('client:test:endpoints', null);
         (() => {
           client = new Client(cfg.get('client:test'));
         }).should.throw('no endpoints configured');
 
-        config.load(process.cwd() + '/test', logger);
-        cfg = config.get();
+        yield config.load(process.cwd() + '/test', logger);
+        cfg = yield config.get();
         cfg.set('client:test:transports', null);
         (() => {
           client = new Client(cfg.get('client:test'));
@@ -373,8 +375,8 @@ describe('microservice.Client', () => {
   });
   context('with running server', () => {
     before(function* initServer() {
-      config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
+      yield config.load(process.cwd() + '/test', logger);
+      const cfg = yield config.get();
       server = new Server(cfg.get('server'));
       yield server.bind('test', service);
       yield server.start();

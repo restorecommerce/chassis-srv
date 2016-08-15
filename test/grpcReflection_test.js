@@ -19,9 +19,9 @@ const Client = chassis.microservice.Client;
 
 describe('binding the grpc.ServerReflection service', () => {
   let server;
-  chassis.config.load(process.cwd() + '/test', logger);
-  const cfg = chassis.config.get();
   beforeEach(function* start() {
+    yield chassis.config.load(process.cwd() + '/test', logger);
+    const cfg = yield chassis.config.get();
     server = new Server(cfg.get('server'));
     const transportName = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
     const transport = server.transport[transportName];
@@ -33,6 +33,7 @@ describe('binding the grpc.ServerReflection service', () => {
     yield server.end();
   });
   it('should provide an endpoint ServerReflectionInfo', function* checkEndpoint() {
+    const cfg = yield chassis.config.get();
     const client = new Client(cfg.get('client:reflection'));
     const reflectionClient = yield client.connect();
     const reflection = yield reflectionClient.serverReflectionInfo();
@@ -43,6 +44,7 @@ describe('binding the grpc.ServerReflection service', () => {
     let client;
     let serverReflectionInfo;
     beforeEach(function* connect() {
+      const cfg = yield chassis.config.get();
       client = new Client(cfg.get('client:reflection'));
       const reflection = yield client.connect();
       serverReflectionInfo = yield reflection.serverReflectionInfo();
@@ -114,6 +116,7 @@ describe('binding the grpc.ServerReflection service', () => {
         should.exist(resp);
         should.exist(resp.listServicesResponse);
         should.exist(resp.listServicesResponse.service);
+        const cfg = yield chassis.config.get();
         const services = cfg.get('server:services');
         resp.listServicesResponse.service.should.be.length(_.size(services));
       });
