@@ -38,14 +38,15 @@ const providers = [
         }
         throw err;
       });
-      return yield database.get(this.name, logger);
+      return yield database.get(cfg.get('database:arango'), logger);
     }
   },
   {
     name: 'nedb',
     init: function* init() {
       config.load(process.cwd() + '/test', logger);
-      return yield database.get(this.name, logger);
+      const cfg = config.get();
+      return yield database.get(cfg.get('database:nedb'), logger);
     }
   }];
 providers.forEach((providerCfg) => {

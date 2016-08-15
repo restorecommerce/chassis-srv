@@ -17,7 +17,8 @@ describe('Kafka events provider', () => {
   let events;
   before(function* setupProvider() {
     config.load(process.cwd() + '/test', logger);
-    events = new Events('kafkaTest');
+    const cfg = chassis.config.get();
+    events = new Events(cfg.get('events:kafkaTest'), logger);
     yield events.start();
   });
   after(function* stopProvider() {

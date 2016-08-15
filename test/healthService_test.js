@@ -7,6 +7,8 @@ coMocha(mocha);
 
 const should = require('should');
 
+const logger = require('./logger_test.js');
+
 const chassis = require('../');
 const Health = chassis.microservice.plugins.health.Health;
 const Server = chassis.microservice.Server;
@@ -16,8 +18,10 @@ const Client = chassis.microservice.Client;
 
 describe('binding the Health service', () => {
   let server;
+  chassis.config.load(process.cwd() + '/test', logger);
+  const cfg = chassis.config.get();
   beforeEach(function* start() {
-    server = new Server();
+    server = new Server(cfg.get('server'));
     const healthSrv = new Health(server, server.$config);
     yield server.bind('health', healthSrv);
     yield server.start();
@@ -29,7 +33,7 @@ describe('binding the Health service', () => {
     describe('when called with an service', () => {
       let health;
       beforeEach(function* init() {
-        const client = new Client('health');
+        const client = new Client(cfg.get('client:health'));
         health = yield client.connect();
         should.exist(health.check);
       });

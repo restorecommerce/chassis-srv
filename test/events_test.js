@@ -30,7 +30,7 @@ describe('events', () => {
         }).catch((err) => {
           should.exist(err);
           err.should.be.Error();
-          err.message.should.equal('missing argument name');
+          err.message.should.equal('missing argument config');
         });
         should.not.exist(result);
       });
@@ -49,7 +49,8 @@ describe('events', () => {
         count: 1,
       };
       before(function* start() {
-        events = new Events(eventsName, null, logger);
+        const cfg = config.get();
+        events = new Events(cfg.get(`events:${eventsName}`), logger);
         yield events.start();
       });
       after(function* start() {

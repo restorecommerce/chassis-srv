@@ -90,7 +90,7 @@ describe('microservice.Server', () => {
       const cfg = config.get();
       cfg.set('server:services', undefined);
       (() => {
-        server = new Server();
+        server = new Server(cfg.get('server'));
       }).should.throw('missing services configuration');
     });
     it('should throw an error when transports config is missing', () => {
@@ -98,7 +98,7 @@ describe('microservice.Server', () => {
       const cfg = config.get();
       cfg.set('server:transports', undefined);
       (() => {
-        server = new Server();
+        server = new Server(cfg.get('server'));
       }).should.throw('missing transports configuration');
     });
     it('should throw an error when configuration does not exist', () => {
@@ -107,12 +107,13 @@ describe('microservice.Server', () => {
       cfg.set('server:services', undefined);
       cfg.set('server:transports', undefined);
       (() => {
-        server = new Server();
+        server = new Server(cfg.get('server'));
       }).should.throw('missing server configuration');
     });
     it('should return a server when provided with correct config', () => {
       config.load(process.cwd() + '/test', logger);
-      server = new Server();
+      const cfg = config.get();
+      server = new Server(cfg.get('server'));
       should.exist(server);
       should.exist(server.logger);
       should.exist(server.logger.log);
@@ -290,8 +291,9 @@ describe('microservice.Server', () => {
       const numClients = 10;
       const conns = [];
       const clients = [];
+      const cfg = chassis.config.get();
       for (let i = 0; i < numClients; i++) {
-        const conn = new Client('test');
+        const conn = new Client(cfg.get('client:test'));
         conns.push(conn);
         const c = yield conn.connect();
         clients.push(c);
@@ -337,7 +339,8 @@ describe('microservice.Client', () => {
     it('should create a client when providing correct configuration',
       () => {
         config.load(process.cwd() + '/test', logger);
-        client = new Client('test');
+        const cfg = chassis.config.get();
+        client = new Client(cfg.get('client:test'));
         should.exist(client);
         should.exist(client.logger);
         should.exist(client.middleware);
@@ -345,11 +348,11 @@ describe('microservice.Client', () => {
       });
     it('should throw an error when providing no configuration', () => {
       config.load(process.cwd() + '/test', logger);
-      const cfg = config.get();
+      const cfg = chassis.config.get();
       cfg.set('client:test', null);
       (() => {
-        client = new Client('test');
-      }).should.throw('client:test config does not exist');
+        client = new Client();
+      }).should.throw('missing config argument');
     });
     it('should throw an error when providing with invalid configuration',
       () => {
@@ -357,14 +360,14 @@ describe('microservice.Client', () => {
         let cfg = config.get();
         cfg.set('client:test:endpoints', null);
         (() => {
-          client = new Client('test');
+          client = new Client(cfg.get('client:test'));
         }).should.throw('no endpoints configured');
 
         config.load(process.cwd() + '/test', logger);
         cfg = config.get();
         cfg.set('client:test:transports', null);
         (() => {
-          client = new Client('test');
+          client = new Client(cfg.get('client:test'));
         }).should.throw('no transports configured');
       });
   });

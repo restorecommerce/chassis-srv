@@ -8,6 +8,8 @@ coMocha(mocha);
 const should = require('should');
 const _ = require('lodash');
 
+const logger = require('./logger_test.js');
+
 const chassis = require('../');
 const grpc = chassis.microservice.transport.provider.grpc;
 const Server = chassis.microservice.Server;
@@ -17,9 +19,10 @@ const Client = chassis.microservice.Client;
 
 describe('binding the grpc.ServerReflection service', () => {
   let server;
+  chassis.config.load(process.cwd() + '/test', logger);
+  const cfg = chassis.config.get();
   beforeEach(function* start() {
-    server = new Server();
-    const cfg = chassis.config.get();
+    server = new Server(cfg.get('server'));
     const transportName = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
     const transport = server.transport[transportName];
     const reflectionService = new grpc.ServerReflection(transport.$builder, server.$config);
@@ -30,7 +33,7 @@ describe('binding the grpc.ServerReflection service', () => {
     yield server.end();
   });
   it('should provide an endpoint ServerReflectionInfo', function* checkEndpoint() {
-    const client = new Client('reflection');
+    const client = new Client(cfg.get('client:reflection'));
     const reflectionClient = yield client.connect();
     const reflection = yield reflectionClient.serverReflectionInfo();
     yield reflection.end();
@@ -40,7 +43,7 @@ describe('binding the grpc.ServerReflection service', () => {
     let client;
     let serverReflectionInfo;
     beforeEach(function* connect() {
-      client = new Client('reflection');
+      client = new Client(cfg.get('client:reflection'));
       const reflection = yield client.connect();
       serverReflectionInfo = yield reflection.serverReflectionInfo();
     });
@@ -111,7 +114,6 @@ describe('binding the grpc.ServerReflection service', () => {
         should.exist(resp);
         should.exist(resp.listServicesResponse);
         should.exist(resp.listServicesResponse.service);
-        const cfg = chassis.config.get();
         const services = cfg.get('server:services');
         resp.listServicesResponse.service.should.be.length(_.size(services));
       });
