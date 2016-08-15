@@ -67,7 +67,8 @@ Environment variables overwrite configuration values from files.
 
 ```js
 const config = require('restore-chassis-srv').config;
-config.load(pathToTheParentOfCfg);
+yield config.load(pathToTheParentOfCfg);
+yield config.get();
 ```
 
 ### Logging
@@ -141,11 +142,13 @@ LoadBalancers:
 
 #### Config
 
-The client requires a configuration file which specifies to which services to connect, what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
+The client requires a configuration file which specifies to which services to connect,
+what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
 
 By default the client uses the roundRobin loadbalancer.
 Setting the config value config.loadbalancer enables a different default loadbalancers.
-Providing a client.publisher config value, sets a default publisher for all endpoints. Each endpoint can overwrite the default loadbalancer and publisher.
+Providing a client.publisher config value, sets a default publisher for all endpoints.
+Each endpoint can overwrite the default loadbalancer and publisher.
 
 Short example config file.
 
