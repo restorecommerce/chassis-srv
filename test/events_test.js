@@ -120,20 +120,21 @@ describe('events', () => {
           countAfter.should.equal(count);
         });
         it('should allow emitting', function* sendEvents() {
-          const mutex = new sync.Mutex();
+          const wg = new sync.WaitGroup();
           const listener = function* listener(message, context) {
             should.exist(message);
             testMessage.value.should.equal(message.value);
             testMessage.count.should.equal(message.count);
-            mutex.unlock();
+            wg.done();
           };
+          wg.add(1);
           yield topic.on(eventName, listener);
           setImmediate(() => {
             co(function* emit() {
               yield topic.emit(eventName, testMessage);
             });
           });
-          yield mutex.lock();
+          yield wg.wait();
         });
       });
     });

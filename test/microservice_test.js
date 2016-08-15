@@ -136,19 +136,20 @@ describe('microservice.Server', () => {
     it('should wrap a service and create endpoints for each object function',
       function* bindService() {
         const boundServices = 2;
-        const mutex = new sync.Mutex();
+        const wg = new sync.WaitGroup();
         let currentBoundServices = 0;
         server.on('bound', () => {
           currentBoundServices++;
           if (currentBoundServices === boundServices) {
-            mutex.unlock();
+            wg.done();
           }
         });
+        wg.add(1);
         co(function* bind() {
           yield server.bind('test', service);
           yield server.bind('stream', service);
         });
-        yield mutex.lock();
+        yield wg.wait();
       });
   });
   describe('calling start', () => {
@@ -316,14 +317,15 @@ describe('microservice.Server', () => {
   });
   describe('calling end', () => {
     it('should stop the server and no longer provide endpoints', function* endServer() {
-      const mutex = new sync.Mutex();
+      const wg = new sync.WaitGroup();
       server.on('stopped', () => {
-        mutex.unlock();
+        wg.done();
       });
+      wg.add(1);
       co(function* end() {
         yield server.end();
       });
-      yield mutex.lock();
+      yield wg.wait();
     });
   });
 });
@@ -471,14 +473,15 @@ describe('microservice.Client', () => {
     });
     describe('end', () => {
       it('should disconnect from all endpoints', function* disconn() {
-        const mutex = new sync.Mutex();
+        const wg = new sync.WaitGroup();
         client.on('disconnected', () => {
-          mutex.unlock();
+          wg.done();
         });
+        wg.add(1);
         co(function* end() {
           yield client.end();
         });
-        yield mutex.lock();
+        yield wg.wait();
       });
     });
   });
