@@ -15,10 +15,15 @@ co(function* init() {
     protoRoot: '../../protos/',
   };
   // Create a new microservice Server
-  const events = new Events('kafka', config);
+  const events = new Events(config);
   yield events.start();
   const logger = events.logger;
-  const db = yield database.get('ephemeral', logger);
+
+  // Load configuration
+  const cfg = yield chassis.config.get();
+
+  // Load database
+  const db = yield database.get(cfg.get('database:ephemeral'), logger);
 
   // Subscribe to events which the business logic requires
   const topicName = 'io.restorecommerce.notify';

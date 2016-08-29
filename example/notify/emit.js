@@ -14,7 +14,10 @@ function askQuestion(rl, question) {
 }
 
 co(function* init() {
-  const client = new Client('notify');
+  // Load configuration
+  const cfg = yield chassis.config.get();
+
+  const client = new Client(cfg.get('client:notify'));
   const notifyd = yield client.connect();
 
   // with arguments

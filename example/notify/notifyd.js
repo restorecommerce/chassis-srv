@@ -73,11 +73,14 @@ function Service(events, logger) {
 }
 
 co(function* init() {
+  // Load configuration
+  const cfg = yield chassis.config.get();
+
   // Create a new microservice Server
-  const server = new Server();
+  const server = new Server(cfg.get('server'));
 
   // Create events
-  const events = new Events('kafka');
+  const events = new Events(cfg.get('events:kafka'));
   yield events.start();
 
   // Subscribe to events which the business logic requires
