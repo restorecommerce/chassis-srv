@@ -30,7 +30,7 @@ describe('events', () => {
         }).catch((err) => {
           should.exist(err);
           err.should.be.Error();
-          err.message.should.equal('missing argument name');
+          err.message.should.equal('missing argument config');
         });
         should.not.exist(result);
       });
@@ -39,7 +39,6 @@ describe('events', () => {
   const providers = ['kafkaTest', 'localTest'];
   _.forEach(providers, (eventsName) => {
     describe(`testing config ${eventsName}`, () => {
-      config.load(process.cwd() + '/test', logger);
       let events;
       const topicName = 'test';
       let topic;
@@ -49,7 +48,9 @@ describe('events', () => {
         count: 1,
       };
       before(function* start() {
-        events = new Events(eventsName, null, logger);
+        yield config.load(process.cwd() + '/test', logger);
+        const cfg = yield config.get();
+        events = new Events(cfg.get(`events:${eventsName}`), logger);
         yield events.start();
       });
       after(function* start() {

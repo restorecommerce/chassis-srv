@@ -15,12 +15,13 @@ const cache = chassis.cache;
 /* global describe it beforeEach */
 
 describe('cache', () => {
-  beforeEach(() => {
-    config.load(process.cwd() + '/test', logger);
+  beforeEach(function* setup() {
+    yield config.load(process.cwd() + '/test', logger);
   });
   describe('get', () => {
     it('should return one store with the config for one store', function* getOne() {
-      const c = yield cache.get('one', logger);
+      const cfg = yield config.get();
+      const c = yield cache.get(cfg.get('cache:one'), logger);
       should.exist(c);
       should.exist(c.get);
 
@@ -29,7 +30,8 @@ describe('cache', () => {
       res.should.equal('testvalue');
     });
     it('should return one multiCaching store with the config for many stores', function* getMany() {
-      const c = yield cache.get('many', logger);
+      const cfg = yield config.get();
+      const c = yield cache.get(cfg.get('cache:many'), logger);
       should.exist(c);
       should.exist(c.get);
 
