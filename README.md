@@ -12,14 +12,15 @@ In development. The API is not stable.
 
 ## Install
 
-To install the chassis just run ``npm install``.
+To install the chassis just run ``npm install restorecommerce/chassis-srv``.
 
 ## Examples
 
 Code examples are in the example directory.
 The examples require a running Kafka instance.
 Commands to run the examples:
-```
+
+```bash
 cd example/notify
 node notifyd.js
 node listen.js
@@ -28,11 +29,13 @@ node emit.js
 
 ## Architecture
 
-The chassis is split into a server, client and events part.
-All parts need configuration file(s).
+The chassis is split into a cache, config, database, events, logger, client and server part.
 The client connects via transports to other servers and offers these endpoints.
 A Server exposes endpoints via transports.
 The events provide a pub/sub model like the NodeJS events module.
+The cache part handles loading of caches based on configuration files.
+Databases can be loaded with database part.
+Log handling is provided by the logger part. 
 
 ### Transport
 
@@ -61,7 +64,7 @@ The following events providers are available:
 ### Configuration
 
 [restore-server-config](https://github.com/restorecommerce/server-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
-The chassis loads the required configuration from files located in the subdirectory 'cfg' of the current working directory.
+The ``config.get`` function loads the configuration from files located in the subdirectory 'cfg' of the current working directory.
 Environment variables overwrite configuration values from files.
 ``config.load`` loads the configuration file from a different location.
 
@@ -74,9 +77,9 @@ yield config.get();
 ### Logging
 
 [restore-logger](https://github.com/restorecommerce/logger) provides logging which uses [winston](https://github.com/winstonjs/winston).
-Clients and server provide the logger.
+Clients, the server and the events provider provide the logger.
 The configuration file contains logger settings.
-The logger is available from ``Client.logger`` or ``Server.logger``.
+The logger is available from ``Client.logger``, ``Server.logger`` or ``Events.logger``.
 
 Default logging levels are:
 - silly
@@ -129,6 +132,7 @@ A publisher provides endpoints to a loadbalancer. Most publisher call a factory 
 
 Publishers:
 
+- FixedPublisher
 - StaticPublisher
 
 #### LoadBalancer
@@ -137,15 +141,15 @@ A loadbalancer picks an endpoint from the publisher. Which endpoint gets selecte
 
 LoadBalancers:
 
-- random
-- roundRobin
+- Random
+- RoundRobin
 
 #### Config
 
 The client requires a configuration file which specifies to which services to connect,
 what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
 
-By default the client uses the roundRobin loadbalancer.
+By default the client uses the RoundRobin loadbalancer.
 Setting the config value config.loadbalancer enables a different default loadbalancers.
 Providing a client.publisher config value, sets a default publisher for all endpoints.
 Each endpoint can overwrite the default loadbalancer and publisher.
@@ -292,7 +296,8 @@ server.middleware.push(makeMiddleware());
 The following example subscribes to a topic named ``com.example.visits`` and
 listens to events called ``visit``.
 On an event the ``listener`` is called with the event message.
-The listener is either a generator function or a normal function.
+The listener are either generator functions or normal functions.
+
 ```js
 const topicName = 'com.example.visits';
 const eventName = 'visit';
@@ -303,6 +308,7 @@ yield topic.on(eventName, listener);
 ```
 
 To emit an event to the topic call:
+
 ```js
 yield topic.emit(eventName, { url: 'example.com' });
 ```
@@ -317,6 +323,7 @@ Database provider are available for the following databases:
 All providers follow the same API which is similar to the NeDB/MongoDB API.
 
 The following code creates a database connection and inserts a new document.
+
 ```js
 const database = require('restore-chassis-srv').database;
 const db = yield database.get('ephemeral');
@@ -325,7 +332,9 @@ const notification = {
 };
 yield db.insert('notifications', notification);
 ```
-The configuration file.
+
+The configuration file looks like this.
+
 ```json
 {
   "database": {
