@@ -350,3 +350,18 @@ The configuration file looks like this.
 
 The field ``id`` is the main unique identifier.
 Conversion happens between the main unique identifier and the equivalent unique ID in each database provider.
+
+### cache
+
+Caches can be loaded with the cache loading function ``cache.get``.
+Cache providers are registered with the ``cache.register`` functions.
+The cache manager is the (node-cache-manager)[https://github.com/BryanDonovan/node-cache-manager].
+By default only the memory provider is registered.
+
+To create a cache manager call the ``cache.get`` function as follows.
+
+```js
+const chassis = require('restore-chassis-srv');
+const cfg = yield chassis.config.get();
+const memory = yield chassis.cache.get(cfg.get('cache:memory'), logger);
+```
