@@ -5,7 +5,7 @@ In development. The API is not stable.
 ## Features
 
 - Expose your business logic as RPC endpoints
-- Emit and listen to events from other microservices like when you would use NodeJS events
+- Emit and listen to events from other microservices like when you would use Node.js events
 - Middleware for client and server
 - Includes endpoint discovery, load balancing, retry and timeout logic
 - Uses ES6 features
@@ -230,7 +230,8 @@ The business logic processes the request and respond with either a result or an 
 The following code starts a server and provides the service endpoints.
 
 ```js
-const server = new Server();
+const cfg = yield chassis.config.get();
+const server = new chassis.microservices.Server(cfg.get('server'));
 const service = new Service();
 yield server.bind('serviceName', service);
 yield server.start();
@@ -299,9 +300,11 @@ On an event the ``listener`` is called with the event message.
 The listener are either generator functions or normal functions.
 
 ```js
+const chassis = require('restore-chassis-src');
 const topicName = 'com.example.visits';
 const eventName = 'visit';
-const events = new Events('example');
+const cfg = yield chassis.config.get();
+const events = new chassis.events.Events(cfg.get('events:example'));
 const listener = function*(message) {};
 const topic = yield events.topic(topicName);
 yield topic.on(eventName, listener);
@@ -325,8 +328,9 @@ All providers follow the same API which is similar to the NeDB/MongoDB API.
 The following code creates a database connection and inserts a new document.
 
 ```js
-const database = require('restore-chassis-srv').database;
-const db = yield database.get('ephemeral');
+const chassis = require('restore-chassis-srv');
+const cfg = yield chassis.config.get();
+const db = yield chassis.database.get(cfg.get('ephemeral'));
 const notification = {
   id: 'unique',
 };
