@@ -1,6 +1,8 @@
 'use strict';
 
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
+/*  eslint-disable require-yield */
+
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
 

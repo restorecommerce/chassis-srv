@@ -23,6 +23,8 @@ const errors = chassis.microservice.errors;
 
 /* global describe context it before after*/
 
+/*  eslint-disable require-yield */
+
 const service = {
   * test(call, context) {
     const request = call.request;

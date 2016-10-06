@@ -14,7 +14,7 @@ const config = chassis.config;
 const Events = chassis.events.Events;
 
 /* global describe it before after */
-
+/*  eslint-disable require-yield */
 describe('Kafka events provider', () => {
   let events;
   before(function* setupProvider() {

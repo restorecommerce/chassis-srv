@@ -1,14 +1,17 @@
 'use strict';
 
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
+/*  eslint-disable require-yield */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
 const logger = require('./logger_test.js');
 
 const chassis = require('../');
+
 const config = chassis.config;
 const cache = chassis.cache;
 
