@@ -32,7 +32,6 @@
     "kafka-node": "^0.5.9",
     "lodash": "^4.16.4",
     "nedb": "^1.8.0",
-    "no-kafka": "^2.8.3",
     "node-zookeeper-client": "^0.2.2",
     "protobufjs": "^5.0.1",
     "random-js": "^1.0.8",
