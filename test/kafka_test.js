@@ -3,11 +3,13 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
 const logger = require('./logger_test.js');
 const chassis = require('../');
+
 const config = chassis.config;
 const Events = chassis.events.Events;
 
@@ -27,10 +29,12 @@ describe('Kafka events provider', () => {
   describe('topic.$wait', function testWait() {
     this.timeout(5000);
     it('should wait until the event message is processed', function* waitUntil() {
-      const testMessage = {
-        value: 'test',
-        count: 1,
-      };
+      const testProto = require('./protos/test_pb.js');
+
+      const testMessage = new testProto.TestEvent();
+      testMessage.setValue('value');
+      testMessage.setCount(1);
+
       const topic = yield events.topic('test.wait');
       let receivedOffset = yield topic.$offset(-1);
       yield topic.on('test-event', function* onTestEvent(message, context) {

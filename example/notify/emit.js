@@ -3,6 +3,7 @@
 const co = require('co');
 const readline = require('readline');
 const chassis = require('../../');
+
 const Client = chassis.microservice.Client;
 
 function askQuestion(rl, question) {

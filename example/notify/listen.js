@@ -2,6 +2,7 @@
 
 const co = require('co');
 const chassis = require('../../');
+
 const Events = chassis.events.Events;
 const database = chassis.database;
 

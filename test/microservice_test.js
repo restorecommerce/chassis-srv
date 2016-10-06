@@ -3,6 +3,7 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
@@ -12,6 +13,7 @@ const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
+
 const config = chassis.config;
 const grpc = chassis.microservice.transport.provider.grpc;
 const Server = chassis.microservice.Server;
@@ -75,7 +77,7 @@ const service = {
     should.exist(req);
     should.exist(req.value);
     req.value.should.equal('ping');
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 3; i += 1) {
       yield call.write({ result: `${i}` });
     }
     yield call.end();
@@ -142,7 +144,7 @@ describe('microservice.Server', () => {
         const wg = new sync.WaitGroup();
         let currentBoundServices = 0;
         server.on('bound', () => {
-          currentBoundServices++;
+          currentBoundServices += 1;
           if (currentBoundServices === boundServices) {
             wg.done();
           }
@@ -246,10 +248,10 @@ describe('microservice.Server', () => {
       instance = cfg.get(biStreamCfgPath);
       const biStream = yield client.makeEndpoint('biStream', instance);
       let call = yield biStream();
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 3; i += 1) {
         yield call.write({ value: 'ping' });
       }
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 3; i += 1) {
         result = yield call.read();
         should.ifError(result.error);
         should.exist(result);
@@ -263,7 +265,7 @@ describe('microservice.Server', () => {
       instance = cfg.get(requestStreamCfgPath);
       const requestStream = yield client.makeEndpoint('requestStream', instance);
       call = yield requestStream();
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 3; i += 1) {
         yield call.write({ value: 'ping' });
       }
       result = yield call.end();
@@ -277,7 +279,7 @@ describe('microservice.Server', () => {
       instance = cfg.get(responseStreamCfgPath);
       const responseStream = yield client.makeEndpoint('responseStream', instance);
       call = yield responseStream({ value: 'ping' });
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 3; i += 1) {
         result = yield call.read();
         should.ifError(result.error);
         should.exist(result);
@@ -294,27 +296,27 @@ describe('microservice.Server', () => {
       const conns = [];
       const clients = [];
       const cfg = yield chassis.config.get();
-      for (let i = 0; i < numClients; i++) {
+      for (let i = 0; i < numClients; i += 1) {
         const conn = new Client(cfg.get('client:test'));
         conns.push(conn);
         const c = yield conn.connect();
         clients.push(c);
       }
       const reqs = [];
-      for (let i = 0; i < numClients; i++) {
+      for (let i = 0; i < numClients; i += 1) {
         reqs.push(clients[i].test({
           value: 'hello',
         }));
       }
       const resps = yield reqs;
-      for (let i = 0; i < resps.length; i++) {
+      for (let i = 0; i < resps.length; i += 1) {
         const result = resps[i];
         should.ifError(result.error);
         should.exist(result.data);
         should.exist(result.data.result);
         result.data.result.should.be.equal('welcome');
       }
-      for (let i = 0; i < numClients; i++) {
+      for (let i = 0; i < numClients; i += 1) {
         yield conns[i].end();
       }
     });

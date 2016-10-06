@@ -3,6 +3,9 @@ npm-debug.log
 
 coverage/
 
+protoc*.zip
+protoc/
+
 kafka*.tgz
 kafka*/
 

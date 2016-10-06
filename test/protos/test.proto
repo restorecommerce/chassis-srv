@@ -7,7 +7,6 @@ option objc_class_prefix = "Test";
 
 package test;
 
-import "io/restorecommerce/event.proto";
 
 service Test {
   rpc Test (TestRequest) returns (TestResponse);

@@ -3,6 +3,7 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
@@ -10,6 +11,7 @@ const co = require('co');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
+
 const grpc = chassis.microservice.transport.provider.grpc;
 const pipe = chassis.microservice.transport.provider.pipe;
 

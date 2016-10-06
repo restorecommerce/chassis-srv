@@ -3,13 +3,14 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
-
 const logger = require('./logger_test.js');
 
 const chassis = require('../');
+
 const Health = chassis.microservice.plugins.health.Health;
 const Server = chassis.microservice.Server;
 const Client = chassis.microservice.Client;

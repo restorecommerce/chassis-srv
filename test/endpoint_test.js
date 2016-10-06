@@ -3,6 +3,7 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
@@ -32,7 +33,7 @@ describe('endpoint.chain', () => {
   let e;
   it('should chain middleware', function* checkChainMiddleware() {
     const middlewares = [];
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 5; i += 1) {
       tree.push(i);
       middlewares.push(makeMiddleware(i));
     }

@@ -3,6 +3,7 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
@@ -12,6 +13,7 @@ const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 const chassis = require('../');
+
 const config = chassis.config;
 const Events = chassis.events.Events;
 
@@ -43,11 +45,13 @@ describe('events', () => {
       const topicName = 'test';
       let topic;
       const eventName = 'test-event';
-      const testMessage = {
-        value: 'test',
-        count: 1,
-      };
+      const testProto = require('./protos/test_pb.js');
+      const testMessage = new testProto.TestEvent();
+      testMessage.setValue('value');
+      testMessage.setCount(1);
+
       before(function* start() {
+        this.timeout(10000);
         yield config.load(process.cwd() + '/test', logger);
         const cfg = yield config.get();
         events = new Events(cfg.get(`events:${eventsName}`), logger);
@@ -121,11 +125,14 @@ describe('events', () => {
           countAfter.should.equal(count);
         });
         it('should allow emitting', function* sendEvents() {
+          this.timeout(20000);
           const wg = new sync.WaitGroup();
           const listener = function* listener(message, context) {
+            const messageConverted = testProto.TestEvent.deserializeBinary(
+              new Uint8Array(message.value));
             should.exist(message);
-            testMessage.value.should.equal(message.value);
-            testMessage.count.should.equal(message.count);
+            testMessage.getValue().should.equal(messageConverted.getValue());
+            testMessage.getCount().should.equal(messageConverted.getCount());
             wg.done();
           };
           wg.add(1);

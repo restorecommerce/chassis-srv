@@ -3,6 +3,7 @@
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 const mocha = require('mocha');
 const coMocha = require('co-mocha');
+
 coMocha(mocha);
 
 const should = require('should');
@@ -35,7 +36,7 @@ describe('fixed publisher', () => {
 });
 
 describe('static publisher', () => {
-  const factory = function* makeFactory(instance) {
+  const factory = function makeFactory(instance) {
     should.exist(instance);
     instance.should.equal('test');
     return endpoint;
@@ -92,7 +93,7 @@ tests.forEach((test) => {
     const endpoints = [endpoint, endpoint, endpoint];
 
     describe('with no publisher, calling next', () => {
-      it('should throw an error', function* getEndpoint() {
+      it('should throw an error', () => {
         const lb = test.loadBalancer();
         lb.next.should.throw();
       });

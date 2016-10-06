@@ -2,6 +2,7 @@
 
 const co = require('co');
 const chassis = require('../../');
+
 const Server = chassis.microservice.Server;
 const Events = chassis.events.Events;
 
