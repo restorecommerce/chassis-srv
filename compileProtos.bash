@@ -1,4 +1,4 @@
-file="protoc-3.1.0-linux-x86_64.zip"
+file="protoc-3.0.0-linux-x86_64.zip"
 if ! [ -f "$file" ]
 then
 	wget https://github.com/google/protobuf/releases/download/v3.0.0/protoc-3.0.0-linux-x86_64.zip
