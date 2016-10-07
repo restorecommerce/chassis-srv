@@ -54,7 +54,7 @@
   "scripts": {
     "lint": "eslint *.json *.js lib/** test/*_test.js example/** ",
     "test": "npm run lint && npm run nsp && npm run mocha",
-    "mocha": "./node_modules/.bin/mocha -R spec test",
+    "mocha": "mocha -R spec test",
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "pretest": "bash ensureKafkaTopics.bash test test.wait io.restorecommerce.notify && bash compileProtos.bash",
