@@ -27,7 +27,7 @@
     "co-emitter": "^0.2.3",
     "google-protobuf": "3.1.1",
     "gostd": "github:restorecommerce/gostd",
-    "grpc": "^1.0.0",
+    "grpc": "^1.0.1",
     "is-generator": "^1.0.3",
     "kafka-node": "^0.5.9",
     "lodash": "^4.16.4",
