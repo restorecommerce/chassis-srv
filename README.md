@@ -8,6 +8,7 @@ In development. The API is not stable.
 - Emit and listen to events from other microservices like when you would use Node.js events
 - Middleware for client and server
 - Includes endpoint discovery, load balancing, retry and timeout logic
+- Microservices Health check Endpoint
 - Uses ES6 features
 
 ## Install
@@ -35,7 +36,7 @@ A Server exposes endpoints via transports.
 The events provide a pub/sub model like the NodeJS events module.
 The cache part handles loading of caches based on configuration files.
 Databases can be loaded with database part.
-Log handling is provided by the logger part. 
+Log handling is provided by the logger part.
 
 ### Transport
 
@@ -90,6 +91,20 @@ Default logging levels are:
 - error
 
 To create a log call ``logger.<level>(message, ...args)``. The ``level`` being one of the levels defined above, ``message`` is a string and ``...args `` is a list of objects.
+
+### Health
+
+The Health check  of microservices is done using a RPC endpoint.
+```js
+const config = require('restore-chassis-srv').config;
+const cfg = yield config.get();
+const client = new Client(cfg.get('client:health'));
+health = yield client.connect();
+const resp = yield health.check({
+  service: 'serviceName',
+});
+```
+The response contains a Status field which could be : 'SERVING' , 'NOT_SERVING' or 'UNKNOWN'.
 
 ### Client
 
