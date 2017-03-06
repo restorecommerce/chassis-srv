@@ -75,7 +75,7 @@
     "tsctests": "tsc test/*.ts test/healthTest/*.ts test/kafkaTest/*.ts --module commonjs -target ES6",
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "pretest": "bash ensureKafkaTopics.bash test test.wait io.restorecommerce.notify && bash compileProtos.bash",
+    "pretest": "bash ensureKafkaTopics.bash test test.wait io.restorecommerce.notify",
     "prepublish": "tsc -d && npm run tsctests && npm test",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
