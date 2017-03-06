@@ -8,10 +8,10 @@ coMocha(mocha);
 
 import * as should from 'should';
 const logger = require('./../logger_test.js');
-const chassis = require('../../');
+import * as chassis from '../../lib';
 
 const config = chassis.config;
-const Events = chassis.events.Events;
+import {Events} from "../../lib/events/index";
 
 /* global describe it before after */
 /*  eslint-disable require-yield */
