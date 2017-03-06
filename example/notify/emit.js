@@ -2,7 +2,7 @@
 
 const co = require('co');
 const readline = require('readline');
-const chassis = require('../../');
+const chassis = require('../../lib');
 
 const Client = chassis.microservice.Client;
 

@@ -1,7 +1,7 @@
 'use strict';
 
 const co = require('co');
-const chassis = require('../../');
+const chassis = require('../../lib');
 
 const Events = chassis.events.Events;
 const database = chassis.database;

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "outDir": "lib"
+  },
+  "include": [
+     "./src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib",
+    "docs"
+  ]
+}

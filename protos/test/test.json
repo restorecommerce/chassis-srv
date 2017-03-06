@@ -1,0 +1,90 @@
+{
+  "options": {
+    "java_multiple_files": true,
+    "java_package": "io.restorecommerce.test.resource",
+    "java_outer_classname": "TestProto",
+    "objc_class_prefix": "Test"
+  },
+  "nested": {
+    "test": {
+      "nested": {
+        "Test": {
+          "methods": {
+            "Test": {
+              "requestType": "TestRequest",
+              "responseType": "TestResponse"
+            },
+            "Throw": {
+              "requestType": "TestRequest",
+              "responseType": "TestResponse"
+            },
+            "NotImplemented": {
+              "requestType": "TestRequest",
+              "responseType": "TestResponse"
+            },
+            "NotFound": {
+              "requestType": "TestRequest",
+              "responseType": "TestResponse"
+            }
+          }
+        },
+        "Stream": {
+          "methods": {
+            "BiStream": {
+              "requestType": "TestRequest",
+              "requestStream": true,
+              "responseType": "TestResponse",
+              "responseStream": true
+            },
+            "ResponseStream": {
+              "requestType": "TestRequest",
+              "responseType": "TestResponse",
+              "responseStream": true
+            },
+            "RequestStream": {
+              "requestType": "TestRequest",
+              "requestStream": true,
+              "responseType": "TestResponse"
+            }
+          }
+        },
+        "TestRequest": {
+          "fields": {
+            "value": {
+              "type": "string",
+              "id": 1
+            }
+          }
+        },
+        "TestResponse": {
+          "fields": {
+            "result": {
+              "type": "string",
+              "id": 1
+            }
+          }
+        },
+        "TestEvent": {
+          "fields": {
+            "value": {
+              "type": "string",
+              "id": 1
+            },
+            "count": {
+              "type": "int32",
+              "id": 2
+            }
+          }
+        },
+        "ExtendMe": {
+          "fields": {
+            "bar": {
+              "type": "int32",
+              "id": 126
+            }
+          }
+        }
+      }
+    }
+  }
+}

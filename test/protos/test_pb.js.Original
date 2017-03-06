@@ -59,7 +59,7 @@ proto.test.TestRequest.prototype.toObject = function(opt_includeInstance) {
  */
 proto.test.TestRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    value: jspb.Message.getFieldWithDefault(msg, 1, "")
+    value: msg.getValue()
   };
 
   if (includeInstance) {
@@ -149,15 +149,24 @@ proto.test.TestRequest.prototype.serializeBinaryToWriter = function (writer) {
 
 
 /**
+ * Creates a deep clone of this proto. No data is shared with the original.
+ * @return {!proto.test.TestRequest} The clone.
+ */
+proto.test.TestRequest.prototype.cloneMessage = function() {
+  return /** @type {!proto.test.TestRequest} */ (jspb.Message.cloneMessage(this));
+};
+
+
+/**
  * optional string value = 1;
  * @return {string}
  */
 proto.test.TestRequest.prototype.getValue = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {string} */ (jspb.Message.getFieldProto3(this, 1, ""));
 };
 
 
-/** @param {string} value */
+/** @param {string} value  */
 proto.test.TestRequest.prototype.setValue = function(value) {
   jspb.Message.setField(this, 1, value);
 };
@@ -209,7 +218,7 @@ proto.test.TestResponse.prototype.toObject = function(opt_includeInstance) {
  */
 proto.test.TestResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    result: jspb.Message.getFieldWithDefault(msg, 1, "")
+    result: msg.getResult()
   };
 
   if (includeInstance) {
@@ -299,15 +308,24 @@ proto.test.TestResponse.prototype.serializeBinaryToWriter = function (writer) {
 
 
 /**
+ * Creates a deep clone of this proto. No data is shared with the original.
+ * @return {!proto.test.TestResponse} The clone.
+ */
+proto.test.TestResponse.prototype.cloneMessage = function() {
+  return /** @type {!proto.test.TestResponse} */ (jspb.Message.cloneMessage(this));
+};
+
+
+/**
  * optional string result = 1;
  * @return {string}
  */
 proto.test.TestResponse.prototype.getResult = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {string} */ (jspb.Message.getFieldProto3(this, 1, ""));
 };
 
 
-/** @param {string} value */
+/** @param {string} value  */
 proto.test.TestResponse.prototype.setResult = function(value) {
   jspb.Message.setField(this, 1, value);
 };
@@ -359,8 +377,8 @@ proto.test.TestEvent.prototype.toObject = function(opt_includeInstance) {
  */
 proto.test.TestEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
-    value: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    count: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    value: msg.getValue(),
+    count: msg.getCount()
   };
 
   if (includeInstance) {
@@ -461,15 +479,24 @@ proto.test.TestEvent.prototype.serializeBinaryToWriter = function (writer) {
 
 
 /**
+ * Creates a deep clone of this proto. No data is shared with the original.
+ * @return {!proto.test.TestEvent} The clone.
+ */
+proto.test.TestEvent.prototype.cloneMessage = function() {
+  return /** @type {!proto.test.TestEvent} */ (jspb.Message.cloneMessage(this));
+};
+
+
+/**
  * optional string value = 1;
  * @return {string}
  */
 proto.test.TestEvent.prototype.getValue = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {string} */ (jspb.Message.getFieldProto3(this, 1, ""));
 };
 
 
-/** @param {string} value */
+/** @param {string} value  */
 proto.test.TestEvent.prototype.setValue = function(value) {
   jspb.Message.setField(this, 1, value);
 };
@@ -480,11 +507,11 @@ proto.test.TestEvent.prototype.setValue = function(value) {
  * @return {number}
  */
 proto.test.TestEvent.prototype.getCount = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
+  return /** @type {number} */ (jspb.Message.getFieldProto3(this, 2, 0));
 };
 
 
-/** @param {number} value */
+/** @param {number} value  */
 proto.test.TestEvent.prototype.setCount = function(value) {
   jspb.Message.setField(this, 2, value);
 };
@@ -536,7 +563,7 @@ proto.test.ExtendMe.prototype.toObject = function(opt_includeInstance) {
  */
 proto.test.ExtendMe.toObject = function(includeInstance, msg) {
   var f, obj = {
-    bar: jspb.Message.getFieldWithDefault(msg, 126, 0)
+    bar: msg.getBar()
   };
 
   if (includeInstance) {
@@ -626,15 +653,24 @@ proto.test.ExtendMe.prototype.serializeBinaryToWriter = function (writer) {
 
 
 /**
+ * Creates a deep clone of this proto. No data is shared with the original.
+ * @return {!proto.test.ExtendMe} The clone.
+ */
+proto.test.ExtendMe.prototype.cloneMessage = function() {
+  return /** @type {!proto.test.ExtendMe} */ (jspb.Message.cloneMessage(this));
+};
+
+
+/**
  * optional int32 bar = 126;
  * @return {number}
  */
 proto.test.ExtendMe.prototype.getBar = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 126, 0));
+  return /** @type {number} */ (jspb.Message.getFieldProto3(this, 126, 0));
 };
 
 
-/** @param {number} value */
+/** @param {number} value  */
 proto.test.ExtendMe.prototype.setBar = function(value) {
   jspb.Message.setField(this, 126, value);
 };

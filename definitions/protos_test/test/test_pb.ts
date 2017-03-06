@@ -9,6 +9,7 @@ var jspb = require('google-protobuf');
 var goog = jspb;
 var global = Function('return this')();
 
+var io_restorecommerce_event_pb = require('../io/restorecommerce/event_pb.js');
 goog.exportSymbol('proto.test.ExtendMe', null, global);
 goog.exportSymbol('proto.test.TestEvent', null, global);
 goog.exportSymbol('proto.test.TestRequest', null, global);

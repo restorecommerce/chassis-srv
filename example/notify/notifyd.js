@@ -1,7 +1,7 @@
 'use strict';
 
 const co = require('co');
-const chassis = require('../../');
+const chassis = require('../../lib');
 
 const Server = chassis.microservice.Server;
 const Events = chassis.events.Events;

@@ -360,7 +360,8 @@ proto.test.TestEvent.prototype.toObject = function(opt_includeInstance) {
 proto.test.TestEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
     value: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    count: jspb.Message.getFieldWithDefault(msg, 2, 0)
+    count: jspb.Message.getFieldWithDefault(msg, 2, 0),
+    testMap: (f = msg.getTestMap()) ? f.toArray() : []
   };
 
   if (includeInstance) {
@@ -404,6 +405,12 @@ proto.test.TestEvent.deserializeBinaryFromReader = function(msg, reader) {
     case 2:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setCount(value);
+      break;
+    case 3:
+      var value = msg.getTestMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readInt64, jspb.BinaryReader.prototype.readInt64);
+         });
       break;
     default:
       reader.skipField();
@@ -457,6 +464,10 @@ proto.test.TestEvent.prototype.serializeBinaryToWriter = function (writer) {
       f
     );
   }
+  f = this.getTestMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(3, writer, jspb.BinaryWriter.prototype.writeInt64, jspb.BinaryWriter.prototype.writeInt64);
+  }
 };
 
 
@@ -487,6 +498,24 @@ proto.test.TestEvent.prototype.getCount = function() {
 /** @param {number} value */
 proto.test.TestEvent.prototype.setCount = function(value) {
   jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * map<int64, int64> test = 3;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<number,number>}
+ */
+proto.test.TestEvent.prototype.getTestMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<number,number>} */ (
+      jspb.Message.getMapField(this, 3, opt_noLazyCreate,
+      null));
+};
+
+
+proto.test.TestEvent.prototype.clearTestMap = function() {
+  this.getTestMap().clear();
 };
 
 

@@ -168,10 +168,22 @@
       "clientId": "restore-chassis-test-server",
       "connectionString": "localhost:2181",
       "protos": ["test.proto"],
-      "protoRoot": "test/protos/"
+      "protoRoot": "test/protos/",
+      "test-event": {
+        "protos": ["test.proto"],
+        "protoRoot": "test/protos/",
+        "messageObject": "test.TestEvent"
+      }
     },
     "localTest": {
-      "provider": "local"
+      "provider": "local",
+      "protos": ["test.proto"],
+      "protoRoot": "test/protos/",
+       "test-event": {
+        "protos": ["test.proto"],
+        "protoRoot": "test/protos/",
+        "messageObject": "test.TestEvent"
+      }
     }
   },
   "server": {
