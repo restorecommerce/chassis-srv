@@ -1,12 +1,12 @@
 'use strict';
 
 /* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-const mocha = require('mocha');
+import * as mocha from 'mocha';
 const coMocha = require('co-mocha');
 
 coMocha(mocha);
 
-const should = require('should');
+import * as should from 'should';
 const logger = require('./../logger_test.js');
 const chassis = require('../../');
 
