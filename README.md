@@ -13,6 +13,7 @@ In development. The API is not stable.
 
 ## Install
 
+Make sure you have typescript (tsc) installed before installing chassis-srv `npm install -g typescript`.
 To install the chassis just run ``npm install restorecommerce/chassis-srv``.
 
 ## Examples
