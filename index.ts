@@ -11,10 +11,12 @@ export {nedb};
 import {Logger} from './src/logger';
 export {Logger};
 
-import {Client as microserviceClient} from './src/microservice/client';
+import {Client} from './src/microservice/client';
 export * from './lib/microservice/client';
+export {Client};
 // import {Server as microserviceServer} from './lib/microservice/server';
-import {Server as microserviceServer} from './src/microservice/server';
+import {Server} from './src/microservice/server';
+export {Server};
 
 import {chain as endpoint} from './src/microservice/endpoint';
 export {endpoint};
@@ -34,6 +36,8 @@ export * from './src/microservice/plugins';
 
 export *  from './lib/microservice/errors';
 export {Client as grpcClient, Server as grpcServer}  from './lib/microservice/transport/provider/grpc';
+import {ServerReflection} from './lib/microservice/transport/provider/grpc';
+export {ServerReflection};
 export {Client as pipeClient, Server as pipeServer}  from './lib/microservice/transport/provider/pipe';
 export *  from './lib/events';
 export *  from './lib/events/provider/kafka';
