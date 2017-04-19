@@ -467,7 +467,7 @@ export class Server {
     }
     this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, protos);
     this.builder = buildProtobuf(protos, protoRoot, logger);
-    this.proto = grpc.loadObject(this.builder.ns);
+    this.proto = grpc.loadObject(this.builder);
     const proto = this.proto;
     this.service = _.transform(this.config.services,
       (service, protobufServiceName, serviceName) => {
@@ -603,7 +603,7 @@ export class Client {
     }
     this.logger.verbose(`gRPC Client loading protobuf files from root ${protoRoot}`, protos);
     this.builder = buildProtobuf(protos, protoRoot, logger);
-    this.proto = grpc.loadObject(this.builder.ns);
+    this.proto = grpc.loadObject(this.builder);
     this.service = _.get(this.proto, this.config.service);
     if (_.isNil(this.service)) {
       throw new Error(`Could not find ${this.config.service} protobuf service`);

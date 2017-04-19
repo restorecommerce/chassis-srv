@@ -5088,13 +5088,13 @@ export namespace google {
              * UninterpretedOption positiveIntValue.
              * @type {number|$protobuf.Long}
              */
-            positiveIntValue: (number|$protobuf.Long);
+            positiveIntValue: (number);
 
             /**
              * UninterpretedOption negativeIntValue.
              * @type {number|$protobuf.Long}
              */
-            negativeIntValue: (number|$protobuf.Long);
+            negativeIntValue: (number);
 
             /**
              * UninterpretedOption doubleValue.
