@@ -405,16 +405,16 @@ function buildProtobuf(files: Object, protoroot: string, logger: any): Object {
   // build protobuf
   let root = new ProtoBuf.Root();
 
-  // _.forEach(files, (fileName, key) => {
+  _.forEach(files, (fileName, key) => {
     root.resolvePath = function(origin, target) {
     // origin is the path of the importing file
     // target is the imported path
     // determine absolute path and return it ...
-    return protoroot + files;
+    return protoroot + fileName;
     };
-  // }
+    root.loadSync(protoroot + fileName);
+  });
 
-  root.loadSync(protoroot + files);
   return root;
 }
 
