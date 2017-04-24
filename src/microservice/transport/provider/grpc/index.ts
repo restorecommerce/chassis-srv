@@ -401,20 +401,21 @@ function wrapServerEndpoint(endpoint: any, logger: any, stream: any): any {
   return makeNormalServerEndpoint(endpoint, logger);
 }
 
-function buildProtobuf(files: Object, root: string, logger: any): Object {
+function buildProtobuf(files: Object, protoroot: string, logger: any): Object {
   // build protobuf
-  const builder = new ProtoBuf.Root();
+  let root = new ProtoBuf.Root();
+
   _.forEach(files, (fileName, key) => {
-    const ok = builder.files[fileName];
-    if (ok) {
-      return;
+    root.resolvePath = function(origin, target) {
+    // origin is the path of the importing file
+    // target is the imported path
+    // determine absolute path and return it ...
+    return protoroot + fileName;
     }
-    // const file = fs.readFileSync(root + fileName, 'utf8');
-    // ProtoBuf.parse.filename = fileName;
-    // ProtoBuf.parse(file, builder);
-    builder.loadSync(root + fileName);
-  });
-  return builder;
+  }
+
+  root.loadSync(protoroot+files);
+  return root;
 }
 
 /**
