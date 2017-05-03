@@ -614,4 +614,4 @@ export function* create(conf: any, logger: any): any {
   }
   const conn = yield connect(conf, log);
   return new Arango(conn);
-};
+}

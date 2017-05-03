@@ -35,4 +35,4 @@ export function* get(logger?: any): any {
   }
   yield load(process.cwd(), logger);
   return config;
-};
+}

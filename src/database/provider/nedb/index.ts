@@ -332,4 +332,4 @@ export function* create(conf: Object, logger: any): any {
   }
   const collections = yield loadDatastores(conf, log);
   return new NedbProvider(collections);
-};
+}
