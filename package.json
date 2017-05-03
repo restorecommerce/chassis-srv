@@ -68,7 +68,7 @@
     "typescript-require": "^0.2.9-1"
   },
   "scripts": {
-    "lint": "eslint *.json example/** && tslint './src/**/*.ts' ",
+    "lint": "eslint *.json && tslint './src/**/*.ts' ",
     "test": "npm run lint && npm run mocha",
     "test-debug": "npm run mochadebug",
     "mochadebug": "mocha -R spec test/*.js test/kafkaTest/*.js test/healthTest/*.js --full-trace --debug-brk",

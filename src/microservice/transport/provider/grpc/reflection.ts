@@ -212,8 +212,23 @@ export class ServerReflection {
    * @param (ProtoBuf.Builder) The protobuf builder  which the gRPC transport provider is using.
    * @config (Object) Server cofnig.
    */
-  constructor(builder: ProtoBuf.Root, config: Object) {
-    this.builder = builder;
+  constructor(builder: ProtoBuf.Root, config: any) {
+    // this.builder = builder;
+    let root = new ProtoBuf.Root();
+    let protoroot = config.transports[0].protoRoot;
+    // let files = config.transports[0].protos;
+    // TODO change this to param in config
+    let files = ["grpc/reflection/v1alpha/reflection.proto"];
+    _.forEach(files, (fileName, key) => {
+      root.resolvePath = function (origin, target) {
+        // origin is the path of the importing file
+        // target is the imported path
+        // determine absolute path and return it ...
+        return protoroot + fileName;
+      };
+      root.loadSync(protoroot + fileName);
+    });
+    this.builder = root;
     this.config = config;
   }
 

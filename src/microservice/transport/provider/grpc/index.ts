@@ -466,19 +466,29 @@ export class Server {
     if (_.isNil(protos) || _.size(protos) === 0) {
       throw new Error('config value protos is not set');
     }
-    this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, protos);
-    this.builder = buildProtobuf(protos, protoRoot, logger);
-    this.proto = grpc.loadObject(this.builder);
-    const proto = this.proto;
-    this.service = _.transform(this.config.services,
-      (service, protobufServiceName, serviceName) => {
-        const serviceDef = _.get(proto, protobufServiceName);
+   this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, protos);
+
+
+    const proto = [];
+    for ( let i = 0; i < protos.length; i++) {
+      const filePath = {root: protoRoot, file: protos[i]};
+      this.proto = grpc.load(filePath);
+      proto[i] = this.proto;
+    }
+
+    // const filePath = {root: protoRoot, file: protos[0]};
+    // this.proto = grpc.load(filePath);
+    // const proto = this.proto;
+    let k = 0;
+    this.service = _.transform(this.config.services, (service, protobufServiceName, serviceName) => {
+        const serviceDef = _.get(proto[k], protobufServiceName);
         if (_.isNil(serviceDef)) {
-          throw new Error(`Could not find ${protobufServiceName} protobuf service`);
+            throw new Error(`Could not find ${protobufServiceName} protobuf service`);
         }
         _.set(service, serviceName, serviceDef.service);
+        k++;
         logger.verbose('gRPC service loaded', serviceName);
-      });
+    });
     this.name = NAME;
   }
 
@@ -603,11 +613,21 @@ export class Client {
       throw new Error('config value protos is not set');
     }
     this.logger.verbose(`gRPC Client loading protobuf files from root ${protoRoot}`, protos);
-    this.builder = buildProtobuf(protos, protoRoot, logger);
-    this.proto = grpc.loadObject(this.builder);
-    this.service = _.get(this.proto, this.config.service);
+    // this.builder = buildProtobuf(protos, protoRoot, logger);
+    // this.proto = grpc.loadObject(this.builder);
+
+    // There will be only one proto since a client can connect to only
+    // one service at a time.
+    const proto = [];
+    for ( let i = 0; i < protos.length; i++) {
+          const filePath = {root: protoRoot, file: protos[i]};
+          this.proto = grpc.load(filePath);
+          proto[i] = this.proto;
+    }
+
+    this.service = _.get(proto[0], this.config.service);
     if (_.isNil(this.service)) {
-      throw new Error(`Could not find ${this.config.service} protobuf service`);
+        throw new Error(`Could not find ${this.config.service} protobuf service`);
     }
     this.logger.verbose('gRPC service loaded', this.config.service);
     this.name = NAME;

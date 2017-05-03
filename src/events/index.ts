@@ -2,6 +2,7 @@
 
 import * as _ from "lodash";
 const Logger = require('../logger');
+import {Topic} from './provider/kafka';
 
 /**
  * A key, value map containing event providers.
@@ -92,7 +93,7 @@ export class Events {
    * @param  {string} name Topic name
    * @return {Topic}      Topic
    */
-  * topic(name: string): any {
+  * topic(name: string): IterableIterator<Topic> {
     if (_.isNil(name)) {
       throw new Error('missing argument name');
     }

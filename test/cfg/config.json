@@ -241,7 +241,7 @@
         "reflection": "grpc.reflection.v1alpha.ServerReflection",
         "health": "grpc.health.v1.Health"
       },
-      "protos": ["test/test.proto", "grpc/reflection/v1alpha/reflection.proto", "google/protobuf/descriptor.proto", "grpc/health/v1/health.proto"],
+      "protos": ["test/test.proto", "test/test.proto", "grpc/reflection/v1alpha/reflection.proto", "grpc/health/v1/health.proto", "google/protobuf/descriptor.proto"],
       "protoRoot": "protos/",
       "addr": "localhost:50051"
     }, {
