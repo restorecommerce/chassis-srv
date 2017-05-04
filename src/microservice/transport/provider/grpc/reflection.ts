@@ -8,6 +8,7 @@ const fs = require('fs');
 
 const grpc = require('grpc');
 const _ = require('lodash');
+const path = require('path');
 
 function findType(t: any, builder: any): any {
   let ns = t;
@@ -199,6 +200,18 @@ function createFileDescriptorProto(file: any, ast: any): any {
   };
 }
 
+function applyProtoRoot(filename, root) {
+  if (_.isString(filename)) {
+    return filename;
+  }
+  filename.root = path.resolve(filename.root) + '/';
+  root.resolvePath = function(originPath, importPath, alreadyNormalized) {
+    return ProtoBuf.util.path.resolve(filename.root,
+                                      importPath,
+                                      alreadyNormalized);
+   };
+  return filename.file;
+ }
 /**
  * An implementation of the grpc.reflection.v1alpha.ServerReflection service.
  * Uses the provided builder and config to reflection on served endpoints.
@@ -218,15 +231,10 @@ export class ServerReflection {
     let protoroot = config.transports[0].protoRoot;
     // let files = config.transports[0].protos;
     // TODO change this to param in config
-    let files = ["grpc/reflection/v1alpha/reflection.proto"];
+    let files = config.transports[0].protos;
     _.forEach(files, (fileName, key) => {
-      root.resolvePath = function (origin, target) {
-        // origin is the path of the importing file
-        // target is the imported path
-        // determine absolute path and return it ...
-        return protoroot + fileName;
-      };
-      root.loadSync(protoroot + fileName);
+      let filename = {root: protoroot, file: fileName};
+      root.loadSync(applyProtoRoot(filename, root));
     });
     this.builder = root;
     this.config = config;
