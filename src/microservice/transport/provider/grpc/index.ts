@@ -520,9 +520,9 @@ export class Server {
     }
     for (let i = 0; i < funcs.length; i += 1) {
       const methodName = funcs[i];
-      const methods = protoService.children;
+      const methods = protoService;
       const methodDef = _.find(methods, (m) => {
-        return m.name.toLowerCase() === methodName.toLowerCase();
+        return m.originalName.toLowerCase() === methodName.toLowerCase();
       });
       const stream = {
         requestStream: false,
@@ -670,9 +670,9 @@ export class Client {
       };
       yield wait();
     }
-    const methods = this.service.service.children;
+    const methods = this.service.service;
     const methodDef = _.find(methods, (m) => {
-      return m.name.toLowerCase() === method.toLowerCase();
+      return m.originalName.toLowerCase() === method.toLowerCase();
     });
     const stream = {
       requestStream: false,
