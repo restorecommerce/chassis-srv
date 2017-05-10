@@ -38,8 +38,7 @@
     "random-js": "^1.0.8",
     "restore-logger": "git+https://github.com/restorecommerce/logger.git",
     "restore-server-config": "git+https://github.com/restorecommerce/server-config.git",
-    "slug": "^0.9.1",
-    "sleep": "^5.1.1"
+    "slug": "^0.9.1"
   },
   "devDependencies": {
     "@types/bluebird": "^3.0.37",
