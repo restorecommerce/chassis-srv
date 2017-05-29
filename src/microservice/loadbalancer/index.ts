@@ -1,6 +1,6 @@
 'use strict';
 
-import{random} from './random';
+import {random} from './random';
 export {random};
 import {roundRobin} from './roundRobin';
 export {roundRobin};
