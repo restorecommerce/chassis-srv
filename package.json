@@ -33,8 +33,8 @@
     "node-zookeeper-client": "^0.2.2",
     "protobufjs": "^6.7.3",
     "random-js": "^1.0.8",
-    "restore-logger": "git+https://github.com/restorecommerce/logger.git",
-    "restore-server-config": "git+https://github.com/restorecommerce/server-config.git",
+    "restore-logger": "restorecommerce/logger",
+    "restore-server-config": "restorecommerce/server-config.git",
     "slug": "^0.9.1"
   },
   "devDependencies": {
