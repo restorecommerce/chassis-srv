@@ -1,12 +1,9 @@
 {
-  "name": "restore-chassis-srv",
+  "name": "@restorecommerce/chassis-srv",
   "version": "0.1.0",
   "description": "Restore Commerce microservice chassis",
   "main": "./lib/index.js",
   "author": "Invend GmbH",
-  "contributors": [
-    "Mohamed Ghassen Brahim"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/restorecommerce/restore-chassis.git"
@@ -80,11 +77,11 @@
     "prepublish": "tsc -d && npm run tsctests && npm test",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
-  "engines": {
-    "node": ">= 6.0.0"
-  },
   "browser": {
     "fs": false,
     "path": false
+  },
+  "engines": {
+    "node": ">= 7.0.0"
   }
 }
