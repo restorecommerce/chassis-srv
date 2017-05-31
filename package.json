@@ -74,7 +74,7 @@
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "pretest": "bash ensureKafkaTopics.bash test test.wait io.restorecommerce.notify",
-    "postinstall": "tsc -d && npm run tsctests && npm test",
+    "prepublish": "tsc -d && npm run tsctests && npm test",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
   "browser": {
