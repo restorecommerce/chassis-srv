@@ -33,8 +33,8 @@
     "node-zookeeper-client": "^0.2.2",
     "protobufjs": "^6.7.3",
     "random-js": "^1.0.8",
-    "restore-logger": "restorecommerce/logger",
-    "restore-server-config": "restorecommerce/server-config.git",
+    "restore-logger": "git+https://github.com/restorecommerce/logger.git",
+    "@restorecommerce/server-config": "git+https://github.com/restorecommerce/server-config.git",
     "slug": "^0.9.1"
   },
   "devDependencies": {
@@ -74,7 +74,7 @@
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "pretest": "bash ensureKafkaTopics.bash test test.wait io.restorecommerce.notify",
-    "prepublish": "tsc -d && npm run tsctests && npm test",
+    "postinstall": "tsc -d && npm run tsctests && npm test",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
   "browser": {
@@ -82,6 +82,6 @@
     "path": false
   },
   "engines": {
-    "node": ">= 7.0.0"
+    "node": ">= 8.0.0"
   }
 }
