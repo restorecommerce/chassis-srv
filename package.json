@@ -68,7 +68,7 @@
     "lint": "eslint *.json && tslint './src/**/*.ts' ",
     "test": "npm run lint && npm run mocha",
     "test-debug": "npm run mochadebug",
-    "mochadebug": "mocha -R spec test/*.js test/kafkaTest/*.js test/healthTest/*.js --full-trace --debug-brk",
+    "mochadebug": "mocha -R spec test/*.js test/kafkaTest/*.js test/healthTest/*.js --full-trace --inspect-brk",
     "mocha": "mocha -R spec test/*.js test/kafkaTest/*.js test/healthTest/*.js --full-trace",
     "tsctests": "tsc test/*.ts test/healthTest/*.ts test/kafkaTest/*.ts --module commonjs -target ES6",
     "nsp": "nsp check --output codeclimate",
