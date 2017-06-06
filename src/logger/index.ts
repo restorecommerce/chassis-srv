@@ -1,6 +1,6 @@
 'use strict';
 
-import * as RestoreLogger from "restore-logger";
+import * as RestoreLogger from "@restorecommerce/logger";
 import * as _ from "lodash";
 
 /**
