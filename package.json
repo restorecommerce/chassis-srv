@@ -31,7 +31,7 @@
     "lodash": "^4.16.4",
     "nedb": "^1.8.0",
     "node-zookeeper-client": "^0.2.2",
-    "protobufjs": "^6.7.3",
+    "protobufjs": "6.7.3",
     "random-js": "^1.0.8",
     "@restorecommerce/logger": "git+https://github.com/restorecommerce/logger.git",
     "@restorecommerce/server-config": "git+https://github.com/restorecommerce/server-config.git",
