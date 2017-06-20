@@ -7,8 +7,8 @@ import * as co from "co";
 import * as path from "path";
 import * as _ from "lodash";
 import * as EventEmitter from "co-emitter";
-import * as root1 from "../../../../definitions/bundled";
-const protobuf = require("protobufjs");
+// import * as root1 from "../../../../definitions/bundled";
+import * as protobuf from "protobufjs";
 
 /**
  * A Kafka topic.
@@ -402,7 +402,7 @@ export class Kafka {
     });
 
     const MessageClass: protobuf.Type = root.lookupType(messageObject);
-    const convertedMessage: protobuf.Message = MessageClass.create(msg);
+    const convertedMessage: protobuf.Message<Object> = MessageClass.create(msg);
     const buffer: Uint8Array = MessageClass.encode(convertedMessage).finish();
 
     return buffer;
@@ -435,6 +435,23 @@ export class Kafka {
   //   return buffer;
   // }
 
+  buildProtobuf(files: Object, protoroot: string): protobuf.Root {
+    // build protobuf
+    let root = new protobuf.Root();
+
+    _.forEach(files, (fileName, key) => {
+      root.resolvePath = function(origin, target) {
+      // origin is the path of the importing file
+      // target is the imported path
+      // determine absolute path and return it ...
+      return protoroot + fileName;
+      };
+      root.loadSync(protoroot + fileName);
+    });
+
+    return root;
+  }
+
  /**
    * ProtoBuf Root object for auto detecting of the decoded message.
    *
@@ -444,7 +461,12 @@ export class Kafka {
    */
  getProtoRoot(config: any, eventName: string): protobuf.Root {
     const stringmessageObject = config.messageObject;
-    const root2 = _.get(root1, stringmessageObject);
+    // using the generated protoRoot instead of the static typedefintion file
+    const protoRoot = config.protoRoot;
+    const protos = config.protos;
+    const root2 = this.buildProtobuf(protos, protoRoot);
+
+    // const root2 = _.get(root1, stringmessageObject);
     return root2;
   }
 
