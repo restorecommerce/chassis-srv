@@ -11746,6 +11746,6 @@ $root.google = (function() {
 })();
 
 // Resolve lazy type references to actual types
-$util.lazyResolve($root, $lazyTypes);
+//$util.lazyResolve($root, $lazyTypes);
 
 module.exports = $root;
