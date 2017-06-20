@@ -22,7 +22,6 @@ describe('binding the Health service', () => {
   chassis.config.load(process.cwd() + '/test', logger);
   before(function* start(): any {
     const cfg = yield chassis.config.get();
-    console.log('The cfg contents are : ' + cfg.get('server'));
     server = new Server(cfg.get('server'));
     const healthSrv: Health = new Health(server, server.config);
     yield server.bind('health', healthSrv);
