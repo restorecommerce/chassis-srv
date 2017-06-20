@@ -244,28 +244,11 @@ describe('microservice.Server', () => {
       yield client.end();
       client = new grpc.Client(grpcConfig, logger);
 
-      // 'biStream'
-      const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
-      instance = cfg.get(biStreamCfgPath);
-      const biStream = yield client.makeEndpoint('biStream', instance);
-      let call = yield biStream();
-      for (let i = 0; i < 3; i += 1) {
-        yield call.write({ value: 'ping' });
-      }
-      for (let i = 0; i < 3; i += 1) {
-        result = yield call.read();
-        should.ifError(result.error);
-        should.exist(result);
-        should.exist(result.result);
-        result.result.should.be.equal('pong');
-      }
-      yield call.end();
-
       // 'requestStream'
       const requestStreamCfgPath: String = 'client:stream:publisher:instances:0';
       instance = cfg.get(requestStreamCfgPath);
       const requestStream = yield client.makeEndpoint('requestStream', instance);
-      call = yield requestStream();
+      let call = yield requestStream();
       for (let i = 0; i < 3; i += 1) {
         yield call.write({ value: 'ping' });
       }
@@ -287,6 +270,23 @@ describe('microservice.Server', () => {
         should.exist(result.result);
         result.result.should.be.equal(`${i}`);
       }
+
+       // 'biStream'
+      const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
+      instance = cfg.get(biStreamCfgPath);
+      const biStream = yield client.makeEndpoint('biStream', instance);
+      call = yield biStream();
+      for (let i = 0; i < 3; i += 1) {
+        yield call.write({ value: 'ping' });
+      }
+      for (let i = 0; i < 3; i += 1) {
+        result = yield call.read();
+        should.ifError(result.error);
+        should.exist(result);
+        should.exist(result.result);
+        result.result.should.be.equal('pong');
+      }
+      yield call.end();
 
       yield client.end();
     });
