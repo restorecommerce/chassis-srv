@@ -9,7 +9,6 @@ import * as _ from "lodash";
 import * as EventEmitter from "co-emitter";
 // import * as root1 from "../../../../definitions/bundled";
 import * as protobuf from "protobufjs";
-import * as sleep from 'sleep';
 
 /**
  * A Kafka topic.
@@ -304,9 +303,6 @@ export class Topic {
       yield this.$subscribe();
     }
     this.emitter.on(eventName, listener);
-    // Fix for the failing test cases - since subscription to topic can
-    // take a while
-    sleep.sleep(2);
   }
 
   /**

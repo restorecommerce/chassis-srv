@@ -15,6 +15,7 @@ const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 import * as chassis from '../lib';
+import * as sleep from 'sleep';
 
 // import * as root1 from '../definitions/bundled';
 import * as protobuf from 'protobufjs';
@@ -90,6 +91,9 @@ describe('events', () => {
           };
           const count: number = yield topic.listenerCount(eventName);
           yield topic.on(eventName, listener);
+          // Giving a delay to avoid BrokerNotAvailable Excpetion
+          // since the subscription to topic takes a while.
+          sleep.sleep(2);
           const countAfter = yield topic.listenerCount(eventName);
           countAfter.should.equal(count + 1);
         });
@@ -98,6 +102,7 @@ describe('events', () => {
             // void listener
           };
           yield topic.on(eventName, listener);
+          sleep.sleep(2);
           yield topic.removeAllListeners(eventName);
           const count: number = yield topic.listenerCount(eventName);
           count.should.equal(0);
@@ -108,6 +113,7 @@ describe('events', () => {
           };
           const count: number = yield topic.listenerCount(eventName);
           yield topic.on(eventName, listener);
+          sleep.sleep(2);
           yield topic.removeListener(eventName, listener);
           const countAfter = yield topic.listenerCount(eventName);
           countAfter.should.equal(count);
@@ -121,6 +127,7 @@ describe('events', () => {
           const hasListeners = yield topic.hasListeners(eventName);
           hasListeners.should.equal(count > 0);
           yield topic.on(eventName, listener);
+          sleep.sleep(2);
           let countAfter = yield topic.listenerCount(eventName);
           countAfter.should.equal(count + 1);
           yield topic.removeListener(eventName, listener);
@@ -165,6 +172,7 @@ describe('events', () => {
           };
           wg.add(1);
           yield topic.on(eventName, listener);
+          sleep.sleep(2);
           setImmediate(() => {
             co(function* emit() {
               yield topic.emit(eventName, testMessage);
