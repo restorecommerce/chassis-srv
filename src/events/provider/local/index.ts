@@ -62,11 +62,16 @@ export class Topic {
    * @return {Object} buffer
    */
   * encodeObject(eventName: string, msg: Object, protoFilePath: string,
-      messageObject: string): any {
+      messageObject: string, protoRoot: string): any {
     let root = new protobuf.Root();
 
-    root.resolvePath = function(origin, target) {
-    return protoFilePath;
+     root.resolvePath = function (origin, target) {
+       // ignore the same file
+       if (target == protoFilePath) {
+         return protoFilePath;
+       }
+       // Resolved target path for the import files
+       return protoRoot + target;
     };
 
     root = yield protobuf.load(protoFilePath, root).then(function(root) {
@@ -118,7 +123,7 @@ export class Topic {
 
         const msg = messages[i];
         bufferObj = yield this.encodeObject(eventName, msg,
-        protoFilePath, messageObject);
+        protoFilePath, messageObject, this.config[eventName].protoRoot);
 
         if (isGeneratorFn(listener)) {
           yield listener(bufferObj, context, this.config, eventName);

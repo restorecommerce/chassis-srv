@@ -388,11 +388,16 @@ export class Kafka {
    * @return {Object} buffer
    */
   * encodeObject(eventName: string, msg: Object, protoFilePath: string,
-      messageObject: string): any {
+      messageObject: string, protoRoot: string): any {
     let root = new protobuf.Root();
 
-    root.resolvePath = function(origin, target) {
-    return protoFilePath;
+     root.resolvePath = function (origin, target) {
+       // ignore the same file
+       if (target == protoFilePath) {
+         return protoFilePath;
+       }
+       // Resolved target path for the import files
+       return protoRoot + target;
     };
 
     root = yield protobuf.load(protoFilePath, root).then(function(root) {
@@ -495,7 +500,7 @@ export class Kafka {
         //  and build a Buffer from it.
         const msg = messages[i];
         const bufferObj = yield this.encodeObject(eventName, msg,
-          protoFilePath, messageObject);
+          protoFilePath, messageObject, this.config[eventName].protoRoot);
         values.push(new kafka.KeyedMessage(eventName, bufferObj));
       }
       this.logger.debug(`sending event ${eventName} to topic ${topicName}`, messages);
