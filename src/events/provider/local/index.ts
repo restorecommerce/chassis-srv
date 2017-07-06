@@ -74,7 +74,7 @@ export class Topic {
        return protoRoot + target;
     };
 
-    root = yield protobuf.load(protoFilePath, root).then(function(root) {
+    root = yield root.load(protoFilePath, {keepCase: true}).then(function(root) {
     return root;
     }).catch(function (err) {
     console.log(err);
