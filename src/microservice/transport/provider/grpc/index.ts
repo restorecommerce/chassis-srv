@@ -418,6 +418,31 @@ function buildProtobuf(files: Object, protoroot: string, logger: any): Object {
   return root;
 }
 
+function buildProtobuf6(file: string, protoRoot: string, logger: any): Object {
+  // build protobuf
+  let root = new ProtoBuf.Root();
+  let protoFilePath = protoRoot + file;
+
+  root.resolvePath = function (origin, target) {
+    // ignore the same file
+    if (target == protoFilePath) {
+      return protoFilePath;
+    }
+    // Resolved target path for the import files
+    return protoRoot + target;
+  };
+
+  // root.load(protoFilePath, {keepCase: true}).then(function(root) {
+  //   return root;
+  // }).catch(function (err) {
+  //   console.log(err);
+  // });
+  root.loadSync(protoFilePath, {keepCase: true});
+
+  return root;
+}
+
+
 /**
  * Server transport provider.
  * @class
@@ -471,8 +496,11 @@ export class Server {
 
     const proto = [];
     for ( let i = 0; i < protos.length; i++) {
-      const filePath = {root: protoRoot, file: protos[i]};
-      this.proto = grpc.load(filePath);
+      // const filePath = {root: protoRoot, file: protos[i]};
+      // this.proto = grpc.load(filePath);
+
+      this.builder = buildProtobuf6(protos[i], protoRoot, logger);
+      this.proto = grpc.loadObject(this.builder);
       proto[i] = this.proto;
     }
 
@@ -613,17 +641,19 @@ export class Client {
       throw new Error('config value protos is not set');
     }
     this.logger.verbose(`gRPC Client loading protobuf files from root ${protoRoot}`, protos);
-    // this.builder = buildProtobuf(protos, protoRoot, logger);
-    // this.proto = grpc.loadObject(this.builder);
+    const proto = [];
+    this.builder = buildProtobuf6(protos, protoRoot, logger);
+    this.proto = grpc.loadObject(this.builder);
+    proto[0] = this.proto;
 
     // There will be only one proto since a client can connect to only
     // one service at a time.
-    const proto = [];
-    for ( let i = 0; i < protos.length; i++) {
-          const filePath = {root: protoRoot, file: protos[i]};
-          this.proto = grpc.load(filePath);
-          proto[i] = this.proto;
-    }
+    // const proto = [];
+    // for ( let i = 0; i < protos.length; i++) {
+    //       const filePath = {root: protoRoot, file: protos[i]};
+    //       this.proto = grpc.load(filePath);
+    //       proto[i] = this.proto;
+    // }
 
     this.service = _.get(proto[0], this.config.service);
     if (_.isNil(this.service)) {
