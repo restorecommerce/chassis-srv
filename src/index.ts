@@ -11,8 +11,8 @@ export {nedb};
 import {Logger} from './logger';
 export {Logger};
 
-import {Client as microserviceClient} from './microservice/client';
-export * from './microservice/client';
+// import {Client as microserviceClient} from './microservice/client';
+// export * from './microservice/client';
 
 import {Server as Server} from './microservice/server';
 export {Server};
@@ -30,11 +30,8 @@ import * as errors from './microservice/errors';
 export {errors};
 import * as grpc from './microservice/transport/provider/grpc';
 export {grpc};
-export {Client as grpcClient} from './microservice/transport/provider/grpc';
+// export {Client as grpcClient} from './microservice/transport/provider/grpc';
 export {Server as grpcServer} from './microservice/transport/provider/grpc';
 import {ServerReflection} from './microservice/transport/provider/grpc';
 export {ServerReflection};
-export {Client as pipeClient, Server as pipeServer}  from './microservice/transport/provider/pipe';
-export *  from './events';
-export *  from './events/provider/kafka';
-export {Topic as localTopic, Local as local}  from './events/provider/local';
+export {Server as pipeServer, Client as pipeClient}  from './microservice/transport/provider/pipe';

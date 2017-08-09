@@ -11,9 +11,8 @@ const logger = require('./../logger_test.ts');
 import * as chassis from '../../lib';
 import {Health} from '../../lib';
 
-import {Client} from '../../lib';
+import {Client, Events} from '@restorecommerce/srv-client';
 import {Server} from '../../lib/microservice/server';
-import {Events} from "../../lib/events/index";
 
 /* global describe it beforeEach afterEach*/
 

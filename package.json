@@ -17,6 +17,9 @@
   ],
   "typings": "lib/index.d.ts",
   "dependencies": {
+    "@restorecommerce/logger": "git+https://github.com/restorecommerce/logger.git",
+    "@restorecommerce/server-config": "git+https://github.com/restorecommerce/server-config.git",
+    "@restorecommerce/srv-client": "git+https://github.com/restorecommerce/srv-client.git",
     "aqb": "^2.1.0",
     "arangojs": "^5.0.3",
     "bluebird": "^3.4.6",
@@ -33,8 +36,6 @@
     "node-zookeeper-client": "^0.2.2",
     "protobufjs": "^6.8.0",
     "random-js": "^1.0.8",
-    "@restorecommerce/logger": "git+https://github.com/restorecommerce/logger.git",
-    "@restorecommerce/server-config": "git+https://github.com/restorecommerce/server-config.git",
     "slug": "^0.9.1"
   },
   "devDependencies": {
@@ -75,7 +76,7 @@
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "pretest": "node test/setUpTopics/setupTopics.js test test.wait io.restorecommerce.notify",
-    "prepublish": "tsc -d && npm run tsctests && npm test",
+    "prepublish": "sh typeScriptConversion.sh && tsc -d && npm run tsctests && npm test",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
   "browser": {

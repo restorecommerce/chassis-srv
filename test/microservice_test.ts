@@ -15,8 +15,10 @@ const logger = require('./logger_test.js');
 import * as chassis from '../lib';
 
 const config = chassis.config;
-const Client = chassis.Client;
+import * as srvClient from '@restorecommerce/srv-client';
+const Client = srvClient.Client;
 const Server = chassis.Server;
+const grpcClient = srvClient.grpcClient;
 const grpc = chassis.grpc;
 const errors = chassis.errors;
 
@@ -172,7 +174,7 @@ describe('microservice.Server', () => {
       should.exist(grpcConfig);
       should.exist(grpcConfig.service);
 
-      let client: chassis.grpcClient = new grpc.Client(grpcConfig, logger);
+      let client: srvClient.grpcClient = new grpcClient(grpcConfig, logger);
       let instance: string;
       let result;
       should.exist(client);
@@ -242,7 +244,7 @@ describe('microservice.Server', () => {
 
       grpcConfig = cfg.get('client:stream:transports:grpc');
       yield client.end();
-      client = new grpc.Client(grpcConfig, logger);
+      client = new grpcClient(grpcConfig, logger);
 
       // 'requestStream'
       const requestStreamCfgPath: String = 'client:stream:publisher:instances:0';
@@ -429,14 +431,6 @@ describe('microservice.Client', () => {
         should.exist(result.data);
         should.exist(result.data.result);
         result.data.result.should.equal('welcome');
-
-        // 'notFound' endpoint
-        result = yield testService.notFound();
-        should.exist(result.error);
-        result.error.should.be.Error();
-        result.error.message.should.equal('not found');
-        result.error.details.should.equal('test not found');
-        should.not.exist(result.data);
       });
     });
     describe('end', () => {

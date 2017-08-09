@@ -10,11 +10,12 @@ const should = require('should');
 const co = require('co');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
+import * as srvClient from '@restorecommerce/srv-client';
 
 import * as chassis from '../lib';
-import {grpcClient} from '../lib';
-import {grpcServer} from '../lib';
+const grpcClient = srvClient.grpcClient;
 import {pipeClient} from '../lib';
+import {grpcServer} from '../lib';
 import {pipeServer} from '../lib';
 
 /* global describe it before after*/

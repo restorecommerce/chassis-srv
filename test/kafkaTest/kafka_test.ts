@@ -11,7 +11,7 @@ const logger = require('./../logger_test.js');
 import * as chassis from '../../lib';
 
 const config = chassis.config;
-import {Events} from "../../lib/events/index";
+import {Events} from "@restorecommerce/srv-client";
 
 /* global describe it before after */
 /*  eslint-disable require-yield */

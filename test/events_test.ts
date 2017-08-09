@@ -20,7 +20,7 @@ import * as sleep from 'sleep';
 // import * as root1 from '../definitions/bundled';
 import * as protobuf from 'protobufjs';
 const config = chassis.config;
-const Events = chassis.Events;
+import {Events, Topic} from '@restorecommerce/srv-client';
 
 
 /* global describe it before after */
@@ -31,7 +31,7 @@ describe('events', () => {
     describe('yielding subscribe', () => {
       it('should throw an error', function* checkGetTopic() {
         const result = yield co(function* getTopic() {
-          const events: chassis.Events = new Events();
+          const events: Events = new Events();
           return yield events.topic(topicName);
         }).then((res) => {
           should.ok(false, 'should not call then');
@@ -47,9 +47,9 @@ describe('events', () => {
   const providers = ['kafkaTest', 'localTest'];
   _.forEach(providers, (eventsName: string) => {
     describe(`testing config ${eventsName}`, () => {
-      let events: chassis.Events;
+      let events: Events;
       const topicName = 'test';
-      let topic: chassis.Topic;
+      let topic: Topic;
       const eventName = 'test-event';
 
       const testMessage = { value: 'testValue', count: 1 };
