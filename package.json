@@ -30,7 +30,7 @@
     "gostd": "github:restorecommerce/gostd",
     "grpc": "^1.4.1",
     "is-generator": "^1.0.3",
-    "kafka-node": "^1.6.2",
+    "kafka-node": "^2.2.0",
     "lodash": "^4.16.4",
     "nedb": "^1.8.0",
     "node-zookeeper-client": "^0.2.2",
@@ -39,21 +39,21 @@
     "slug": "^0.9.1"
   },
   "devDependencies": {
+    "@restorecommerce/eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "@types/bluebird": "^3.5.4",
     "@types/cache-manager": "^1.2.4",
-    "@types/fs-extra": "^3.0.2",
-    "@types/kafka-node": "^1.3.2",
+    "@types/fs-extra": "^4.0.0",
+    "@types/kafka-node": "^2.0.2",
     "@types/long": "^3.0.31",
     "@types/mocha": "^2.2.39",
     "@types/nedb": "^1.8.2",
-    "@types/node": "^7.0.22",
+    "@types/node": "^8.0.22",
     "@types/should": "^8.1.30",
     "@types/slug": "^0.9.0",
     "@types/wolfy87-eventemitter": "^4.2.31",
     "co-mocha": "^1.1.3",
     "coveralls": "^2.11.14",
-    "eslint": "^3.7.1",
-    "@restorecommerce/eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
+    "eslint": "^4.4.1",
     "is-generator": "^1.0.3",
     "istanbul": "^0.4.5",
     "jsdoc": "^3.4.2",
@@ -84,6 +84,6 @@
     "path": false
   },
   "engines": {
-    "node": ">= 8.0.0"
+    "node": ">= 8.3.0"
   }
 }
