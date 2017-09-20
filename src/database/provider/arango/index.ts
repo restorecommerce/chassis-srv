@@ -158,6 +158,9 @@ function buildField(key: any, value: any): any {
   if (value.$ne) {
     return qb.neq(autoCastKey(key, value), autoCastValue(value.$ne));
   }
+  if (value.$inAttr) {
+    return qb.in(autoCastValue(value.$inAttr), autoCastKey(key, value));
+  }
   if (value.$in) {
     return qb.in(autoCastKey(key, value), autoCastValue(value.$in));
   }
@@ -607,9 +610,9 @@ export function* create(conf: any, logger: any): any {
   let log = logger;
   if (_.isNil(logger)) {
     log = {
-      verbose: () => {},
-      info: () => {},
-      error: () => {},
+      verbose: () => { },
+      info: () => { },
+      error: () => { },
     };
   }
   const conn = yield connect(conf, log);
