@@ -557,20 +557,35 @@ function* connect(conf: any, logger: any): any {
   const attempts = conf.retries || 3;
   const delay = conf.delay || 1000;
   const arangoVersion = conf.version || 30000;
-  const url = `http://${dbHost}:${dbPort}`;
+
+  let url = 'http://';
+
+  const username = conf.username;
+  const password = conf.password;
+
+  if (username && password) {
+    url = url + `${username}:${password}@`;
+  }
+
+  url = url + `${dbHost}:${dbPort}`;
+
   let mainError;
   for (let currentAttempt = 1; currentAttempt <= attempts; currentAttempt += 1) {
     try {
-      logger.info(
-        'Attempt to connect database', dbHost, dbPort, dbName, {
-          attempt: currentAttempt
-        });
+      logger.info('Attempt to connect database', dbHost, dbPort, dbName, {
+        attempt: currentAttempt
+      });
+      console.log('Config', { url, arangoVersion });
       const db = new Arangojs({
         url,
         arangoVersion,
       });
       try {
         db.useDatabase(dbName);
+
+        if (username && password) {
+          db.useBasicAuth(username, password);
+        }
         yield db.get();
       } catch (err) {
         if (err.name === 'ArangoError' && err.errorNum === 1228) {
