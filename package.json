@@ -18,7 +18,7 @@
   "typings": "lib/index.d.ts",
   "dependencies": {
     "@restorecommerce/logger": "git+https://github.com/restorecommerce/logger.git",
-    "@restorecommerce/server-config": "git+https://github.com/restorecommerce/server-config.git",
+    "@restorecommerce/service-config": "git+https://github.com/restorecommerce/service-config.git",
     "@restorecommerce/srv-client": "git+https://github.com/restorecommerce/srv-client.git",
     "aqb": "^2.1.0",
     "arangojs": "^5.0.3",

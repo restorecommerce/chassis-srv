@@ -1,6 +1,6 @@
 'use strict';
 
-import * as readConfig from "@restorecommerce/server-config";
+import * as readConfig from "@restorecommerce/service-config";
 
 // singleton
 let config;
