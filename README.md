@@ -1,20 +1,17 @@
 # chassis-srv [![Build Status](https://travis-ci.org/restorecommerce/chassis-srv.svg?branch=master)](https://travis-ci.org/restorecommerce/chassis-srv) [![Coverage Status](https://coveralls.io/repos/github/restorecommerce/chassis-srv/badge.svg?branch=master)](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
 
-In development. The API is not stable.
-
 ## Features
 
 - Expose your business logic as RPC endpoints
-- Emit and listen to events from other microservices like when you would use Node.js events
-- Middleware for client and server
+- Middleware for server
 - Includes endpoint discovery, load balancing, retry and timeout logic
 - Microservices Health check Endpoint
 - Uses ES6 features
 
 ## Install
 
-Make sure you have typescript (tsc) installed before installing chassis-srv `npm install -g typescript`.
-To install the chassis just run ``npm install restorecommerce/chassis-srv``.
+Make sure you have typescript (tsc) installed before using chassis-srv `npm install -g typescript`.
+To install the chassis-srv run ``npm install restorecommerce/chassis-srv``.
 
 ## Examples
 
@@ -31,10 +28,8 @@ node emit.js
 
 ## Architecture
 
-The chassis is split into a cache, config, database, events, logger, client and server part.
-The client connects via transports to other servers and offers these endpoints.
+The chassis is split into a cache, config, database, logger and server part.
 A Server exposes endpoints via transports.
-The events provide a pub/sub model like the NodeJS events module.
 The cache part handles loading of caches based on configuration files.
 Databases can be loaded with database part.
 Log handling is provided by the logger part.
@@ -53,32 +48,22 @@ The following transport providers are available:
 An endpoint is one function of a service. At the client side an endpoint is an exposed service function of one server.
 On the server it is one exposed business logic function. Endpoints connect to each other via transports.
 
-### Events
-
-The chassis provides a similar event API to [Node.js events](https://nodejs.org/api/events.html).
-A provider broadcasts emitted events to listeners.
-The provider takes care of packaging the event and distributing it to listeners.
-The following events providers are available:
-
-- [Kafka](https://kafka.apache.org/)
-- Local (in-process events, designed for testing)
-
 ### Configuration
 
-[restore-server-config](https://github.com/restorecommerce/server-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
+[service-config](https://github.com/restorecommerce/service-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
 The ``config.get`` function loads the configuration from files located in the subdirectory 'cfg' of the current working directory.
 Environment variables overwrite configuration values from files.
 ``config.load`` loads the configuration file from a different location.
 
 ```js
-const config = require('restore-chassis-srv').config;
+const config = require('chassis-srv').config;
 yield config.load(pathToTheParentOfCfg);
 yield config.get();
 ```
 
 ### Logging
 
-[restore-logger](https://github.com/restorecommerce/logger) provides logging which uses [winston](https://github.com/winstonjs/winston).
+[logger](https://github.com/restorecommerce/logger) provides logging which uses [winston](https://github.com/winstonjs/winston).
 Clients, the server and the events provider provide the logger.
 The configuration file contains logger settings.
 The logger is available from ``Client.logger``, ``Server.logger`` or ``Events.logger``.
@@ -97,7 +82,7 @@ To create a log call ``logger.<level>(message, ...args)``. The ``level`` being o
 
 The Health check  of microservices is done using a RPC endpoint.
 ```js
-const config = require('restore-chassis-srv').config;
+const config = require('chassis-srv').config;
 const cfg = yield config.get();
 const client = new Client(cfg.get('client:health'));
 health = yield client.connect();
@@ -106,136 +91,6 @@ const resp = yield health.check({
 });
 ```
 The response contains a Status field which could be : 'SERVING' , 'NOT_SERVING' or 'UNKNOWN'.
-
-### Client
-
-Clients connect to servers via transports and provide endpoints. When calling an endpoint the request traverses on the client side possible middleware, retry and timeout logic, load balancing and finally it reaches the transport. The transport encodes the request and sends it to the server. The response from the server is directly provided as a result or an error.
-
-#### Retry
-
-Failing endpoints retry calling with the retry mechanism. When providing multiple instances of the endpoint to the publisher, depending on the used load balancer, the retried endpoint is not the same instance. The retry number specifies the amount of additional attempts.
-
-```js
-yield service.endpoint({}, {retry:3}),
-```
-
-#### Timeout
-
-It is possible to add a timeout to an endpoint call. The timeout number is in milliseconds.
-
-```js
-yield service.endpoint({}, {timeout:100}),
-```
-
-#### Middleware
-
-The call traverses middleware before calling the endpoint. The middleware can call the next middleware until the last middleware calls the endpoint.
-
-```js
-function makeMiddleware() {
-  return function*(next) {
-    return function*(request, context){
-      return yield next(request, context);
-    };
-  };
-}
-client.middleware.push(makeMiddleware());
-```
-
-#### Publisher
-
-A publisher provides endpoints to a loadbalancer. Most publisher call a factory function to generate an endpoint from an instance.
-
-Publishers:
-
-- FixedPublisher
-- StaticPublisher
-
-#### LoadBalancer
-
-A loadbalancer picks an endpoint from the publisher. Which endpoint gets selected depends on it's strategy.
-
-LoadBalancers:
-
-- Random
-- RoundRobin
-
-#### Config
-
-The client requires a configuration file which specifies to which services to connect,
-what transport to use, which endpoints to create, how to discover endpoints and how to balance calls.
-
-By default the client uses the RoundRobin loadbalancer.
-Setting the config value config.loadbalancer enables a different default loadbalancers.
-Providing a client.publisher config value, sets a default publisher for all endpoints.
-Each endpoint can overwrite the default loadbalancer and publisher.
-
-Short example config file.
-
-```json
-{
-  "client": {
-    "user": {
-      "transports": {
-        "grpc": {
-          "service": "io.restorecommerce.notify.Notifyd",
-          "protoRoot": "protos/",
-          "protos": ["io/restorecommerce/notify.proto"],
-          "timeout": 3000
-        }
-      },
-      "publisher": {
-        "name": "static",
-        "instances": ["grpc://localhost:50051"]
-      },
-      "endpoints": {
-        "create": {},
-        "createStream": {}
-      }
-    }
-  }
-}
-```
-
-Extended example configuration file
-
-```json
-{
-  "client": {
-    "user": {
-      "transports": {
-        "grpc": {
-          "service": "io.restorecommerce.notify.Notifyd",
-          "protoRoot": "protos/",
-          "protos": ["io/restorecommerce/notify.proto"],
-          "timeout": 3000
-        }
-      },
-      "endpoints": {
-        "create": {
-          "loadbalancer": {
-            "name": "roundRobin"
-          },
-          "publisher": {
-            "name": "static",
-            "instances": ["grpc://localhost:50051"]
-          }
-        },
-        "createStream": {
-          "loadbalancer": {
-            "name": "random",
-            "seed": 1
-          },
-          "publisher": {
-            "name": "static",
-            "instances": ["grpc://localhost:50051"]
-          }
-        }
-      }
-    }
-  }
-}
-```
 
 ### Server
 
@@ -246,8 +101,9 @@ The business logic processes the request and respond with either a result or an 
 The following code starts a server and provides the service endpoints.
 
 ```js
+const chassis = require('chassis-srv');
 const cfg = yield chassis.config.get();
-const server = new chassis.microservices.Server(cfg.get('server'));
+const server = new chassis.Server(cfg.get('server'));
 const service = new Service();
 yield server.bind('serviceName', service);
 yield server.start();
@@ -308,30 +164,6 @@ function makeMiddleware() {
 server.middleware.push(makeMiddleware());
 ```
 
-### Events
-
-The following example subscribes to a topic named ``com.example.visits`` and
-listens to events called ``visit``.
-On an event the ``listener`` is called with the event message.
-The listener are either generator functions or normal functions.
-
-```js
-const chassis = require('restore-chassis-src');
-const topicName = 'com.example.visits';
-const eventName = 'visit';
-const cfg = yield chassis.config.get();
-const events = new chassis.events.Events(cfg.get('events:example'));
-const listener = function*(message) {};
-const topic = yield events.topic(topicName);
-yield topic.on(eventName, listener);
-```
-
-To emit an event to the topic call:
-
-```js
-yield topic.emit(eventName, { url: 'example.com' });
-```
-
 ### database
 
 Database provider are available for the following databases:
@@ -344,7 +176,7 @@ All providers follow the same API which is similar to the NeDB/MongoDB API.
 The following code creates a database connection and inserts a new document.
 
 ```js
-const chassis = require('restore-chassis-srv');
+const chassis = require('chassis-srv');
 const cfg = yield chassis.config.get();
 const db = yield chassis.database.get(cfg.get('ephemeral'));
 const notification = {
@@ -381,7 +213,7 @@ By default only the memory provider is registered.
 To create a cache manager call the ``cache.get`` function as follows.
 
 ```js
-const chassis = require('restore-chassis-srv');
+const chassis = require('chassis-srv');
 const cfg = yield chassis.config.get();
 const memory = yield chassis.cache.get(cfg.get('cache:memory'), logger);
 ```
