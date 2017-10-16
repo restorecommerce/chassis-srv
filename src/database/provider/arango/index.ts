@@ -1,9 +1,9 @@
 'use strict';
 const Arangojs = require('arangojs');
-import * as slug from "slug";
-import * as _ from "lodash";
-import * as time from "gostd";
-import * as qb from "aqb";
+import * as slug from 'slug';
+import * as _ from 'lodash';
+import * as time from 'sleep';
+import * as qb from 'aqb';
 
 const DB_SYSTEM = '_system';
 
@@ -609,7 +609,7 @@ function* connect(conf: any, logger: any): any {
         });
       mainError = err;
     }
-    yield time.sleep(delay);
+    yield time.msleep(delay);
   }
   throw mainError;
 }

@@ -9,7 +9,6 @@ coMocha(mocha);
 const should = require('should');
 const _ = require('lodash');
 const co = require('co');
-const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 import * as chassis from '../lib';
@@ -144,20 +143,14 @@ describe('microservice.Server', () => {
     it('should wrap a service and create endpoints for each object function',
       function* bindService() {
         const boundServices = 2;
-        const wg = new sync.WaitGroup();
         let currentBoundServices = 0;
         server.on('bound', () => {
           currentBoundServices += 1;
-          if (currentBoundServices === boundServices) {
-            wg.done();
-          }
         });
-        wg.add(1);
         co(function* bind() {
           yield server.bind('test', service);
           yield server.bind('stream', service);
         });
-        yield wg.wait();
       });
   });
   describe('calling start', () => {
@@ -273,7 +266,7 @@ describe('microservice.Server', () => {
         result.result.should.be.equal(`${i}`);
       }
 
-       // 'biStream'
+      // 'biStream'
       const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
       instance = cfg.get(biStreamCfgPath);
       const biStream = yield client.makeEndpoint('biStream', instance);
@@ -326,15 +319,12 @@ describe('microservice.Server', () => {
   });
   describe('calling end', () => {
     it('should stop the server and no longer provide endpoints', function* endServer() {
-      const wg = new sync.WaitGroup();
       server.on('stopped', () => {
-        wg.done();
+        logger.info('server stopped');
       });
-      wg.add(1);
       co(function* end() {
         yield server.end();
       });
-      yield wg.wait();
     });
   });
 });
@@ -475,15 +465,12 @@ describe('microservice.Client', () => {
     });
     describe('end', () => {
       it('should disconnect from all endpoints', function* disconn() {
-        const wg = new sync.WaitGroup();
         client.on('disconnected', () => {
-          wg.done();
+          logger.info('all endpoints disconnected');
         });
-        wg.add(1);
         co(function* end() {
           yield client.end();
         });
-        yield wg.wait();
       });
     });
   });
