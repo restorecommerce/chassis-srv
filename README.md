@@ -11,7 +11,7 @@
 ## Install
 
 Make sure you have typescript (tsc) installed before using chassis-srv `npm install -g typescript`.
-To install the chassis-srv run ``npm install restorecommerce/chassis-srv``.
+To install the chassis-srv run ``npm install chassis-srv``.
 
 ## Examples
 
@@ -56,7 +56,7 @@ Environment variables overwrite configuration values from files.
 ``config.load`` loads the configuration file from a different location.
 
 ```js
-const config = require('chassis-srv').config;
+const config = require('@restorecommerce/chassis-srv').config;
 yield config.load(pathToTheParentOfCfg);
 yield config.get();
 ```
@@ -82,7 +82,7 @@ To create a log call ``logger.<level>(message, ...args)``. The ``level`` being o
 
 The Health check  of microservices is done using a RPC endpoint.
 ```js
-const config = require('chassis-srv').config;
+const config = require('@restorecommerce/chassis-srv').config;
 const cfg = yield config.get();
 const client = new Client(cfg.get('client:health'));
 health = yield client.connect();
@@ -101,7 +101,7 @@ The business logic processes the request and respond with either a result or an 
 The following code starts a server and provides the service endpoints.
 
 ```js
-const chassis = require('chassis-srv');
+const chassis = require('@restorecommerce/chassis-srv');
 const cfg = yield chassis.config.get();
 const server = new chassis.Server(cfg.get('server'));
 const service = new Service();
@@ -176,7 +176,7 @@ All providers follow the same API which is similar to the NeDB/MongoDB API.
 The following code creates a database connection and inserts a new document.
 
 ```js
-const chassis = require('chassis-srv');
+const chassis = require('@restorecommerce/chassis-srv');
 const cfg = yield chassis.config.get();
 const db = yield chassis.database.get(cfg.get('ephemeral'));
 const notification = {
@@ -213,7 +213,7 @@ By default only the memory provider is registered.
 To create a cache manager call the ``cache.get`` function as follows.
 
 ```js
-const chassis = require('chassis-srv');
+const chassis = require('@restorecommerce/chassis-srv');
 const cfg = yield chassis.config.get();
 const memory = yield chassis.cache.get(cfg.get('cache:memory'), logger);
 ```
