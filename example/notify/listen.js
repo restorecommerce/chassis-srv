@@ -2,26 +2,30 @@
 
 const co = require('co');
 const chassis = require('../../lib');
+const srvClient = require('@restorecommerce/srv-client');
+const Logger = require('@restorecommerce/logger');
 
-const Events = chassis.events.Events;
+const Events = srvClient.Events;
 const database = chassis.database;
 
 co(function* init() {
-  const config = {
-    provider: 'kafka',
-    groupId: 'notify-listen',
-    clientId: 'notify-listen',
-    connectionString: 'localhost:9092',
-    protos: ['io/restorecommerce/notify.proto'],
-    protoRoot: '../../protos/',
-  };
-  // Create a new microservice Server
-  const events = new Events(config);
-  yield events.start();
-  const logger = events.logger;
+  // const config = {
+  //   provider: 'kafka',
+  //   groupId: 'notify-listen',
+  //   clientId: 'notify-listen',
+  //   connectionString: 'localhost:9092',
+  //   protos: ['io/restorecommerce/notify.proto'],
+  //   protoRoot: '../../protos/',
+  // };
+
 
   // Load configuration
   const cfg = yield chassis.config.get();
+  const logger = new Logger(cfg.get('logger'));
+
+  // Create a new microservice Server
+  const events = new Events(cfg.get('events:kafka'), logger);
+  yield events.start();
 
   // Load database
   const db = yield database.get(cfg.get('database:ephemeral'), logger);

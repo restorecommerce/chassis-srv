@@ -1,4 +1,12 @@
 {
+  "logger": {
+    "console": {
+      "handleExceptions": false,
+      "level": "silly",
+      "colorize": true,
+      "prettyPrint": true
+    }
+  },
   "client": {
     "notify": {
       "transports": {
@@ -39,11 +47,18 @@
       "provider": "kafka",
       "groupId": "notifyd",
       "clientId": "notifyd",
-      "connectionString": "localhost:9092",
+      "connectionString": "localhost:2181",
       "protos": [
         "io/restorecommerce/notify.proto"
       ],
-      "protoRoot": "../../protos/"
+      "protoRoot": "../../protos/",
+      "notification": {
+        "protos": [
+          "io/restorecommerce/notify.proto"
+        ],
+        "protoRoot": "../../protos/",
+        "messageObject": "io.restorecommerce.notify.Notification"
+      }
     }
   },
   "server": {

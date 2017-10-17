@@ -3,8 +3,10 @@
 const co = require('co');
 const chassis = require('../../lib');
 
-const Server = chassis.microservice.Server;
-const Events = chassis.events.Events;
+const Server = chassis.Server;
+const srvClient = require('@restorecommerce/srv-client');
+const Logger = require('@restorecommerce/logger');
+const Events = srvClient.Events;
 
 function guid() {
   function s4() {
@@ -20,6 +22,7 @@ function guid() {
 function Service(events, logger) {
   // will be an endpoint
   this.create = function* create(call, context) {
+    logger.info('create being called!');
     const req = call.request;
     const id = guid();
     const notification = {
@@ -30,6 +33,7 @@ function Service(events, logger) {
     };
     let send = false;
     try {
+      logger.info('Notification', notification);
       yield events.emit('notification', notification);
       send = true;
     } catch (err) {
@@ -63,6 +67,7 @@ function Service(events, logger) {
         yield call.write(report);
       } catch (err) {
         stream = false;
+        context.logger.error(err);
         if (err.message === 'stream end') {
           yield call.end();
           return;
@@ -76,19 +81,20 @@ function Service(events, logger) {
 co(function* init() {
   // Load configuration
   const cfg = yield chassis.config.get();
+  const logger = new Logger(cfg.get('logger'));
 
   // Create a new microservice Server
-  const server = new Server(cfg.get('server'));
+  const server = new Server(cfg.get('server'), logger);
 
   // Create events
-  const events = new Events(cfg.get('events:kafka'));
+  const events = new Events(cfg.get('events:kafka'), logger);
   yield events.start();
 
   // Subscribe to events which the business logic requires
   const notificationEvents = yield events.topic('io.restorecommerce.notify');
 
   // Create the business logic
-  const service = new Service(notificationEvents, server.logger);
+  const service = new Service(notificationEvents, logger);
 
   // Bind business logic to server
   yield server.bind('notifyd', service);

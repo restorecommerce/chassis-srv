@@ -3,8 +3,10 @@
 const co = require('co');
 const readline = require('readline');
 const chassis = require('../../lib');
+const srvClient = require('@restorecommerce/srv-client');
+const Logger = require('@restorecommerce/logger');
 
-const Client = chassis.microservice.Client;
+const Client = srvClient.Client;
 
 function askQuestion(rl, question) {
   return function wrap(cb) {
@@ -17,9 +19,11 @@ function askQuestion(rl, question) {
 co(function* init() {
   // Load configuration
   const cfg = yield chassis.config.get();
+  const logger = new Logger(cfg.get('logger'));
 
-  const client = new Client(cfg.get('client:notify'));
+  const client = new Client(cfg.get('client:notify'), logger);
   const notifyd = yield client.connect();
+  logger.info('Service', notifyd);
 
   // with arguments
   if (process.argv.length === 5) {
@@ -34,9 +38,9 @@ co(function* init() {
     try {
       const response = yield notifyd.create(notification);
       const report = response.data;
-      client.logger.info(`Notification ${report.id} was send ${report.send}`);
+      logger.info(`Notification ${report.id} was send ${report.send}`);
     } catch (err) {
-      client.logger.error('notification creation error', err);
+      logger.error('notification creation error', err);
     }
     return;
   }
@@ -46,19 +50,18 @@ co(function* init() {
     input: process.stdin,
     output: process.stdout
   });
-  const call = yield notifyd.createStream();
+
   const keepReading = true;
   while (keepReading) {
     const notification = {};
     notification.sender = yield askQuestion(rl, 'Enter sender: ');
     notification.title = yield askQuestion(rl, 'Enter title: ');
     notification.message = yield askQuestion(rl, 'Enter message: ');
-    yield call.write(notification);
-    const report = yield call.read();
-    client.logger.info('report', report);
+
+    const report = yield notifyd.create(notification, this);
+    logger.info('report', report);
   }
   rl.close();
-  yield call.end();
 }).catch((err) => {
   /* eslint no-console: ["error", { allow: ["error"] }] */
   console.error('client error', err, err.stack);
