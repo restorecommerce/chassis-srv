@@ -2,8 +2,8 @@
 
 const co = require('co');
 const chassis = require('../../lib');
-
-const Events = chassis.events.Events;
+const srvClient = require('@restorecommerce/srv-client');
+const Events = srvClient.Events;
 const database = chassis.database;
 
 co(function* init() {
