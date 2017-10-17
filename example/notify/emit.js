@@ -3,9 +3,8 @@
 const co = require('co');
 const readline = require('readline');
 const chassis = require('../../lib');
-const srvClient = require('@restorecommerce/srv-client');
 
-const Client = srvClient.Client;
+const Client = chassis.microservice.Client;
 
 function askQuestion(rl, question) {
   return function wrap(cb) {

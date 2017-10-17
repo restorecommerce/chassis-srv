@@ -2,9 +2,9 @@
 
 const co = require('co');
 const chassis = require('../../lib');
-const srvClient = require('@restorecommerce/srv-client');
-const Server = chassis.Server;
-const Events = srvClient.Events;
+
+const Server = chassis.microservice.Server;
+const Events = chassis.events.Events;
 
 function guid() {
   function s4() {
