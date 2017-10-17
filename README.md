@@ -65,7 +65,7 @@ The following events providers are available:
 
 ### Configuration
 
-[restore-server-config](https://github.com/restorecommerce/server-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
+[restore-service-config](https://github.com/restorecommerce/service-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
 The ``config.get`` function loads the configuration from files located in the subdirectory 'cfg' of the current working directory.
 Environment variables overwrite configuration values from files.
 ``config.load`` loads the configuration file from a different location.
