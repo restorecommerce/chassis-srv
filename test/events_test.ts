@@ -11,7 +11,6 @@ coMocha(mocha);
 import * as should from 'should';
 import * as co from 'co';
 const _ = require('lodash');
-const sync = require('gostd').sync;
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
 import * as chassis from '../lib';

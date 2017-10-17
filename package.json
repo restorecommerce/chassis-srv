@@ -27,7 +27,6 @@
     "co": "^4.6.0",
     "co-emitter": "^0.2.3",
     "google-protobuf": "^3.4.0",
-    "gostd": "github:restorecommerce/gostd",
     "grpc": "1.4.1",
     "is-generator": "^1.0.3",
     "kafka-node": "^2.2.2",
@@ -36,6 +35,7 @@
     "node-zookeeper-client": "^0.2.2",
     "protobufjs": "^6.8.0",
     "random-js": "^1.0.8",
+    "sleep": "^5.1.1",
     "slug": "^0.9.1"
   },
   "devDependencies": {
@@ -76,7 +76,7 @@
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "pretest": "node test/setUpTopics/setupTopics.js test test.wait io.restorecommerce.notify",
-    "prepublish": "sh typeScriptConversion.sh && tsc -d && npm run tsctests && npm test",
+    "postinstall": "sh typeScriptConversion.sh && tsc -d",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
   },
   "browser": {
