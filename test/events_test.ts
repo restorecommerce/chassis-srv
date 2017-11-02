@@ -19,7 +19,7 @@ import * as sleep from 'sleep';
 // import * as root1 from '../definitions/bundled';
 import * as protobuf from 'protobufjs';
 const config = chassis.config;
-import { Events, Topic } from '@restorecommerce/srv-client';
+import { Events, Topic } from '@restorecommerce/kafka-client';
 
 
 /* global describe it before after */
@@ -65,8 +65,8 @@ describe('events', () => {
         events = null;
       });
       describe('yielding subscribe', () => {
-        it('should return a topic', function* checkGetTopic() {
-          topic = yield events.topic(topicName);
+        it('should return a topic', async function checkGetTopic() {
+          topic = await (events.topic(topicName));
           should.exist(topic);
           should.exist(topic.on);
           should.exist(topic.emit);
@@ -74,63 +74,63 @@ describe('events', () => {
           should.exist(topic.hasListeners);
           should.exist(topic.removeListener);
           should.exist(topic.removeAllListeners);
-          should.ok(isGeneratorFn(topic.on));
+          /*should.ok(isGeneratorFn(topic.on));
           should.ok(isGeneratorFn(topic.emit));
           should.ok(isGeneratorFn(topic.listenerCount));
           should.ok(isGeneratorFn(topic.hasListeners));
           should.ok(isGeneratorFn(topic.removeListener));
-          should.ok(isGeneratorFn(topic.removeAllListeners));
+          should.ok(isGeneratorFn(topic.removeAllListeners));*/
         });
       });
       describe('yielding Provider.start', function startKafka() {
         this.timeout(5000);
-        it('should allow listening to events', function* listenToEvents() {
+        it('should allow listening to events', async function listenToEvents() {
           const listener = function* listener() {
             // void listener
           };
-          const count: number = yield topic.listenerCount(eventName);
-          yield topic.on(eventName, listener);
+          const count: number = await topic.listenerCount(eventName);
+          await topic.on(eventName, listener);
           // Giving a delay to avoid BrokerNotAvailable Excpetion
           // since the subscription to topic takes a while.
           sleep.sleep(2);
-          const countAfter = yield topic.listenerCount(eventName);
+          const countAfter = await topic.listenerCount(eventName);
           countAfter.should.equal(count + 1);
         });
-        it('should allow removing all listeners', function* removeAllListeners() {
+        it('should allow removing all listeners', async function removeAllListeners() {
           const listener = function* listener() {
             // void listener
           };
-          yield topic.on(eventName, listener);
+          await topic.on(eventName, listener);
           sleep.sleep(2);
-          yield topic.removeAllListeners(eventName);
-          const count: number = yield topic.listenerCount(eventName);
+          await topic.removeAllListeners(eventName);
+          const count: number = await topic.listenerCount(eventName);
           count.should.equal(0);
         });
-        it('should allow removing a listener', function* removeListener() {
+        it('should allow removing a listener', async function removeListener() {
           const listener = function* listener() {
             // void listener
           };
-          const count: number = yield topic.listenerCount(eventName);
-          yield topic.on(eventName, listener);
+          const count: number = await topic.listenerCount(eventName);
+          await topic.on(eventName, listener);
           sleep.sleep(2);
-          yield topic.removeListener(eventName, listener);
-          const countAfter = yield topic.listenerCount(eventName);
+          await topic.removeListener(eventName, listener);
+          const countAfter = await topic.listenerCount(eventName);
           countAfter.should.equal(count);
         });
-        it('should allow counting listeners', function* countListeners() {
+        it('should allow counting listeners', async function countListeners() {
           const listener = function* listener() {
             // void listener
           };
-          const count: number = yield topic.listenerCount(eventName);
+          const count: number = await topic.listenerCount(eventName);
           should.exist(count);
-          const hasListeners = yield topic.hasListeners(eventName);
+          const hasListeners = await topic.hasListeners(eventName);
           hasListeners.should.equal(count > 0);
-          yield topic.on(eventName, listener);
+          await topic.on(eventName, listener);
           sleep.sleep(2);
-          let countAfter = yield topic.listenerCount(eventName);
+          let countAfter = await topic.listenerCount(eventName);
           countAfter.should.equal(count + 1);
-          yield topic.removeListener(eventName, listener);
-          countAfter = yield topic.listenerCount(eventName);
+          await topic.removeListener(eventName, listener);
+          countAfter = await topic.listenerCount(eventName);
           countAfter.should.equal(count);
         });
         // it('should allow emitting', function* sendEvents() {
