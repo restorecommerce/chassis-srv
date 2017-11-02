@@ -11,7 +11,7 @@ const logger = require('./../logger_test.js');
 import * as chassis from '../../lib';
 
 const config = chassis.config;
-import {Events} from "@restorecommerce/srv-client";
+import {Events} from "@restorecommerce/kafka-client";
 
 /* global describe it before after */
 /*  eslint-disable require-yield */
@@ -30,14 +30,14 @@ describe('Kafka events provider', () => {
     this.timeout(5000);
     it('should wait until the event message is processed', function* waitUntil() {
       const testMessage = { value: 'value', count: 1 };
-      const topic = yield events.topic('test.wait');
+      const topic = events.topic('test.wait');
       let receivedOffset = yield topic.$offset(-1);
-      yield topic.on('test-event', function* onTestEvent(message, context) {
+      topic.on('test-event', function onTestEvent(message, context) {
         should.exist(message);
         receivedOffset = context.offset;
       });
       const offset = yield topic.$offset(-1);
-      yield topic.emit('test-event', testMessage);
+      topic.emit('test-event', testMessage);
       yield topic.$wait(offset);
       offset.should.equal(receivedOffset);
     });
