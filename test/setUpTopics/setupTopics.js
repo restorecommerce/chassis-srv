@@ -1,7 +1,7 @@
 const co = require('co');
 
 const chassis = require('../../lib');
-const srvClient = require('@restorecommerce/srv-client');
+const srvClient = require('@restorecommerce/kafka-client');
 const Events = srvClient.Events;
 const logger = chassis.Logger;
 const config = chassis.config;
@@ -23,7 +23,7 @@ co(function* createTopics() {
 
   for(let i=0; i< listOfTopics.length; i++) {
     let topicName = listOfTopics[i];
-    yield events.topic(topicName);
+     events.topic(topicName);
   }
 
   // Give a delay of 3 seconds and exit the process
