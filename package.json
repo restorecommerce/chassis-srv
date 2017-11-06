@@ -17,8 +17,10 @@
   ],
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "@restorecommerce/logger": "git+https://github.com/restorecommerce/logger.git",
-    "@restorecommerce/service-config": "git+https://github.com/restorecommerce/service-config.git",
+    "@restorecommerce/grpc-client": "git+https://github.com/restorecommerce/grpc-client.git",
+    "@restorecommerce/kafka-client": "git+https://github.com/restorecommerce/kafka-client.git",
+    "@restorecommerce/logger": "^0.1.0",
+    "@restorecommerce/service-config": "^0.1.0",
     "@restorecommerce/srv-client": "git+https://github.com/restorecommerce/srv-client.git",
     "aqb": "^2.1.0",
     "arangojs": "^5.7.0",
