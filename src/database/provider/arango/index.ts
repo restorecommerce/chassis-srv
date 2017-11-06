@@ -322,6 +322,10 @@ class Arango {
     const bindVars = {
       '@collection': collection,
     };
+
+    const collectionInstance = this.db.collection(collection);
+    yield collectionInstance.create();
+
     yield query(this.db, collection, q, bindVars);
   }
 
