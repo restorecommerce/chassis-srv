@@ -14,7 +14,7 @@ const logger = require('./logger_test.js');
 import * as chassis from '../lib';
 
 const config = chassis.config;
-import * as srvClient from '@restorecommerce/grpc-client';
+import * as srvClient from '@restorecommerce/srv-client';
 const Client = srvClient.Client;
 const Server = chassis.Server;
 const grpcClient = srvClient.grpcClient;
@@ -306,7 +306,7 @@ describe('microservice.Server', () => {
       }
       const resps = yield reqs;
       for (let i = 0; i < resps.length; i += 1) {
-        const result = yield resps[i];
+        const result = resps[i];
         should.ifError(result.error);
         should.exist(result.data);
         should.exist(result.data.result);
@@ -389,20 +389,19 @@ describe('microservice.Client', () => {
         const testService = yield client.connect();
         should.exist(testService);
         should.exist(testService.test);
-        // should.ok(isGeneratorFn(testService.test));
+        should.ok(isGeneratorFn(testService.test));
         should.exist(testService.throw);
-        // should.ok(isGeneratorFn(testService.throw));
+        should.ok(isGeneratorFn(testService.throw));
         should.exist(testService.notImplemented);
-        // should.ok(isGeneratorFn(testService.notImplemented));
+        should.ok(isGeneratorFn(testService.notImplemented));
         should.exist(testService.notFound);
-        // should.ok(isGeneratorFn(testService.notFound));
+        should.ok(isGeneratorFn(testService.notFound));
         connected.should.equal(true);
 
         // test
         let result = yield testService.test({
           value: 'hello',
         });
-        result = yield result;
         should.exist(result);
         should.not.exist(result.error);
         should.exist(result.data);
@@ -410,19 +409,18 @@ describe('microservice.Client', () => {
         result.data.result.should.equal('welcome');
 
         // test with timeout and retry
-        let result1 = yield testService.test({
+        result = yield testService.test({
           value: 'hello',
-        // },
-        //   {
-        //     timeout: 500,
-        //     retry: 2,
+        },
+          {
+            timeout: 500,
+            retry: 2,
           });
-        result1 = yield result1;
-        should.exist(result1);
-        should.not.exist(result1.error);
-        should.exist(result1.data);
-        should.exist(result1.data.result);
-        result1.data.result.should.equal('welcome');
+        should.exist(result);
+        should.not.exist(result.error);
+        should.exist(result.data);
+        should.exist(result.data.result);
+        result.data.result.should.equal('welcome');
       });
     });
     describe('end', () => {
@@ -438,30 +436,29 @@ describe('microservice.Client', () => {
           const testService = yield client.connect();
           should.exist(testService);
           should.exist(testService.test);
-          // should.ok(isGeneratorFn(testService.test));
+          should.ok(isGeneratorFn(testService.test));
           should.exist(testService.throw);
-          // should.ok(isGeneratorFn(testService.throw));
+          should.ok(isGeneratorFn(testService.throw));
           should.exist(testService.notImplemented);
-          // should.ok(isGeneratorFn(testService.notImplemented));
+          should.ok(isGeneratorFn(testService.notImplemented));
 
           // test
-          let result = yield testService.test({
+          const result = yield testService.test({
             value: 'hello',
           },
             {
               timeout: 100,
             });
-          // result = yield result;
           should.exist(result);
           should.exist(result.error);
           if (_.isArray(result.error)) {
             _.forEach(result.error, (value, key) => {
               value.should.be.Error();
-              value.message.should.equal('timeout of 100ms exceeded');
+              value.message.should.equal('call timeout');
             });
           } else {
             result.error.should.be.Error();
-            result.error.message.should.equal('timeout of 100ms exceeded');
+            result.error.message.should.equal('call timeout');
           }
           should.not.exist(result.data);
         });
