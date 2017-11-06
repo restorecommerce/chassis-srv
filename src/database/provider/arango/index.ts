@@ -288,6 +288,7 @@ function buildReturn(q: qb.QB, options: any): any {
  */
 class Arango {
   db: any;
+  collections: Set<String>;
   /**
    * ArangoDB provider
    *
@@ -295,6 +296,7 @@ class Arango {
    */
   constructor(conn: any) {
     this.db = conn;
+    this.collections = new Set<String>()
   }
 
   /**
@@ -323,8 +325,12 @@ class Arango {
       '@collection': collection,
     };
 
-    const collectionInstance = this.db.collection(collection);
-    yield collectionInstance.create();
+    if (!this.collections.has(collection)) { // collection is not created yet
+      const collectionInstance = this.db.collection(collection);
+      yield collectionInstance.create();
+
+      this.collections.add(collection); // add collection name to existent collections
+    }
 
     yield query(this.db, collection, q, bindVars);
   }

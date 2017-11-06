@@ -9,6 +9,10 @@ protoc/
 kafka*.tgz
 kafka*/
 
+lib/
+test/*.js
+test/**/*.js
+
 .project
 .settings
 .directory
