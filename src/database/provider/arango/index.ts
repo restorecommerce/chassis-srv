@@ -347,6 +347,10 @@ class Arango {
     if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
       throw new Error('invalid or missing collection argument');
     }
+    // collection does not exist if it is empty
+    if (!this.collections[collection]) {
+      return [];
+    }
     const fil = filter || {};
     const opts = options || {};
     let q = qb.for('node').in('@@collection');
@@ -378,6 +382,10 @@ class Arango {
   * findByID(collection: string, identifications: any): any {
     if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
       throw new Error('invalid or missing collection argument');
+    }
+    // collection does not exist if it is empty
+    if (!this.collections[collection]) {
+      return [];
     }
     if (_.isNil(identifications)) {
       throw new Error('invalid or missing ids argument');
