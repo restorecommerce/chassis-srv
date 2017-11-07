@@ -19,7 +19,7 @@ function* query(db: any, collection: string, q: any, bind: Object): any {
   try {
     return yield db.query(q, bind);
   } catch (err) {
-    if (err.message && !err.message.startsWith('collection not found')) {
+    if (err.message && !err.message.startsWith('AQcollection not found')) {
       throw err;
     }
   }
@@ -288,7 +288,6 @@ function buildReturn(q: qb.QB, options: any): any {
  */
 class Arango {
   db: any;
-  collections: Set<String>;
   /**
    * ArangoDB provider
    *
@@ -296,7 +295,6 @@ class Arango {
    */
   constructor(conn: any) {
     this.db = conn;
-    this.collections = new Set<String>()
   }
 
   /**
@@ -325,13 +323,6 @@ class Arango {
       '@collection': collection,
     };
 
-    if (!this.collections.has(collection)) { // collection is not created yet
-      const collectionInstance = this.db.collection(collection);
-      yield collectionInstance.create();
-
-      this.collections.add(collection); // add collection name to existent collections
-    }
-
     yield query(this.db, collection, q, bindVars);
   }
 
@@ -347,10 +338,7 @@ class Arango {
     if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
       throw new Error('invalid or missing collection argument');
     }
-    // collection does not exist if it is empty
-    if (!this.collections[collection]) {
-      return [];
-    }
+
     const fil = filter || {};
     const opts = options || {};
     let q = qb.for('node').in('@@collection');
@@ -383,10 +371,7 @@ class Arango {
     if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
       throw new Error('invalid or missing collection argument');
     }
-    // collection does not exist if it is empty
-    if (!this.collections[collection]) {
-      return [];
-    }
+
     if (_.isNil(identifications)) {
       throw new Error('invalid or missing ids argument');
     }
