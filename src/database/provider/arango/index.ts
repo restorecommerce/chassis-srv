@@ -19,7 +19,7 @@ function* query(db: any, collection: string, q: any, bind: Object): any {
   try {
     return yield db.query(q, bind);
   } catch (err) {
-    if (err.message && !err.message.startsWith('AQcollection not found')) {
+    if (err.message && !err.message.indexOf('collection not found') == -1) {
       throw err;
     }
   }
