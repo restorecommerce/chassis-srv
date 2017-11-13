@@ -37,7 +37,7 @@ describe('Kafka events provider', () => {
         receivedOffset = context.offset;
       });
       const offset = yield topic.$offset(-1);
-      topic.emit('test-event', testMessage);
+      yield topic.emit('test-event', testMessage);
       yield topic.$wait(offset);
       offset.should.equal(receivedOffset);
     });
