@@ -10,28 +10,22 @@ const should = require('should');
 const co = require('co');
 const logger = require('./logger_test.js');
 const isGeneratorFn = require('is-generator').fn;
-import {loadbalancer} from '../lib/index';
+const loadbalancer = require('@restorecommerce/grpc-client/lib/microservice/loadbalancer');
 
 /* global describe it */
 
-function* endpoint(request, context) {
-  return yield {
+function endpoint(request, context) {
+  return {
     result: 'ok',
   };
 }
 
 describe('fixed publisher', () => {
-  it('should always yield its input', function* checkFixedPublisher() {
+  it('should get its input', async function checkFixedPublisher() {
     const endpoints = [endpoint];
-    const publisher = loadbalancer.fixedPublisher(endpoints);
-    const n = publisher.next();
-    n.done.should.not.be.ok();
-    should.exist(n.value);
-    should.exist(n.value.then);
-    n.value.then.should.be.Function();
-    const result = yield n.value;
-    should.exist(result);
-    endpoints.should.equal(result);
+    const publisher = await loadbalancer.fixedPublisher(endpoints);
+    const ep = await endpoints;
+    ep.should.equal(publisher);
   });
 });
 
@@ -41,30 +35,15 @@ describe('static publisher', () => {
     instance.should.equal('test');
     return endpoint;
   };
-  it('should always yield the same endpoints', function* checkStaticPublisherWithEndpoints() {
+  it('should get the endpoint', async function checkStaticPublisherWithEndpoints() {
     const instances = ['test'];
-    const publisher = loadbalancer.staticPublisher(instances, factory, logger);
-    let n = publisher.next();
-    n.done.should.not.be.ok();
-    should.exist(n.value);
-    should.exist(n.value.then);
-    const resultA = yield n.value;
-
-    n = publisher.next();
-    n.done.should.not.be.ok();
-    should.exist(n.value);
-    should.exist(n.value.then);
-    const resultB = yield n.value;
-
-    resultA.should.equal(resultB);
+    const publisher = await loadbalancer.staticPublisher(instances, factory, logger);
+    should.exist(publisher);
   });
-  it('should throw an error with no instances', function* checkStaticPublisherWithoutEndpoints() {
-    const result = yield co(function* getEndpoint() {
+  it('should throw an error with no instances', async function checkStaticPublisherWithoutEndpoints() {
+    const result = await co(async function getEndpoint() {
       const publisher = loadbalancer.staticPublisher([], factory, logger);
-      const n = publisher.next();
-      return yield n.value;
-    }).then((res) => {
-      should.ok(false, 'should not call then');
+      return await publisher;
     }).catch((err) => {
       should.exist(err);
       err.should.be.Error();
@@ -92,53 +71,38 @@ tests.forEach((test) => {
     const oneEndpoints = [endpoint];
     const endpoints = [endpoint, endpoint, endpoint];
 
-    describe('with no publisher, calling next', () => {
-      it('should throw an error', () => {
-        const lb = test.loadBalancer();
-        lb.next.should.throw();
+    describe('with no publisher, calling await', () => {
+      it('should throw an error', async () => {
+        const lb = await test.loadBalancer().catch((error) => {
+          error.message.should.equal('missing publisher');
+        });
       });
     });
 
-    describe('with fixedPublisher and three endpoints, calling next',
-      () => {
+    describe('with fixedPublisher and three endpoints, calling await',
+      async () => {
         const publisher = loadbalancer.fixedPublisher(endpoints);
         const lb = test.loadBalancer(publisher);
-        const r = lb.next();
-        it('should not end the loadBalancer', () => {
-          r.done.should.not.be.ok();
+        it('should return endpoint promise', () => {
+          should.exist(lb);
         });
-        it('should return one endpoint promise', () => {
-          should.exist(r.value);
-          should.exist(r.value.then);
-        });
-        it('should return generator function which when called yields a result',
-          function* getEndpoint() {
-            // yield r.value because it is a promise
-            const e = yield r.value;
-            should.ok(isGeneratorFn(e));
-            const result = yield e({}, {});
-            result.should.have.property('result', 'ok');
+        it('should return promise value on await',
+          async function () {
+            const e = await lb;
+            should.exist(e);
           });
       });
 
-    describe('with fixedPublisher and one endpoint, calling next', () => {
+    describe('with fixedPublisher and one endpoint, calling await', () => {
       const publisher = loadbalancer.fixedPublisher(oneEndpoints);
       const lb = test.loadBalancer(publisher);
-      const r = lb.next();
-      it('should not end the loadBalancer', () => {
-        r.done.should.not.be.ok();
+      it('should return endpoint promise', () => {
+        should.exist(lb);
       });
-      it('should return one endpoint promise', () => {
-        should.exist(r.value);
-        should.exist(r.value.then);
-      });
-      it('should return a generator function which when called yields a result',
-        function* getEndpoint() {
-          // yield r.value because it is a promise
-          const e = yield r.value;
-          should.ok(isGeneratorFn(e));
-          const result = yield e({}, {});
-          result.should.have.property('result', 'ok');
+      it('should return promise value on await',
+        async function () {
+          const e = await lb;
+          should.exist(e);
         });
     });
 
@@ -146,28 +110,18 @@ tests.forEach((test) => {
       const publisher = loadbalancer.fixedPublisher(zeroEndpoints);
       const lb = test.loadBalancer(publisher);
       it('should throw an error', function* checkGetEndpoint() {
-        const result = yield co(function* getEndpoint() {
-          const r = lb.next();
-          return yield r.value;
-        }).then((res) => {
-          should.ok(false, 'should not call then');
-        }).catch((err) => {
-          should.exist(err);
-          err.should.be.Error();
-          err.message.should.equal('publisher did not return endpoints');
+        const result = yield co(async function getEndpoint() {
+          const r = await lb.catch((error) => {
+            error.message.should.equal('publisher did not return endpoints');
+          });
         });
         should.not.exist(result);
       });
       it('should throw an error after calling it again', function* checkGetEndpoint() {
-        const result = yield co(function* getEndpoint() {
-          const r = lb.next();
-          return yield r.value;
-        }).then((res) => {
-          should.ok(false, 'should not call then');
-        }).catch((err) => {
-          should.exist(err);
-          err.should.be.Error();
-          err.message.should.equal('publisher did not return endpoints');
+        const result = yield co(async function getEndpoint() {
+          const r = await lb.catch((error) => {
+            error.message.should.equal('publisher did not return endpoints');
+          });
         });
         should.not.exist(result);
       });

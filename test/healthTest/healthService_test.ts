@@ -9,10 +9,11 @@ coMocha(mocha);
 import * as should from 'should';
 const logger = require('./../logger_test.ts');
 import * as chassis from '../../lib';
-import {Health} from '../../lib';
+import { Health } from '../../lib';
 
-import {Client, Events} from '@restorecommerce/srv-client';
-import {Server} from '../../lib/microservice/server';
+import { Client } from '@restorecommerce/grpc-client';
+import { Events } from '@restorecommerce/kafka-client';
+import { Server } from '../../lib/microservice/server';
 
 /* global describe it beforeEach afterEach*/
 

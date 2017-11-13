@@ -56,7 +56,7 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051", "piplineAddr"]
+        "instances": ["grpc://localhost:50051"]
       },
       "endpoints": {
         "test": {
