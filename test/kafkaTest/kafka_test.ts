@@ -1,44 +1,39 @@
-'use strict';
-
-/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
 import * as mocha from 'mocha';
-const coMocha = require('co-mocha');
+import * as coMocha from 'co-mocha';
 
 coMocha(mocha);
 
 import * as should from 'should';
 const logger = require('./../logger_test.js');
 import * as chassis from '../../lib';
-
-const config = chassis.config;
-import {Events} from "@restorecommerce/kafka-client";
+import * as sconfig from '@restorecommerce/service-config';
+import { Events } from '@restorecommerce/kafka-client';
 
 /* global describe it before after */
 /*  eslint-disable require-yield */
 describe('Kafka events provider', () => {
   let events;
-  before(function* setupProvider() {
-    yield config.load(process.cwd() + '/test', logger);
-    const cfg = yield chassis.config.get();
+  before(async function setupProvider() {
+    const cfg = sconfig(process.cwd() + '/test');
     events = new Events(cfg.get('events:kafkaTest'), logger);
-    yield events.start();
+    await events.start();
   });
-  after(function* stopProvider() {
-    yield events.end();
+  after(async function stopProvider() {
+    await events.end();
   });
   describe('topic.$wait', function testWait() {
     this.timeout(5000);
-    it('should wait until the event message is processed', function* waitUntil() {
+    it('should wait until the event message is processed', async function waitUntil() {
       const testMessage = { value: 'value', count: 1 };
       const topic = events.topic('test.wait');
-      let receivedOffset = yield topic.$offset(-1);
+      let receivedOffset = await topic.$offset(-1);
       topic.on('test-event', function onTestEvent(message, context) {
         should.exist(message);
-        receivedOffset = context.offset;
+        let receivedOffset = context.offset;
       });
-      const offset = yield topic.$offset(-1);
-      yield topic.emit('test-event', testMessage);
-      yield topic.$wait(offset);
+      const offset = await topic.$offset(-1);
+      await topic.emit('test-event', testMessage);
+      await topic.$wait(offset);
       offset.should.equal(receivedOffset);
     });
   });
