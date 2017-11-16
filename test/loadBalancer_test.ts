@@ -1,15 +1,7 @@
 'use strict';
 
-/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-const mocha = require('mocha');
-const coMocha = require('co-mocha');
-
-coMocha(mocha);
-
-const should = require('should');
 const co = require('co');
 const logger = require('./logger_test.js');
-const isGeneratorFn = require('is-generator').fn;
 const loadbalancer = require('@restorecommerce/grpc-client/lib/microservice/loadbalancer');
 
 /* global describe it */
