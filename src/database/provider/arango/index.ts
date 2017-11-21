@@ -578,7 +578,6 @@ function* connect(conf: any, logger: any): any {
       logger.info('Attempt to connect database', dbHost, dbPort, dbName, {
         attempt: currentAttempt
       });
-      console.log('Config', { url, arangoVersion });
       const db = new Arangojs({
         url,
         arangoVersion,
