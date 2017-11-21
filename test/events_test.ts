@@ -172,7 +172,7 @@ describe('events', () => {
           };
 
           // wg.add(1);
-          topic.on(eventName, listener);
+          yield topic.on(eventName, listener);
           sleep.sleep(2);
           setImmediate(() => {
             co(function* emit() {

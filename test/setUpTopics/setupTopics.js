@@ -1,38 +1,28 @@
-const co = require('co');
+const { Events } = require('@restorecommerce/kafka-client');
+const Logger = require('@restorecommerce/logger');
+const sconfig = require('@restorecommerce/service-config');
 
-const chassis = require('../../lib');
-const srvClient = require('@restorecommerce/kafka-client');
-const Events = srvClient.Events;
-const logger = chassis.Logger;
-const config = chassis.config;
+async function createTopics() {
+  const cfg = sconfig(process.cwd());
+  const logger = new Logger(cfg.get('logger'));
+  const events = new Events(cfg.get('events:kafka'), logger);
+  await events.start();
 
-co(function* createTopics() {
-  // create topics
-  yield config.load(process.cwd() + '/test', logger);
-  const cfg = yield config.get();
-
-  let log = new logger(cfg.get('server:logger'));
-  let events = new Events(cfg.get('events:kafkaTest'), log);
-  yield events.start();
-  let listOfTopics = [];
-
-  process.argv.forEach( (value, index, array) => {
-    if( index >=2 )
-      listOfTopics.push(value);
+  process.argv.forEach((value, index, array) => {
+    if (index >= 2) {
+      events.topic(value);
+    }
   });
-
-  for(let i=0; i< listOfTopics.length; i++) {
-    let topicName = listOfTopics[i];
-     events.topic(topicName);
-  }
 
   // Give a delay of 3 seconds and exit the process
   // this delay is for the creation of topic via zookeeper
-  setTimeout(function () {
+  setTimeout(() => {
     console.log('Exiting after topic creation');
     process.exit();
   }, 3000);
-}).catch(err => {
+}
+
+createTopics().catch((err) => {
   console.log(err);
 });
 

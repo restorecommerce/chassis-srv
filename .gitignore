@@ -7,7 +7,6 @@ protoc*.zip
 protoc/
 
 kafka*.tgz
-kafka*/
 
 lib/
 test/*.js

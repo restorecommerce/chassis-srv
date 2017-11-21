@@ -27,7 +27,7 @@ describe('Kafka events provider', () => {
       const testMessage = { value: 'value', count: 1 };
       const topic = events.topic('test.wait');
       let receivedOffset = await topic.$offset(-1);
-      topic.on('test-event', function onTestEvent(message, context) {
+      await topic.on('test-event', function onTestEvent(message, context) {
         should.exist(message);
         let receivedOffset = context.offset;
       });
