@@ -1,4 +1,12 @@
 {
+  "logger": {
+    "console": {
+      "handleExceptions": false,
+      "level": "error",
+      "colorize": true,
+      "prettyPrint": true
+    }
+  },
   "database": {
     "arango": {
       "provider": "arango",
@@ -10,8 +18,7 @@
     "nedb": {
       "provider": "nedb",
       "collections": {
-        "test": {
-        }
+        "test": {}
       }
     }
   },
@@ -43,7 +50,9 @@
       "transports": {
         "grpc": {
           "service": "test.Test",
-          "protos": ["test/test.proto"],
+          "protos": [
+            "test/test.proto"
+          ],
           "protoRoot": "protos/",
           "timeout": 3000
         },
@@ -56,7 +65,9 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051"]
+        "instances": [
+          "grpc://localhost:50051"
+        ]
       },
       "endpoints": {
         "test": {
@@ -66,7 +77,9 @@
           },
           "publisher": {
             "name": "static",
-            "instances": ["grpc://localhost:50051"]
+            "instances": [
+              "grpc://localhost:50051"
+            ]
           }
         },
         "notImplemented": {
@@ -75,7 +88,9 @@
           },
           "publisher": {
             "name": "static",
-            "instances": ["grpc://localhost:50051"]
+            "instances": [
+              "grpc://localhost:50051"
+            ]
           }
         },
         "throw": {},
@@ -94,7 +109,9 @@
       "transports": {
         "grpc": {
           "service": "test.Stream",
-          "protos": ["test/test.proto"],
+          "protos": [
+            "test/test.proto"
+          ],
           "protoRoot": "protos/",
           "timeout": 3000
         }
@@ -104,7 +121,9 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051"]
+        "instances": [
+          "grpc://localhost:50051"
+        ]
       },
       "endpoints": {
         "biStream": {},
@@ -116,7 +135,9 @@
       "transports": {
         "grpc": {
           "service": "grpc.reflection.v1alpha.ServerReflection",
-          "protos": ["grpc/reflection/v1alpha/reflection.proto"],
+          "protos": [
+            "grpc/reflection/v1alpha/reflection.proto"
+          ],
           "protoRoot": "protos/",
           "timeout": 3000
         }
@@ -126,7 +147,9 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051"]
+        "instances": [
+          "grpc://localhost:50051"
+        ]
       },
       "endpoints": {
         "serverReflectionInfo": {}
@@ -136,7 +159,9 @@
       "transports": {
         "grpc": {
           "service": "grpc.health.v1.Health",
-          "protos": ["grpc/health/v1/health.proto"],
+          "protos": [
+            "grpc/health/v1/health.proto"
+          ],
           "protoRoot": "protos/",
           "timeout": 3000
         }
@@ -146,7 +171,9 @@
       },
       "publisher": {
         "name": "static",
-        "instances": ["grpc://localhost:50051"]
+        "instances": [
+          "grpc://localhost:50051"
+        ]
       },
       "endpoints": {
         "check": {}
@@ -167,20 +194,28 @@
       "groupId": "restore-chassis-test-server",
       "clientId": "restore-chassis-test-server",
       "connectionString": "localhost:2181",
-      "protos": ["test.proto"],
+      "protos": [
+        "test.proto"
+      ],
       "protoRoot": "test/protos/",
       "test-event": {
-        "protos": ["test.proto"],
+        "protos": [
+          "test.proto"
+        ],
         "protoRoot": "test/protos/",
         "messageObject": "test.TestEvent"
       }
     },
     "localTest": {
       "provider": "local",
-      "protos": ["test.proto"],
+      "protos": [
+        "test.proto"
+      ],
       "protoRoot": "test/protos/",
-       "test-event": {
-        "protos": ["test.proto"],
+      "test-event": {
+        "protos": [
+          "test.proto"
+        ],
         "protoRoot": "test/protos/",
         "messageObject": "test.TestEvent"
       }
@@ -198,56 +233,88 @@
     "services": {
       "test": {
         "test": {
-          "transport": ["grpcTest", "pipeline"]
+          "transport": [
+            "grpcTest",
+            "pipeline"
+          ]
         },
         "throw": {
-          "transport": ["grpcTest", "pipeline"]
+          "transport": [
+            "grpcTest",
+            "pipeline"
+          ]
         },
         "notImplemented": {
-          "transport": ["grpcTest", "pipeline"]
+          "transport": [
+            "grpcTest",
+            "pipeline"
+          ]
         },
         "notFound": {
-          "transport": ["grpcTest", "pipeline"]
+          "transport": [
+            "grpcTest",
+            "pipeline"
+          ]
         }
       },
       "stream": {
         "biStream": {
-          "transport": ["grpcTest"]
+          "transport": [
+            "grpcTest"
+          ]
         },
         "requestStream": {
-          "transport": ["grpcTest"]
+          "transport": [
+            "grpcTest"
+          ]
         },
         "responseStream": {
-          "transport": ["grpcTest"]
+          "transport": [
+            "grpcTest"
+          ]
         }
       },
       "reflection": {
         "serverReflectionInfo": {
-          "transport": ["grpcTest"]
+          "transport": [
+            "grpcTest"
+          ]
         }
       },
       "health": {
         "check": {
-          "transport": ["grpcTest", "pipeline"]
+          "transport": [
+            "grpcTest",
+            "pipeline"
+          ]
         }
       }
     },
-    "transports": [{
-      "name": "grpcTest",
-      "provider": "grpc",
-      "services": {
-        "test": "test.Test",
-        "stream": "test.Stream",
-        "reflection": "grpc.reflection.v1alpha.ServerReflection",
-        "health": "grpc.health.v1.Health"
+    "transports": [
+      {
+        "name": "grpcTest",
+        "provider": "grpc",
+        "services": {
+          "test": "test.Test",
+          "stream": "test.Stream",
+          "reflection": "grpc.reflection.v1alpha.ServerReflection",
+          "health": "grpc.health.v1.Health"
+        },
+        "protos": [
+          "test/test.proto",
+          "test/test.proto",
+          "grpc/reflection/v1alpha/reflection.proto",
+          "grpc/health/v1/health.proto",
+          "google/protobuf/descriptor.proto"
+        ],
+        "protoRoot": "protos/",
+        "addr": "localhost:50051"
       },
-      "protos": ["test/test.proto", "test/test.proto", "grpc/reflection/v1alpha/reflection.proto", "grpc/health/v1/health.proto", "google/protobuf/descriptor.proto"],
-      "protoRoot": "protos/",
-      "addr": "localhost:50051"
-    }, {
-      "name": "pipeline",
-      "provider": "pipe",
-      "addr": "piplineAddr"
-    }]
+      {
+        "name": "pipeline",
+        "provider": "pipe",
+        "addr": "piplineAddr"
+      }
+    ]
   }
 }

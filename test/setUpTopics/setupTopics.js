@@ -3,9 +3,9 @@ const Logger = require('@restorecommerce/logger');
 const sconfig = require('@restorecommerce/service-config');
 
 async function createTopics() {
-  const cfg = sconfig(process.cwd());
+  const cfg = sconfig(process.cwd() + '/test');
   const logger = new Logger(cfg.get('logger'));
-  const events = new Events(cfg.get('events:kafka'), logger);
+  const events = new Events(cfg.get('events:kafkaTest'), logger);
   await events.start();
 
   process.argv.forEach((value, index, array) => {

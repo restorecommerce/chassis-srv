@@ -346,8 +346,8 @@ class Arango {
       const f = buildFilter(fil);
       q = q.filter(f);
     }
-    q = buildLimiter(q, opts);
     q = buildSorter(q, opts);
+    q = buildLimiter(q, opts);
     q = buildReturn(q, opts);
     const bindVars = {
       '@collection': collection,
