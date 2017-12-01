@@ -61,7 +61,7 @@ describe('events', () => {
         yield events.start();
       });
       after(function* start() {
-        yield events.end();
+        yield events.stop();
         events = null;
       });
       describe('yielding subscribe', () => {

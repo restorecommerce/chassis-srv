@@ -19,7 +19,7 @@ describe('Kafka events provider', () => {
     await events.start();
   });
   after(async function stopProvider() {
-    await events.end();
+    await events.stop();
   });
   describe('topic.$wait', function testWait() {
     this.timeout(5000);
