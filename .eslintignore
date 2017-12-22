@@ -1,3 +1,0 @@
-protos/io/restorecommerce/*.proto
-protos/grpc/**/**/*.proto
-*_pb.js
