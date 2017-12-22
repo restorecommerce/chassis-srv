@@ -34,7 +34,6 @@
     "slug": "^0.9.1"
   },
   "devDependencies": {
-    "@restorecommerce/eslint-config-restorecommerce": "restorecommerce/eslint-config-restorecommerce",
     "@types/bluebird": "^3.5.16",
     "@types/cache-manager": "^1.2.5",
     "@types/fs-extra": "^4.0.2",
@@ -48,7 +47,6 @@
     "@types/wolfy87-eventemitter": "^4.2.32",
     "co-mocha": "^1.2.1",
     "coveralls": "^3.0.0",
-    "eslint": "^4.9.0",
     "is-generator": "^1.0.3",
     "istanbul": "^0.4.5",
     "jsdoc": "^3.5.5",
@@ -61,11 +59,11 @@
     "typescript-require": "^0.2.9"
   },
   "scripts": {
-    "lint": "eslint *.json && tslint './src/**/*.ts' ",
+    "lint": "tslint './src/**/*.ts' ",
     "test": "npm run lint && npm run mocha",
     "test-debug": "npm run mochadebug",
     "mochadebug": "mocha -R spec test/*.js test/kafkaTest/*.js test/healthTest/*.js --full-trace --inspect-brk",
-    "mocha": "mocha -R spec test/microservice_test.js --full-trace",
+    "mocha": "mocha -R spec test/*.js --full-trace",
     "tsctests": "tsc test/*.ts test/healthTest/*.ts test/kafkaTest/*.ts --module commonjs -target ES6",
     "nsp": "nsp check --output codeclimate",
     "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
