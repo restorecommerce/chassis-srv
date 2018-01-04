@@ -1,5 +1,7 @@
 # chassis-srv [![Build Status](https://travis-ci.org/restorecommerce/chassis-srv.svg?branch=master)](https://travis-ci.org/restorecommerce/chassis-srv) [![Coverage Status](https://coveralls.io/repos/github/restorecommerce/chassis-srv/badge.svg?branch=master)](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
 
+An engine for microservice operations.
+
 ## Features
 
 - Expose your business logic as RPC endpoints
