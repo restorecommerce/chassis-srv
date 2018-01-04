@@ -6,7 +6,7 @@
 - Customize server communication with middlewares
 - Endpoint discovery, load balancing, retry and timeout logic
 - Uses ES6 features
-- Multiple microservice functionalities, such as logging, database access, cache handling or exposing system commands.
+- Handle multiple microservice recurrent functionalities, such as logging, database access, cache handling or exposing system commands.
 
 ## Architecture
 
@@ -19,18 +19,7 @@ A configurable log infrastructure is provided.
 
 ### Cache
 
-Caches can be loaded with the cache loading function ``cache.get``.
-Cache providers are registered with the ``cache.register`` functions.
-The cache manager is the (node-cache-manager)[https://github.com/BryanDonovan/node-cache-manager].
-By default only the memory provider is registered.
-
-To create a cache manager call the ``cache.get`` function as follows.
-
-```js
-const chassis = require('@restorecommerce/chassis-srv');
-const cfg = yield chassis.config.get();
-const memory = yield chassis.cache.get(cfg.get('cache:memory'), logger);
-```
+Caches can be loaded with the cache loading function ``cache.get``. Cache providers are registered with the ``cache.register`` functions. Caches are managed with (node-cache-manager)[https://github.com/BryanDonovan/node-cache-manager].
 
 ### Command interface
 
