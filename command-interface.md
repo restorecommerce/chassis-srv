@@ -1,6 +1,6 @@
 # command-interface
 
-The command-interface defines common functions for controlling and retrieving operational information from services. The commands are defined using [gRPC](https://grpc.io/docs/) interface. The message structures are defined using [Protocol Buffers](https://developers.google.com/protocol-buffers/) in the [commandinterface.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/commandinterface.proto) file.
+The command interface defines common functions for controlling and retrieving operational information from services. The commands are defined using [gRPC](https://grpc.io/docs/) interface. The message structures are defined using [Protocol Buffers](https://developers.google.com/protocol-buffers/) in the [commandinterface.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/commandinterface.proto) file.
 
 The following commands are available:
 
