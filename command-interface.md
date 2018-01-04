@@ -7,7 +7,6 @@ The following commands are available:
 - check (health check)
 - restore (re-process [Apache Kafka](https://kafka.apache.org/) event messages)
 - reset (reset any state)
-- sendMailNotification (triggers sending an email notification via Kafka)
 - version (return runtime version information)
 - reconfigure (reload configuration, not yet implemented)
 
