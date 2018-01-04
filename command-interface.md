@@ -63,8 +63,8 @@ This command returns npm package and nodejs version of the implementing service.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | string | required | version of npm package |
-| nodejs | string | required | nodejs version |
+| version | string | required | NPM package version |
+| nodejs | string | required | Node.js version |
 
 
 ## Usage
