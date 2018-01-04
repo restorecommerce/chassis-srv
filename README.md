@@ -3,207 +3,21 @@
 ## Features
 
 - Expose your business logic as RPC endpoints
-- Middleware for server
-- Includes endpoint discovery, load balancing, retry and timeout logic
-- Microservices Health check Endpoint
+- Customize server communication with middlewares
+- Endpoint discovery, load balancing, retry and timeout logic
 - Uses ES6 features
-
-## Install
-
-Make sure you have typescript (tsc) installed before using chassis-srv `npm install -g typescript`.
-To install the chassis-srv run ``npm install chassis-srv``.
-
-## Examples
-
-Code examples are in the example directory.
-The examples require a running Kafka instance.
-Commands to run the examples:
-
-```bash
-cd example/notify
-node notifyd.js
-node listen.js
-node emit.js
-```
+- Multiple microservice functionalities, such as logging, database access, cache handling or exposing system commands.
 
 ## Architecture
 
-The chassis is split into a cache, config, database, logger and server part.
-A Server exposes endpoints via transports.
+The chassis consists of a cache, command interface, config, database, logger and server part.
+A [Server](src/microservice/server.ts) can be instantiated in order to generically expose gRPC endpoints 
+given a protobuf interface and a transport config.
 The cache part handles loading of caches based on configuration files.
-Databases can be loaded with database part.
-Log handling is provided by the logger part.
+A provider-based mechanism allows to access different databases.
+A configurable log infrastructure is provided.
 
-### Transport
-
-A transport communicates between a server and a client.
-It handles encoding/decoding of data and sending/receiving.
-The following transport providers are available:
-
-- [gRPC](http://www.grpc.io) (Client,Server)
-- pipe (in-process communication, designed for testing)
-
-### Endpoint
-
-An endpoint is one function of a service. At the client side an endpoint is an exposed service function of one server.
-On the server it is one exposed business logic function. Endpoints connect to each other via transports.
-
-### Configuration
-
-[restore-service-config](https://github.com/restorecommerce/service-config) provides configuration management which uses [nconf](https://github.com/indexzero/nconf).
-The ``config.get`` function loads the configuration from files located in the subdirectory 'cfg' of the current working directory.
-Environment variables overwrite configuration values from files.
-``config.load`` loads the configuration file from a different location.
-
-```js
-const config = require('@restorecommerce/chassis-srv').config;
-yield config.load(pathToTheParentOfCfg);
-yield config.get();
-```
-
-### Logging
-
-[logger](https://github.com/restorecommerce/logger) provides logging which uses [winston](https://github.com/winstonjs/winston).
-Clients, the server and the events provider provide the logger.
-The configuration file contains logger settings.
-The logger is available from ``Client.logger``, ``Server.logger`` or ``Events.logger``.
-
-Default logging levels are:
-- silly
-- verbose
-- debug
-- info
-- warn
-- error
-
-To create a log call ``logger.<level>(message, ...args)``. The ``level`` being one of the levels defined above, ``message`` is a string and ``...args `` is a list of objects.
-
-### Health
-
-The Health check  of microservices is done using a RPC endpoint.
-```js
-const config = require('@restorecommerce/chassis-srv').config;
-const cfg = yield config.get();
-const client = new Client(cfg.get('client:health'));
-health = yield client.connect();
-const resp = yield health.check({
-  service: 'serviceName',
-});
-```
-The response contains a Status field which could be : 'SERVING' , 'NOT_SERVING' or 'UNKNOWN'.
-
-### Server
-
-A server provides service endpoints. Endpoints expose each business logic function via a transports. Clients connect to these endpoints.
-When a client calls a server endpoint it traverses from the transport through possible middleware to the business logic function.
-The business logic processes the request and respond with either a result or an error. The transport transports the response back to the client.
-
-The following code starts a server and provides the service endpoints.
-
-```js
-const chassis = require('@restorecommerce/chassis-srv');
-const cfg = yield chassis.config.get();
-const server = new chassis.Server(cfg.get('server'));
-const service = new Service();
-yield server.bind('serviceName', service);
-yield server.start();
-```
-
-It is possible to bind different service to one server by calling ``yield server.bind(serviceName, service);`` multiple times.
-
-#### Config
-
-Each configured endpoint specifies which transport to use, to provide an endpoint.
-Configuration for specified endpoints goes into the ``transports`` section.
-
-```json
-{
-  "server": {
-    "services": {
-      "notifyd": {
-        "create": {
-          "transport": ["notifydGRPC"]
-        },
-        "createStream": {
-          "transport": ["notifydGRPC"]
-        }
-      }
-    },
-    "transports": [{
-      "name": "notifydGRPC",
-      "provider": "grpc",
-      "services": {
-        "notifyd": "io.restorecommerce.notify.Notifyd"
-      },
-      "addr": "localhost:50051",
-      "protoRoot": "protos/",
-      "protos": ["io/restorecommerce/notify.proto"],
-    }]
-  }
-}
-```
-
-#### Service
-
-The business logic is an object with functions which get wrapped and served as endpoints.
-Functions get wrapped up based on the configuration file.
-
-#### Middleware
-
-The request traverses the middleware before reaching the service function.
-The middleware can call the next middleware until the last middleware calls the service function.
-
-```js
-function makeMiddleware() {
-  return function*(next) {
-    return function*(call, context){
-      return yield next(call, context);
-    };
-  };
-}
-server.middleware.push(makeMiddleware());
-```
-
-### database
-
-Database provider are available for the following databases:
-
-* ArangoDB
-* NeDB
-
-All providers follow the same API which is similar to the NeDB/MongoDB API.
-
-The following code creates a database connection and inserts a new document.
-
-```js
-const chassis = require('@restorecommerce/chassis-srv');
-const cfg = yield chassis.config.get();
-const db = yield chassis.database.get(cfg.get('ephemeral'));
-const notification = {
-  id: 'unique',
-};
-yield db.insert('notifications', notification);
-```
-
-The configuration file looks like this.
-
-```json
-{
-  "database": {
-    "ephemeral": {
-      "provider": "nedb",
-      "collections": {
-        "notifications": {}
-      }
-    }
-  }
-}
-```
-
-The field ``id`` is the main unique identifier.
-Conversion happens between the main unique identifier and the equivalent unique ID in each database provider.
-
-### cache
+### Cache
 
 Caches can be loaded with the cache loading function ``cache.get``.
 Cache providers are registered with the ``cache.register`` functions.
@@ -220,6 +34,61 @@ const memory = yield chassis.cache.get(cfg.get('cache:memory'), logger);
 
 ### Command interface
 
-An interface for service control operations commands is also implemented. For more details
+A shared interface for system commands is also implemented. For more details
 about all operations please refer
 [command-interface](https://github.com/restorecommerce/chassis-srv/command-interface.md).
+
+
+### Config
+  
+Configs are loaded using the [nconf](https://github.com/indexzero/nconf)-based module [service-config](https://github.com/restorecommerce/service-config). Such configuration files may contain endpoint specifications 
+along with their associated transports or simple access credentials for backing services such as a database or a Kafka server.
+
+### Database 
+
+The following database providers are implemented:
+
+* ArangoDB
+* NeDB
+
+Query messages bear similarity in structure with the NeDB/MongoDB API. CRUD operations are performed using [resource-base-interface](https://github.com/restorecommerce/resource-base-interface).
+
+### Logging
+
+Logginf functionality is provided through [logger](https://github.com/restorecommerce/logger), which uses [winston](https://github.com/winstonjs/winston). Logger output transport, severity levels and other options are configurable.
+
+Default logging levels are:
+- silly
+- verbose
+- debug
+- info
+- warn
+- error
+
+### Server
+
+A server provides service endpoints. Endpoints expose each business logic function via a transports. Clients connect to these endpoints.
+When a client calls a server endpoint it traverses from the transport through possible middleware to the business logic function.
+The business logic processes the request and respond with either a result or an error. The transport transports the response back to the client.
+
+The following code starts a server and provides the service endpoints. Note that multiple services can be binded with the same `Server` instance.
+
+#### Transports
+
+Although this module is mainly based on one type of transport for business logic exposure (gRPC), it is also possible
+to use `pipe` ((in-process communication, designed for testing). Transport details are configurable for each endpoint.
+
+#### Endpoints
+
+An endpoint is a wrapped gRPC method accessible from any gRPC clients. At the client side an endpoint is an exposed service function of one server.
+On the server it is one exposed business logic function. Endpoints connect to each other via transports.
+
+#### Middleware
+
+The request traverses the middleware before reaching the service function.
+The middleware can call the next middleware until the last middleware calls the service function.
+
+## Usage
+
+See [tests](tests/).
+
