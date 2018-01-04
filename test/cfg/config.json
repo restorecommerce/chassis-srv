@@ -154,30 +154,6 @@
       "endpoints": {
         "serverReflectionInfo": {}
       }
-    },
-    "health": {
-      "transports": {
-        "grpc": {
-          "service": "grpc.health.v1.Health",
-          "protos": [
-            "grpc/health/v1/health.proto"
-          ],
-          "protoRoot": "protos/",
-          "timeout": 3000
-        }
-      },
-      "loadbalancer": {
-        "name": "roundRobin"
-      },
-      "publisher": {
-        "name": "static",
-        "instances": [
-          "grpc://localhost:50051"
-        ]
-      },
-      "endpoints": {
-        "check": {}
-      }
     }
   },
   "events": {
@@ -280,14 +256,6 @@
             "grpcTest"
           ]
         }
-      },
-      "health": {
-        "check": {
-          "transport": [
-            "grpcTest",
-            "pipeline"
-          ]
-        }
       }
     },
     "transports": [
@@ -297,14 +265,12 @@
         "services": {
           "test": "test.Test",
           "stream": "test.Stream",
-          "reflection": "grpc.reflection.v1alpha.ServerReflection",
-          "health": "grpc.health.v1.Health"
+          "reflection": "grpc.reflection.v1alpha.ServerReflection"
         },
         "protos": [
           "test/test.proto",
           "test/test.proto",
           "grpc/reflection/v1alpha/reflection.proto",
-          "grpc/health/v1/health.proto",
           "google/protobuf/descriptor.proto"
         ],
         "protoRoot": "protos/",

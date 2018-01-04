@@ -8,6 +8,7 @@ const _ = require('lodash');
 const co = require('co');
 const isGeneratorFn = require('is-generator').fn;
 const logger = require('./logger_test.js');
+import * as sleep from 'sleep';
 import * as chassis from '../lib';
 
 const config = chassis.config;
@@ -158,6 +159,7 @@ describe('microservice.Server', () => {
                 serving = !serving;
             });
             yield server.start();
+            sleep.sleep(1);
             serving.should.equal(true);
 
             // const cfg = yield config.get();
@@ -377,6 +379,7 @@ describe('microservice.Client', () => {
             server = new Server(cfg.get('server'));
             yield server.bind('test', service);
             yield server.start();
+            sleep.sleep(1);
         });
         after(function* stopServer() {
             yield server.end();
@@ -461,7 +464,7 @@ describe('microservice.Client', () => {
                         });
                     } else {
                         result.error.should.be.Error();
-                        result.error.message.should.equal('unavailable');
+                        result.error.details.should.containEql('GOAWAY');
                     }
                     should.not.exist(result.data);
                 });

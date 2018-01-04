@@ -24,8 +24,6 @@ import * as loadbalancer from './microservice/loadbalancer';
 export {loadbalancer};
 export * from "./microservice/loadbalancer";
 
-export * from './microservice/plugins';
-
 import * as errors from './microservice/errors';
 export {errors};
 import * as grpc from './microservice/transport/provider/grpc';

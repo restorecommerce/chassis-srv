@@ -17,7 +17,7 @@ const grpcClient = srvClient.grpcClient;
 import { pipeClient } from '../lib';
 import { grpcServer } from '../lib';
 import { pipeServer } from '../lib';
-
+import * as sleep from 'sleep';
 /* global describe it before after*/
 
 const providers = [{
@@ -28,7 +28,7 @@ const providers = [{
       service: 'test.Test',
       protos: ['test/test.proto'],
       protoRoot: 'protos/',
-      addr: 'grpc://localhost:50051',
+      addr: 'grpc://localhost:50060',
       timeout: 100,
     },
     server: {
@@ -39,7 +39,7 @@ const providers = [{
       },
       protos: ['test/test.proto'],
       protoRoot: 'protos/',
-      addr: 'localhost:50051'
+      addr: 'localhost:50060'
     },
   },
   name: 'grpc',
@@ -95,6 +95,7 @@ providers.forEach((provider) => {
       describe('start', () => {
         it('should start the server', function* startServer() {
           yield server.start();
+          sleep.sleep(1);
         });
       });
       describe('end', () => {
@@ -143,11 +144,10 @@ providers.forEach((provider) => {
         describe('without running server', function runWithoutServer() {
           this.slow(200);
           it('should fail', function* checkMakeEndpoint() {
-            let err;
             endpoint = client.makeEndpoint(methodName, instance);
             const result = yield endpoint();
             result.error.should.be.Error();
-            result.error.message.should.equal('unavailable');
+            result.error.details.should.containEql('Connect Failed');
           });
         });
         describe('with running server', () => {
@@ -164,9 +164,11 @@ providers.forEach((provider) => {
             },
           };
           before(function* startServer() {
+            this.timeout(5000);
             server = new provider.Server(provider.config.server, logger);
             yield server.bind('test', service);
             yield server.start();
+            sleep.sleep(2);
           });
           after(function* stopServer() {
             yield server.end();
@@ -178,6 +180,7 @@ providers.forEach((provider) => {
           it('should succeed when calling with empty context', function* checkWithEmptyContext() {
             const result = yield endpoint(request, {});
             should.ifError(result.error);
+            console.log('Result data', result.data);
             should.deepEqual(response, result.data);
           });
           it('should succeed when calling without context', function* checkWithoutContext() {
@@ -185,7 +188,7 @@ providers.forEach((provider) => {
             should.ifError(result.error);
             should.deepEqual(response, result.data);
           });
-          it('should return an error when calling a unimplemented method',
+          it('should return an error when calling an unimplemented method',
             function* checkUnimplemented() {
               const endpointThrow = client.makeEndpoint('notImplemented', instance);
               should.exist(endpoint);

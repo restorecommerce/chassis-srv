@@ -19,13 +19,13 @@ const errors = require('../../../errors');
 const NAME = 'grpc';
 
 
-function setGRPCLogger(logger: any): any {
-  // gRPC logger
-  const grpcLogger = {
-    error: logger.debug,
-  };
-  grpc.setLogger(grpcLogger);
-}
+// function setGRPCLogger(logger: any): any {
+//   // gRPC logger
+//   const grpcLogger = {
+//     error: logger.debug,
+//   };
+//   grpc.setLogger(grpcLogger);
+// }
 
 const errorMap = new Map([
   [grpc.status.CANCELLED, errors.Cancelled],
@@ -50,7 +50,7 @@ function makeNormalServerEndpoint(endpoint: any, logger: any): any {
     const req = call.request;
     if (!endpoint) {
       callback({
-        code: grpc.status.NOT_IMPLEMENTED
+        code: grpc.status.UNIMPLEMENTED
       });
     }
     co(function* callEndpoint(): any {
@@ -253,7 +253,7 @@ export class Server {
     this.logger = logger;
 
     // gRPC logger
-    setGRPCLogger(logger);
+    grpc.setLogger(console);
 
     this.server = new grpc.Server();
 
