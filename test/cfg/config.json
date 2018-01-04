@@ -265,7 +265,7 @@
         "services": {
           "test": "test.Test",
           "stream": "test.Stream",
-          "reflection": "grpc.reflection.v1alpha.ServerReflection"
+          "reflection": "grpc.reflection.v1alpha.ServerReflection",
         },
         "protos": [
           "test/test.proto",

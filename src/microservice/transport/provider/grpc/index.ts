@@ -252,6 +252,7 @@ export class Server {
     this.config = config;
     this.logger = logger;
 
+    console['error'] = logger.debug;
     // gRPC logger
     grpc.setLogger(console);
 
@@ -331,7 +332,7 @@ export class Server {
       }
       binding[methodName] = wrapServerEndpoint(service[methodName], this.logger, stream);
     }
-    this.server.addProtoService(protoService, binding);
+    this.server.addService(protoService, binding);
   }
 
   /**

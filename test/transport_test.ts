@@ -180,7 +180,6 @@ providers.forEach((provider) => {
           it('should succeed when calling with empty context', function* checkWithEmptyContext() {
             const result = yield endpoint(request, {});
             should.ifError(result.error);
-            console.log('Result data', result.data);
             should.deepEqual(response, result.data);
           });
           it('should succeed when calling without context', function* checkWithoutContext() {
