@@ -1,12 +1,5 @@
 # command-interface
 
-<img src="http://img.shields.io/npm/v/%40restorecommerce%2Fcommand%2Dinterface.svg?style=flat-square" alt="">[![Build Status][build]](https://travis-ci.org/restorecommerce/command-interface?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/command-interface)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/command-interface?branch=master)
-
-[version]: http://img.shields.io/npm/v/command-interface.svg?style=flat-square
-[build]: http://img.shields.io/travis/restorecommerce/command-interface/master.svg?style=flat-square
-[depend]: https://img.shields.io/david/restorecommerce/command-interface.svg?style=flat-square
-[cover]: http://img.shields.io/coveralls/restorecommerce/command-interface/master.svg?style=flat-square
-
 The command-interface defines common functions for controlling and retrieving operational information from services. The commands are defined using [gRPC](https://grpc.io/docs/) interface. The message structures are defined using [Protocol Buffers](https://developers.google.com/protocol-buffers/) in the [commandinterface.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/commandinterface.proto) file.
 
 The following commands are available:
@@ -74,24 +67,7 @@ This command returns npm package and nodejs version of the implementing service.
 | version | string | required | version of npm package |
 | nodejs | string | required | nodejs version |
 
-### SendMailNotification
-
-This command triggers sending email notification by emitting message to Kafka. This message is consumed by [notification-srv](https://github.com/restorecommerce/notification-srv) which internally uses [mailer](https://github.com/restorecommerce/mailer) to send email. Requests are performed using `io.restorecommerce.commandinterface.NotificationRequest` and responses are empty message `io.restorecommerce.commandinterface.NotificationResponse`.
-This command could also be scheduled to be recurring using scheduling-srv and hence we have the additional fields for job details in the `NotificationRequest` message.
-
-`io.restorecommerce.commandinterface.NotificationRequest`
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| topic | string | required | topic name which the notification-srv is listening to |
-| eventName | string | required | name of the event |
-| message | string | optional | message to send |
-| id | number | optional | job id |
-| schedule_type | string | optional | type of schedule ONCE, RECURR etc |
-| job_resource_id | string | optional | Job reference ID in the database |
-| job_unique_name | string | optional | unique job name in redis |
-
 
 ## Usage
 
-See [tests](test/).
+See [tests](test/command_test).
