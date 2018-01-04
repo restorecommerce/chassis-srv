@@ -350,7 +350,7 @@ describe('microservice.Client', () => {
             const cfg = yield chassis.config.get();
             cfg.set('client:test', null);
             (() => {
-                client = new Client();
+                client = new Client(null, null);
             }).should.throw('missing config argument');
         });
         it('should throw an error when providing with invalid configuration',

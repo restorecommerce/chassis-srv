@@ -12,7 +12,6 @@ import * as chassis from '../../lib';
 import { Health } from '../../lib';
 
 import { Client } from '@restorecommerce/grpc-client';
-import { Events } from '@restorecommerce/kafka-client';
 import { Server } from '../../lib/microservice/server';
 
 /* global describe it beforeEach afterEach*/
