@@ -220,6 +220,6 @@ const memory = yield chassis.cache.get(cfg.get('cache:memory'), logger);
 
 ### Command interface
 
-A shared interface for system commands is also implemented. For more details
+An interface for service control operations commands is also implemented. For more details
 about all operations please refer
 [command-interface](https://github.com/restorecommerce/chassis-srv/command-interface.md).
