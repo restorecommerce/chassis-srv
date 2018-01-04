@@ -38,15 +38,36 @@
     ]
   },
   "client": {
-    "test": {
-      "logger": {
-        "console": {
-          "handleExceptions": false,
-          "level": "error",
-          "colorize": true,
-          "prettyPrint": true
+    "commandinterface": {
+      "transports": {
+        "grpc": {
+          "service": "io.restorecommerce.commandinterface.Service",
+          "protos": [
+            "io/restorecommerce/commandinterface.proto"
+          ],
+          "protoRoot": "protos/",
+          "timeout": 3000
         }
       },
+      "loadbalancer": {
+        "name": "roundRobin"
+      },
+      "publisher": {
+        "name": "static",
+        "instances": [
+          "grpc://localhost:50061"
+        ]
+      },
+      "endpoints": {
+        "check": {},
+        "reconfigure": {},
+        "reset": {},
+        "restore": {},
+        "sendMailNotification": {},
+        "version": {}
+      }
+    },
+    "test": {
       "transports": {
         "grpc": {
           "service": "test.Test",
@@ -233,6 +254,40 @@
           ]
         }
       },
+      "not_bound": {
+        "notImplemented": {
+          "transport": [
+            "grpcCIS"
+          ]
+        }
+      },
+      "commandinterface": {
+        "check": {
+          "transport": [
+            "grpcCIS"
+          ]
+        },
+        "reset": {
+          "transport": [
+            "grpcCIS"
+          ]
+        },
+        "restore": {
+          "transport": [
+            "grpcCIS"
+          ]
+        },
+        "version": {
+          "transport": [
+            "grpcCIS"
+          ]
+        },
+        "reconfigure": {
+          "transport": [
+            "grpcCIS"
+          ]
+        }
+      },
       "stream": {
         "biStream": {
           "transport": [
@@ -265,7 +320,7 @@
         "services": {
           "test": "test.Test",
           "stream": "test.Stream",
-          "reflection": "grpc.reflection.v1alpha.ServerReflection",
+          "reflection": "grpc.reflection.v1alpha.ServerReflection"
         },
         "protos": [
           "test/test.proto",
@@ -280,6 +335,20 @@
         "name": "pipeline",
         "provider": "pipe",
         "addr": "piplineAddr"
+      },
+      {
+        "name": "grpcCIS",
+        "provider": "grpc",
+        "services": {
+          "test": "test.Test",
+          "commandinterface": "io.restorecommerce.commandinterface.Service"
+        },
+        "protos": [
+          "test/test.proto",
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "protos/",
+        "addr": "localhost:50061"
       }
     ]
   }

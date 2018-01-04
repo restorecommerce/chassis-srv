@@ -45,23 +45,7 @@ const providers = [{
   name: 'grpc',
   Client: grpcClient,
   Server: grpcServer,
-} // , {
-//   config: {
-//     client: {
-//       service: 'test',
-//       addr: 'piplineAddr'
-//     },
-//     server: {
-//       name: 'pipeline',
-//       provider: 'pipe',
-//       addr: 'piplineAddr'
-//     },
-//   },
-//   name: 'pipeline',
-//   Client: pipeClient,
-//   Server: pipeServer,
-// }
-];
+}];
 providers.forEach((provider) => {
   logger.level = 'silly';
   describe(`transport provider ${provider.name}`, () => {
