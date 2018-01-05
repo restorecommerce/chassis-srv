@@ -6,7 +6,7 @@
 [depend]: https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square
 
-An engine for microservice operations.
+An engine for diverse microservice operations.
 
 ## Features
 
@@ -18,12 +18,10 @@ An engine for microservice operations.
 ## Architecture
 
 The chassis consists of a cache, command interface, config, database, logger and server part.
-A [Server](src/microservice/server.ts) can be instantiated in order to generically expose gRPC endpoints 
-given a protobuf interface and a transport config.
 The cache part handles loading of caches based on configuration files.
 A provider-based mechanism allows to access different databases.
 A configurable log infrastructure is also provided.
-A runnable `Server` class is implemented in order to expose multiple services with business logic functionalities.
+A [Server](src/microservice/server.ts) can be instantiated in order to generically expose [gRPC](https://grpc.io/docs/) endpoints given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config.
 
 ### Cache
 
@@ -39,14 +37,14 @@ about all operations please refer
 ### Config
   
 Configs are loaded using the [nconf](https://github.com/indexzero/nconf)-based module [service-config](https://github.com/restorecommerce/service-config). Such configuration files may contain endpoint specifications 
-along with their associated transports or simple access credentials for backing services such as a database or a Kafka server.
+along with their associated transports or simple access configs for backing services such as a database or even a Kafka instance.
 
 ### Database 
 
 The following database providers are implemented:
 
-* ArangoDB
-* NeDB
+* [ArangoDB](https://www.arangodb.com/documentation/)
+* [NeDB](https://github.com/louischatriot/nedb)
 
 The structure of query messages is similar in structure with the NeDB/MongoDB API.
 
