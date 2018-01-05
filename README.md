@@ -1,4 +1,10 @@
-# chassis-srv [![Build Status](https://travis-ci.org/restorecommerce/chassis-srv.svg?branch=master)](https://travis-ci.org/restorecommerce/chassis-srv) [![Coverage Status](https://coveralls.io/repos/github/restorecommerce/chassis-srv/badge.svg?branch=master)](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
+# chassis-srv 
+<img src="http://img.shields.io/npm/v/%40restorecommerce%2Fkafka%2Dclient.svg?style=flat-square" alt="">[![Build Status][build]](https://travis-ci.org/restorecommerce/chassis-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/chassis-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
+
+[version]: http://img.shields.io/npm/v/chassis-srv.svg?style=flat-square
+[build]: http://img.shields.io/travis/restorecommerce/chassis-srv/master.svg?style=flat-square
+[depend]: https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square
+[cover]: http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square
 
 An engine for microservice operations.
 
