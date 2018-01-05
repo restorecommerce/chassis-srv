@@ -48,7 +48,7 @@ The following database providers are implemented:
 * ArangoDB
 * NeDB
 
-The structure of query messages is similar in structure with the NeDB/MongoDB API. CRUD operations are performed using [resource-base-interface](https://github.com/restorecommerce/resource-base-interface).
+The structure of query messages is similar in structure with the NeDB/MongoDB API.
 
 ### Logging
 
