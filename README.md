@@ -46,7 +46,7 @@ The following database providers are implemented:
 * [ArangoDB](https://www.arangodb.com/documentation/)
 * [NeDB](https://github.com/louischatriot/nedb)
 
-The structure of query messages is similar in structure with the NeDB/MongoDB API.
+Providers include generic database handling operations (find, insert, upsert delete, truncate, etc). Query parameter structure for all exposed operations is similar with the structure used in [MongoDB](https://docs.mongodb.com/manual/tutorial/getting-started/) queries.
 
 ### Logging
 
