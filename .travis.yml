@@ -10,6 +10,8 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -o Dpkg::Options::="--force-confold" --force-yes -y docker-ce
   - 'npm config set loglevel error'
+  - 'npm install -g typescript'
+  - 'npm install -g tslint'
   - docker network create --driver bridge chassis_net
   - docker run --name chassis_zk -d --net=chassis_net -p 2181:2181 wurstmeister/zookeeper:3.4.6
   - docker run --name chassis_kafka -d --net=chassis_net -p 9092:9092 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e KAFKA_ZOOKEEPER_CONNECT=zk:2181 -v /var/run/docker.sock:/var/run/docker.sock --link chassis_zk:zk wurstmeister/kafka:0.9.0.1
