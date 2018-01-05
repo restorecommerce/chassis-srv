@@ -27,7 +27,7 @@ const providers = [{
       provider: 'grpc',
       service: 'test.Test',
       protos: ['test/test.proto'],
-      protoRoot: 'protos/',
+      protoRoot: 'node_modules/@restorecommerce/protos/',
       addr: 'grpc://localhost:50060',
       timeout: 100,
     },
@@ -38,7 +38,7 @@ const providers = [{
         test: 'test.Test',
       },
       protos: ['test/test.proto'],
-      protoRoot: 'protos/',
+      protoRoot: 'node_modules/@restorecommerce/protos/',
       addr: 'localhost:50060'
     },
   },
