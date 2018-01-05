@@ -65,10 +65,10 @@
     "test": "npm run lint && npm run mocha",
     "test-debug": "npm run mochadebug",
     "mochadebug": "mocha -R spec test/*.js --full-trace --inspect-brk",
-    "mocha": "mocha -R spec test/*.js test/command_test/*.js --full-trace --exit",
-    "tsctests": "tsc test/*.ts test/command_test/*.ts --module commonjs -target ES6",
+    "mocha": "mocha -R spec test/*.js --full-trace --exit",
+    "tsctests": "tsc test/*.ts --module commonjs -target ES6",
     "nsp": "nsp check --output codeclimate",
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/*.js test/command_test/*.js --exit",
+    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/*.js --exit",
     "pretest": "npm run tsctests",
     "postinstall": "tsc -d",
     "jsdoc": "node node_modules/jsdoc/jsdoc.js -r -c jsdoc.json"
