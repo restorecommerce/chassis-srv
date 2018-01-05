@@ -1,6 +1,5 @@
 'use strict';
 const Arangojs = require('arangojs');
-import * as slug from 'slug';
 import * as _ from 'lodash';
 import * as time from 'sleep';
 import * as qb from 'aqb';
@@ -35,9 +34,7 @@ function* query(db: any, collection: string, q: any, bind: Object): any {
  * @return {string} arangodb friendly key
  */
 function idToKey(id: string): any {
-  return slug(id, {
-    replacement: '_'
-  });
+  return id.replace(/\//g, '_');
 }
 
 /**

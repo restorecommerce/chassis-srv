@@ -4,7 +4,8 @@ import * as co from 'co';
 import * as mocha from 'mocha';
 import * as coMocha from 'co-mocha';
 // microservice chassis
-import { config, CommandInterface, database, Server } from './../../src';
+import { config, CommandInterface, database, Server } from './../lib';
+import * as chassis from './../lib';
 import * as Logger from '@restorecommerce/logger';
 import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
@@ -13,7 +14,7 @@ import * as sconfig from '@restorecommerce/service-config';
 coMocha(mocha);
 
 /*
- * Note: A running kafka instance is required (for 'restore' test case).
+ * Note: A running Kafka instance is required for 'restore' test case.
  */
 
 /* global describe it before after beforeEach afterEach */
@@ -21,37 +22,33 @@ describe('CommandInterfaceService', () => {
   let db: any;
   let server: Server;
   let events: Events;
-  let testEvents;
-  let commandEvents: Topic;
   const testEvent = {
     value: 'a test event',
     count: 0,
   };
   let service;
   let cfg;
+  let testTopic;
+  let commandTopic;
   before(async function setup() {
     cfg = sconfig(process.cwd() + '/test');
-    const loggerCfg = cfg.get('logger');
-    const logger = new Logger(loggerCfg);
-    events = new Events(cfg.get('events:kafkaTest'), logger);
-    await events.start();
-    testEvents = events.topic('test');
-    commandEvents = events.topic('io.restorecommerce.command');
+    const logger = new chassis.Logger(cfg.get('logger'));
 
-    server = new Server(cfg.get('server'));
+    events = new Events(cfg.get('events:kafka'), logger);
+    await events.start();
+
+    const topics = cfg.get('events:kafka:topics');
+    testTopic = events.topic(cfg.get('events:kafka:topics:test:topic'));
+    commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+
+    server = new Server(cfg.get('server'), logger);
     db = await co(database.get(cfg.get('database:arango'), server.logger));
     await co(db.truncate());
-    const eventSetup = {
-      test: { // topicName
-        topic: testEvents, // topic
-        events: {
-          'test-event': (message, context) => {
-            return {};
-          },
-        },
-      }
-    };
-    const cis = new CommandInterface(server, eventSetup, cfg.get(), server.logger);
+
+    const config = cfg.get();
+    delete config.database.nedb;  // not supported in default implementation
+
+    const cis = new CommandInterface(server, config, server.logger, events);
     await co(server.bind('commandinterface', cis));
     await co(server.start());
 
@@ -120,14 +117,31 @@ describe('CommandInterfaceService', () => {
   });
 
   describe('restore', function checkRestore() {
-    this.timeout(10000);
+    let restoreDoneListener: any;
     before(async function prepareKafka() {
       for (let i = 0; i < 10; i += 1) {
         testEvent.count = i;
-        await testEvents.emit('test-event', testEvent);
+        await testTopic.emit('test-event', testEvent);
       }
     });
+    beforeEach(async function prepareDB() {
+      await co(db.truncate('test'));
+    });
     it('should re-read all data from the topics the service listens', async function restore() {
+      // restore conclusion is checked asynchronously, since it can take a variable
+      // and potentially large amount of time
+      restoreDoneListener = async function eventListener(msg: any,
+        context: any, config: any, eventName: string): Promise<any> {
+        const result = await co(db.find('test', {}, {
+          sort: {
+            count: 1
+          }
+        }));
+        result.should.be.length(10);
+        for (let i = 0; i < 10; i++) {
+          result[i].count.should.equal(i);
+        }
+      };
       should.exist(service.restore);
       const resp = await service.restore({
         topics: [
@@ -139,8 +153,26 @@ describe('CommandInterfaceService', () => {
         ],
       });
       should.not.exist(resp.error);
+
+      // waiting for restore conclusion
+      const offset = await commandTopic.$offset(-1);
+      await commandTopic.on('restoreResponse', restoreDoneListener);
+      await commandTopic.$wait(offset);
+
     });
     it('should re-read all data from specified offset', async function restore() {
+      restoreDoneListener = async function eventListener(msg: any,
+        context: any, config: any, eventName: string): Promise<any> {
+        const result = await co(db.find('test', {}, {
+          sort: {
+            count: 1
+          }
+        }));
+        result.should.be.length(5);
+        for (let i = 5; i < 10; i++) {
+          result[i].count.should.equal(i);
+        }
+      };
       should.exist(service.restore);
       const resp = await service.restore({
         topics: [
@@ -152,6 +184,11 @@ describe('CommandInterfaceService', () => {
         ],
       });
       should.not.exist(resp.error);
+
+      // waiting for restore conclusion
+      const offset = await commandTopic.$offset(-1);
+      await commandTopic.on('restoreResponse', restoreDoneListener);
+      await commandTopic.$wait(offset);
     });
   });
   describe('version', () => {

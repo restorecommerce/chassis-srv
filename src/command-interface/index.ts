@@ -1,6 +1,5 @@
 'use strict';
 import * as _ from 'lodash';
-import * as mixinEmitter from 'co-emitter';
 import * as co from 'co';
 import { Server } from './../microservice/server';
 import * as errors from './../microservice/errors';
@@ -14,34 +13,40 @@ const ServingStatus = {
   NOT_SERVING: 2,
 };
 
+/**
+ * Generic interface to expose system operations.
+ * Currently, it supports:
+ * * service health check
+ * * service versioning
+ * * system data restore
+ * * system reset
+ * Unimplemented:
+ * * reconfigure
+ * In case of custom data/events handling or service-specific operations regarding
+ * a certain method, such method should be extended or overriden.
+ */
 export class CommandInterface {
-  hasDatabase: any;
   logger: Logger;
-  events: Events;
   config: any;
   health: any;
   service: any;
-  listener: any;
-  emit: any;
-  constructor(server: Server, events: any, config: any, logger: Logger) {
+  kafkaEvents: Events;
+  constructor(server: Server, config: any, logger: Logger, events?: Events) {
     if (!_.has(config, 'server.services')) {
       throw new Error('missing config server.services');
     }
-    this.hasDatabase = _.has(config, 'database');
-    if (this.hasDatabase === false) {
-      logger.warn('missing database config, disabling endpoints', {
-        disabledEndpoints: ['reset', 'restore'],
-      });
+
+    this.config = config;
+    this.logger = logger;
+
+    // disable reset and restore if there are no databases in configs
+    if (!_.has(this.config, 'events')) {
+      this.logger.warn('Missing events config. Disabling restore and reset operations.');
       this.reset = undefined;
       this.restore = undefined;
     }
-    mixinEmitter(this);
-    this.logger = logger;
-    this.events = events;
-    this.config = {
-      workers: 4,
-      workerConfig: config,
-    };
+
+    this.kafkaEvents = events;
 
     // Health
     this.health = {
@@ -79,7 +84,7 @@ export class CommandInterface {
   }
 
   /**
-   * Reconfigure
+   * Reconfigure service
    * @param call
    * @param context
    */
@@ -89,36 +94,64 @@ export class CommandInterface {
   }
 
   /**
-   * used to restore the system by re-reading the Kafka messages
+   * Restore the system by re-reading Kafka messages. Default implementation
+   * restores collection documents from a set of ArangoDB databases, using
+   * the chassis-srv database provider.
    * @param call list of Kafka topics to be restored
    * @param context
    */
   async restore(call: any, context?: any): Promise<any> {
+
     let topics;
     if (call && call.request) {
       topics = call.request.topics;
     } else {
       topics = call.topics;
     }
-    // Check if all topics specified in the request are registered
-    for (let i = 0; i < topics.length; i += 1) {
-      const topic = topics[i];
-      if (_.isNil(this.events[topic.topic])) {
-        throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
+
+    if (_.isNil(topics)) {
+      throw new errors.NotFound('Invalid event configuration provided in restore operation');
+    }
+
+    const events = {};
+
+    const dbCfgs = this.config.database;
+    const dbCfgNames = _.keys(dbCfgs);
+    for (let i = 0; i < dbCfgNames.length; i += 1) {
+      const dbCfgName = dbCfgNames[i];
+      const dbCfg = dbCfgs[dbCfgName];
+      const collections = dbCfg.collections;
+      if (_.isNil(collections)) {
+        throw new errors.NotFound('No collections found on DB config');
+      }
+      const db = await co(database.get(dbCfg, this.logger));
+      for (let topic of topics) {
+        for (let collection of collections) {
+          if (topic.topic.includes(collection)) {
+            events[topic.topic] = {
+              topic: this.kafkaEvents.topic(topic.topic),
+              events: this.makeResourcesRestoreSetup(db, collection)
+            };
+            break;
+          }
+          if (!events[topic.topic]) {
+            throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
+          }
+        }
       }
     }
+
+    const commandTopic = this.kafkaEvents.topic(this.config.events.kafka.topics.command.topic);
     const logger = this.logger;
     // Start the restore process
     logger.warn('restoring data');
-    for (let i = 0; i < topics.length; i += 1) {
-      const topic = topics[i];
-      const restoreTopic = this.events[topic.topic];
+    for (let topic of topics) {
+      const restoreTopic = events[topic.topic];
       const eventNames = _.keys(restoreTopic.events);
       const targetOffset = (await restoreTopic.topic.$offset(-1)) - 1;
       const ignoreOffsets = topic.ignore_offset;
       this.logger.debug(`topic ${topic.topic} has current offset ${targetOffset}`);
-      for (let j = 0; j < eventNames.length; j += 1) {
-        const eventName = eventNames[j];
+      for (let eventName of eventNames) {
         const listener = restoreTopic.events[eventName];
         const listenUntil = async function listenUntil(message: any, ctx: any,
           config: any, eventNameRet: string): Promise<any> {
@@ -132,6 +165,11 @@ export class CommandInterface {
             logger.debug('Exception caught :', e.message);
           }
           if (ctx.offset >= targetOffset) {
+            await commandTopic.emit('restoreDone', {
+              topic: topic.topic,
+              offset: ctx.offset
+            });
+
             for (let k = 0; k < eventNames.length; k += 1) {
               const eventToRemove = eventNames[k];
               logger.debug('Number of listeners before removing :',
@@ -150,14 +188,14 @@ export class CommandInterface {
         logger.debug(`reset done for topic ${topic.topic} to commit offset ${topic.offset}`);
       }
     }
-    // wait until all committed offsets reached targetOffset
     logger.debug('waiting until all messages are processed');
     logger.info('restore process done');
     return {};
   }
 
   /**
-   * used to reset the system
+   * Reset system data related to a service. Default implementation truncates
+   * a set of ArangoDB instances, using the chassis-srv database provider.
    * @param call
    * @param context
    */
@@ -166,8 +204,7 @@ export class CommandInterface {
     if (this.health.status !== ServingStatus.NOT_SERVING) {
       this.logger.warn('reset process starting while server is serving');
     }
-    await this.emit('reset.start');
-    const dbCfgs = this.config.workerConfig.database;
+    const dbCfgs = this.config.database;
     const dbCfgNames = _.keys(dbCfgs);
     for (let i = 0; i < dbCfgNames.length; i += 1) {
       const dbCfgName = dbCfgNames[i];
@@ -184,14 +221,13 @@ export class CommandInterface {
           break;
       }
     }
-    await this.emit('reset.end');
     this.logger.info('reset process ended');
     return {};
   }
 
   /**
-   * used to check the service status
-   * @param call list of service names
+   * Check the service status
+   * @param call List of services to be checked
    * @param context
    */
   check(call: any, context?: any): any {
@@ -224,7 +260,7 @@ export class CommandInterface {
   }
 
   /**
-   * get the npm package and node version of system
+   * Retrieve current NPM package and Node version of service
    * @param call
    * @param context
    */
@@ -235,5 +271,31 @@ export class CommandInterface {
       version: process.env.npm_package_version,
     };
   }
-}
 
+  // Helper functions
+
+  /**
+   * Generic resource restore setup.
+   * @param db
+   * @param db
+   */
+  makeResourcesRestoreSetup(db: any, collectionName: string): any {
+    return {
+      [`${collectionName}Created`]: async function restoreCreated(message: any, context: any,
+        config: any, eventName: string): Promise<any> {
+        await co(db.insert(`${collectionName}s`, message));
+        return {};
+      },
+      [`${collectionName}Modified`]: async function restoreModified(message: any, context: any,
+        config: any, eventName: string): Promise<any> {
+        await co(db.update(collectionName, { id: message.id }, _.omitBy(message, _.isNil)));
+        return {};
+      },
+      [`${collectionName}Deleted`]: async function restoreDeleted(message: any, context: any,
+        config: any, eventName: string): Promise< any> {
+        await co(db.delete(collectionName, { id: message.id }));
+        return {};
+      }
+    };
+  }
+}
