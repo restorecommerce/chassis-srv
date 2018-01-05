@@ -29,9 +29,9 @@ Multiple cache providers can be registered and loaded within a microservice. Suc
 
 ### Command interface
 
-A shared interface for system commands (useful information retrieval, system control, etc) is also implemented. For more details
-about all operations please refer
-[command-interface](https://github.com/restorecommerce/chassis-srv/command-interface.md).
+An interface for system commands (useful information retrieval, system control, etc) is also implemented. For more details about all operations please refer
+[command-interface](command-interface.md). 
+This interface can be directly exposed via gRPC as a service or it can be extended by a microservice for specific functionalities.
 
 
 ### Config
@@ -46,7 +46,8 @@ The following database providers are implemented:
 * [ArangoDB](https://www.arangodb.com/documentation/)
 * [NeDB](https://github.com/louischatriot/nedb)
 
-Providers include generic database handling operations (find, insert, upsert delete, truncate, etc). Query parameter structure for all exposed operations is similar with the structure used in [MongoDB](https://docs.mongodb.com/manual/tutorial/getting-started/) queries.
+Providers include generic database handling operations (find, insert, upsert delete, truncate, etc). Query parameter structure for all exposed operations is similar with the structure used in [MongoDB](https://docs.mongodb.com/manual/tutorial/getting-started/) queries. 
+Database providers can be used as a database abstration by any service that owns a set of resources. Furthermore, services can later expose their database operations via gRPC.
 
 ### Logging
 
