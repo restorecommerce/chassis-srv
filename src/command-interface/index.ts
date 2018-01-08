@@ -134,9 +134,9 @@ export class CommandInterface {
             };
             break;
           }
-          if (!events[topic.topic]) {
-            throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
-          }
+        }
+        if (!events[topic.topic]) {
+          throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
         }
       }
     }
@@ -165,7 +165,7 @@ export class CommandInterface {
             logger.debug('Exception caught :', e.message);
           }
           if (ctx.offset >= targetOffset) {
-            await commandTopic.emit('restoreDone', {
+            await commandTopic.emit('restoreResponse', {
               topic: topic.topic,
               offset: ctx.offset
             });
