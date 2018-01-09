@@ -34,6 +34,6 @@ import {ServerReflection} from './microservice/transport/provider/grpc';
 export {ServerReflection};
 export {Server as pipeServer, Client as pipeClient}  from './microservice/transport/provider/pipe';
 
-import { CommandInterface as CommandInterface} from './command-interface';
+import { ICommandInterface, CommandInterface as CommandInterface} from './command-interface';
 
-export  { CommandInterface };
+export  { ICommandInterface, CommandInterface };

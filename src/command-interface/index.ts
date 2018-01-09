@@ -15,17 +15,29 @@ const ServingStatus = {
 
 /**
  * Generic interface to expose system operations.
- * Currently, it supports:
- * * service health check
- * * service versioning
- * * system data restore
- * * system reset
- * Unimplemented:
+ */
+export interface ICommandInterface {
+  check(call, context);
+  version(call, context);
+  reconfigure(call, context);
+  reset(call, context);
+  restore(call, context);
+}
+
+/**
+ * Base implementation.
+ * Currently includes:
+ * * 'check' - returns UNKNOWN, SERVING or NOT_SERVING
+ * * 'version' - returns NPM service version and Node.js version
+ * * 'reset' - truncated all DB instances specified in config files
+ * * 'restore' - re-reads Kafka events to restore a set of ArangoDB collections' data
+ *  Unimplemented:
  * * reconfigure
+ *
  * In case of custom data/events handling or service-specific operations regarding
  * a certain method, such method should be extended or overriden.
  */
-export class CommandInterface {
+export class CommandInterface implements ICommandInterface {
   logger: Logger;
   config: any;
   health: any;
