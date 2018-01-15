@@ -62,12 +62,7 @@
         ]
       },
       "endpoints": {
-        "check": {},
-        "reconfigure": {},
-        "reset": {},
-        "restore": {},
-        "sendMailNotification": {},
-        "version": {}
+        "command":{}
       }
     },
     "test": {
@@ -266,27 +261,7 @@
         }
       },
       "commandinterface": {
-        "check": {
-          "transport": [
-            "grpcCIS"
-          ]
-        },
-        "reset": {
-          "transport": [
-            "grpcCIS"
-          ]
-        },
-        "restore": {
-          "transport": [
-            "grpcCIS"
-          ]
-        },
-        "version": {
-          "transport": [
-            "grpcCIS"
-          ]
-        },
-        "reconfigure": {
+        "command": {
           "transport": [
             "grpcCIS"
           ]

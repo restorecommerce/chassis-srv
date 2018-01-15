@@ -8,20 +8,42 @@ import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 
 const ServingStatus = {
-  UNKNOWN: 0,
-  SERVING: 1,
-  NOT_SERVING: 2,
+  UNKNOWN: 'UNKNOWN',
+  SERVING: 'SERVING',
+  NOT_SERVING: 'NOT_SERVING',
 };
 
 /**
  * Generic interface to expose system operations.
  */
 export interface ICommandInterface {
-  check(call, context);
-  version(call, context);
-  reconfigure(call, context);
-  reset(call, context);
-  restore(call, context);
+  command(call, context);
+}
+
+/**
+ *
+ * @param msg google.protobuf.Any
+ * @returns Arbitrary JSON
+ */
+function decodeMsg(msg: any): any {
+  const decoded = Buffer.from(msg.value, 'base64').toString();
+  return JSON.parse(decoded);
+}
+
+/**
+ *
+ * @param msg Arbitrary JSON
+ * @returns google.protobuf.Any formatted message
+ */
+function encodeMsg(msg: any): any {
+
+  const stringified = JSON.stringify(msg);
+  const encoded = Buffer.from(stringified).toString('base64');
+  const ret = {
+    type_url: 'payload',
+    value: encoded
+  };
+  return ret;
 }
 
 /**
@@ -43,6 +65,7 @@ export class CommandInterface implements ICommandInterface {
   health: any;
   service: any;
   kafkaEvents: Events;
+  commands: any;
   constructor(server: Server, config: any, logger: Logger, events?: Events) {
     if (!_.has(config, 'server.services')) {
       throw new Error('missing config server.services');
@@ -93,6 +116,75 @@ export class CommandInterface implements ICommandInterface {
         });
       });
     });
+
+    this.commands = [
+      'reset',
+      'restore',
+      'reconfigure',
+      'health_check',
+      'version'
+    ];
+  }
+  /**
+   * Generic command operation, which demultiplexes a command by its name and parameters.
+   * @param call
+   * @param context
+   */
+  async command(call, context?: any): Promise<any> {
+    if ((_.isNil(call.request) || _.isNil(call.request.name) && _.isNil(call.name))) {
+      throw new errors.InvalidArgument('No command name provided');
+    }
+
+    if (this.commands.indexOf(call.request.name) == -1) {
+      throw new errors.InvalidArgument('Invalid command name ' + call.request.name);
+    }
+    const name = call.name || call.request.name;
+    let payload;
+    try {
+      if (call.payload) {
+        payload = decodeMsg(call.payload);
+      } else if (call.request.payload) {
+        payload = decodeMsg(call.request.payload);
+      }
+    } catch (err) {
+      payload = null;
+    }
+
+    let result;
+    switch (call.request.name) {
+      case 'reset':
+        result = await this.reset();
+        break;
+      case 'restore':
+        if (!payload) {
+          throw new errors.InvalidArgument('Invalid payload for restore command');
+        }
+        const topics = payload.topics;
+
+        if (_.isNil(topics)) {
+          throw new errors.NotFound('Invalid event configuration provided in restore operation');
+        }
+        result = await this.restore(topics);
+        break;
+      case 'reconfigure':
+        result = this.reconfigure();
+        break;
+      case 'health_check':
+        if (!payload) {
+          throw new errors.InvalidArgument('Invalid payload for restore command');
+        }
+        const serviceName = payload.service;
+        if (_.isNil(serviceName)) {
+          throw new errors.InvalidArgument('No service name was provided for health check');
+        }
+        result = this.check(serviceName);
+        break;
+      case 'version':
+        result = this.version();
+        break;
+    }
+
+    return encodeMsg(result);
   }
 
   /**
@@ -100,7 +192,7 @@ export class CommandInterface implements ICommandInterface {
    * @param call
    * @param context
    */
-  reconfigure(call: any, context?: any): any {
+  reconfigure(): any {
     this.logger.info('reconfigure is not implemented');
     throw new errors.Unimplemented('reconfigure is not implemented');
   }
@@ -109,22 +201,9 @@ export class CommandInterface implements ICommandInterface {
    * Restore the system by re-reading Kafka messages. Default implementation
    * restores collection documents from a set of ArangoDB databases, using
    * the chassis-srv database provider.
-   * @param call list of Kafka topics to be restored
-   * @param context
+   * @param topics list of Kafka topics to be restored
    */
-  async restore(call: any, context?: any): Promise<any> {
-
-    let topics;
-    if (call && call.request) {
-      topics = call.request.topics;
-    } else {
-      topics = call.topics;
-    }
-
-    if (_.isNil(topics)) {
-      throw new errors.NotFound('Invalid event configuration provided in restore operation');
-    }
-
+  async restore(topics: any[]): Promise<any> {
     const events = {};
 
     const dbCfgs = this.config.database;
@@ -195,7 +274,7 @@ export class CommandInterface implements ICommandInterface {
         logger.debug(`listening to topic ${topic.topic} event ${eventName}
           until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
         await restoreTopic.topic.on(eventName, listenUntil);
-        logger.debug(`reseting commit offset of topic ${topic.topic} to ${topic.offset}`);
+        logger.debug(`resetting commit offset of topic ${topic.topic} to ${topic.offset}`);
         restoreTopic.topic.$reset(eventName, topic.offset);
         logger.debug(`reset done for topic ${topic.topic} to commit offset ${topic.offset}`);
       }
@@ -208,10 +287,8 @@ export class CommandInterface implements ICommandInterface {
   /**
    * Reset system data related to a service. Default implementation truncates
    * a set of ArangoDB instances, using the chassis-srv database provider.
-   * @param call
-   * @param context
    */
-  async reset(call: any, context?: any): Promise<any> {
+  async reset(): Promise<any> {
     this.logger.info('reset process started');
     if (this.health.status !== ServingStatus.NOT_SERVING) {
       this.logger.warn('reset process starting while server is serving');
@@ -242,13 +319,7 @@ export class CommandInterface implements ICommandInterface {
    * @param call List of services to be checked
    * @param context
    */
-  check(call: any, context?: any): any {
-    let serviceName;
-    if (call && call.request) {
-      serviceName = call.request.service;
-    } else {
-      serviceName = call.service;
-    }
+  check(serviceName: string): any {
     if (_.isNil(serviceName) || _.size(serviceName) === 0) {
       return {
         status: this.health.status,
@@ -273,10 +344,8 @@ export class CommandInterface implements ICommandInterface {
 
   /**
    * Retrieve current NPM package and Node version of service
-   * @param call
-   * @param context
    */
-  version(call: any, context?: any): any {
+  version(): any {
     this.logger.info('process version');
     return {
       nodejs: process.version,
@@ -289,7 +358,7 @@ export class CommandInterface implements ICommandInterface {
   /**
    * Generic resource restore setup.
    * @param db
-   * @param db
+   * @param collectionName
    */
   makeResourcesRestoreSetup(db: any, collectionName: string): any {
     return {
@@ -304,7 +373,7 @@ export class CommandInterface implements ICommandInterface {
         return {};
       },
       [`${collectionName}Deleted`]: async function restoreDeleted(message: any, context: any,
-        config: any, eventName: string): Promise< any> {
+        config: any, eventName: string): Promise<any> {
         await co(db.delete(collectionName, { id: message.id }));
         return {};
       }

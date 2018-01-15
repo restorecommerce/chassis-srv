@@ -4,6 +4,7 @@ import * as co from 'co';
 import * as mocha from 'mocha';
 import * as coMocha from 'co-mocha';
 // microservice chassis
+import * as _ from 'lodash';
 import { config, CommandInterface, database, Server } from './../lib';
 import * as chassis from './../lib';
 import * as Logger from '@restorecommerce/logger';
@@ -13,11 +14,36 @@ import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as sconfig from '@restorecommerce/service-config';
 coMocha(mocha);
 
+
+/**
+ *
+ * @param msg google.protobuf.Any
+ * @returns Arbitrary JSON
+ */
+function decodeMsg(msg: any): any {
+  const decoded = Buffer.from(msg.value, 'base64').toString();
+  return JSON.parse(decoded);
+}
+
+/**
+ *
+ * @param msg Arbitrary JSON
+ * @returns google.protobuf.Any formatted message
+ */
+function encodeMsg(msg: any): any {
+
+  const stringified = JSON.stringify(msg);
+  const encoded = Buffer.from(stringified).toString('base64');
+  const ret = {
+    type_url: 'payload',
+    value: encoded
+  };
+  return ret;
+}
+
 /*
  * Note: A running Kafka instance is required for 'restore' test case.
  */
-
-/* global describe it before after beforeEach afterEach */
 describe('CommandInterfaceService', () => {
   let db: any;
   let server: Server;
@@ -61,39 +87,53 @@ describe('CommandInterfaceService', () => {
   });
   describe('check', () => {
     it('should return the status', async function checkHealth() {
-      should.exist(service.check);
-
-      // // check commandinterface service, should serve
-      let resp = await service.check({
-        service: 'commandinterface',
+      let cmdPayload = encodeMsg({
+        service: 'commandinterface'
       });
+
+      const msg = {
+        name: 'health_check',
+        payload: cmdPayload
+      };
+      // check commandinterface service, should serve
+      let resp = await service.command(msg);
       should.not.exist(resp.error);
       should.exist(resp.data);
-      should.exist(resp.data.status);
-      resp.data.status.should.equal('SERVING');
-
+      let data = decodeMsg(resp.data);
+      should.exist(data.status);
+      data.status.should.equal('SERVING');
+      cmdPayload = encodeMsg({
+        service: 'does_not_exist'
+      });
       // check none existing service, should throw error
-      resp = await service.check({
-        service: 'does_not_exist',
+      resp = await service.command({
+        name: 'health_check',
+        payload: cmdPayload
       });
       should.not.exist(resp.data);
       should.exist(resp.error);
       resp.error.message.should.equal('not found');
 
+      cmdPayload = encodeMsg({
+        service: ''
+      });
       // check server, should serve
-      resp = await service.check({
-        service: '',
+      resp = await service.command({
+        name: 'health_check',
+        payload: cmdPayload
       });
       should.not.exist(resp.error);
       should.exist(resp.data);
-      should.exist(resp.data.status);
-      resp.data.status.should.equal('SERVING');
+      data = decodeMsg(resp.data);
+      should.exist(data.status);
+      data.status.should.equal('SERVING');
     });
   });
   describe('reconfigure', () => {
     it('should return an error since it is not implemented', async function reconfigure() {
-      should.exist(service.reconfigure);
-      const resp = await service.reconfigure({});
+      const resp = await service.command({
+        name: 'reconfigure'
+      });
       should.exist(resp.error);
     });
   });
@@ -106,8 +146,10 @@ describe('CommandInterfaceService', () => {
       }));
     });
     it('should clean the database', async function reset() {
-      should.exist(service.reset);
-      const resp = await service.reset({});
+      const resp = await service.command({
+        name: 'reset'
+      });
+
       should.not.exist(resp.error);
       should.exist(resp.data);
 
@@ -127,7 +169,7 @@ describe('CommandInterfaceService', () => {
     beforeEach(async function prepareDB() {
       await co(db.truncate('test'));
     });
-    it('should re-read all data from the topics the service listens', async function restore() {
+    it('should re-read all data from the topics the service listens to', async function restore() {
       // restore conclusion is checked asynchronously, since it can take a variable
       // and potentially large amount of time
       restoreDoneListener = async function eventListener(msg: any,
@@ -142,8 +184,8 @@ describe('CommandInterfaceService', () => {
           result[i].count.should.equal(i);
         }
       };
-      should.exist(service.restore);
-      const resp = await service.restore({
+
+      const cmdPayload = encodeMsg({
         topics: [
           {
             topic: 'test',
@@ -151,6 +193,12 @@ describe('CommandInterfaceService', () => {
             ignore_offset: [],
           },
         ],
+      }
+      );
+
+      const resp = await service.command({
+        name: 'restore',
+        payload: cmdPayload
       });
       should.not.exist(resp.error);
 
@@ -173,8 +221,7 @@ describe('CommandInterfaceService', () => {
           result[i].count.should.equal(i);
         }
       };
-      should.exist(service.restore);
-      const resp = await service.restore({
+      const cmdPayload = encodeMsg({
         topics: [
           {
             topic: 'test',
@@ -182,6 +229,11 @@ describe('CommandInterfaceService', () => {
             ignore_offset: [],
           },
         ],
+      }
+      );
+      const resp = await service.command({
+        name: 'restore',
+        payload: cmdPayload
       });
       should.not.exist(resp.error);
 
@@ -193,14 +245,16 @@ describe('CommandInterfaceService', () => {
   });
   describe('version', () => {
     it('should return the version of the package and nodejs', async function version() {
-      should.exist(service.version);
-      const resp = await service.version({});
+      const resp = await service.command({
+        name: 'version',
+      });
       should.not.exist(resp.error);
       should.exist(resp.data);
-      should.exist(resp.data.version);
-      resp.data.version.should.equal(process.env.npm_package_version);
-      should.exist(resp.data.nodejs);
-      resp.data.nodejs.should.equal(process.version);
+      const data = decodeMsg(resp.data);
+      should.exist(data.version);
+      data.version.should.equal(process.env.npm_package_version);
+      should.exist(data.nodejs);
+      data.nodejs.should.equal(process.version);
     });
   });
 });
