@@ -56,6 +56,11 @@ describe('CommandInterfaceService', () => {
   let cfg;
   let testTopic;
   let commandTopic;
+  let validate;
+  const eventListener = async function (msg: any,
+    context: any, config: any, eventName: string): Promise<any> {
+    validate(msg, eventName);
+  };
   before(async function setup() {
     cfg = sconfig(process.cwd() + '/test');
     const logger = new chassis.Logger(cfg.get('logger'));
@@ -66,6 +71,10 @@ describe('CommandInterfaceService', () => {
     const topics = cfg.get('events:kafka:topics');
     testTopic = events.topic(cfg.get('events:kafka:topics:test:topic'));
     commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+    // subscribe all response events
+    for (let eventName of cfg.get('events:kafka:topics:command:events')) {
+      await commandTopic.on(eventName, eventListener);
+    }
 
     server = new Server(cfg.get('server'), logger);
     db = await co(database.get(cfg.get('database:arango'), server.logger));
@@ -95,13 +104,31 @@ describe('CommandInterfaceService', () => {
         name: 'health_check',
         payload: cmdPayload
       };
+
+      // validator called by the event listener
+      validate = function (msg: any, eventName: string): void {
+        eventName.should.equal('healthCheckResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.not.exist(payload.error);
+        should.exist(payload.status);
+        payload.status.should.equal('SERVING');
+      };
+
+      let offset = await commandTopic.$offset(-1);
       // check commandinterface service, should serve
       let resp = await service.command(msg);
+      await commandTopic.$wait(offset); // wait for response on both Kafka & gRPC
+
       should.not.exist(resp.error);
       should.exist(resp.data);
       let data = decodeMsg(resp.data);
       should.exist(data.status);
       data.status.should.equal('SERVING');
+
+      // should not serve if service does not exist
       cmdPayload = encodeMsg({
         service: 'does_not_exist'
       });
@@ -113,7 +140,7 @@ describe('CommandInterfaceService', () => {
       should.not.exist(resp.data);
       should.exist(resp.error);
       resp.error.message.should.equal('not found');
-
+      // should check all binded services if no service is specified
       cmdPayload = encodeMsg({
         service: ''
       });
@@ -122,6 +149,7 @@ describe('CommandInterfaceService', () => {
         name: 'health_check',
         payload: cmdPayload
       });
+      await commandTopic.$wait(offset) + 1; // wait for response on both Kafka & gRPC
       should.not.exist(resp.error);
       should.exist(resp.data);
       data = decodeMsg(resp.data);
@@ -146,9 +174,19 @@ describe('CommandInterfaceService', () => {
       }));
     });
     it('should clean the database', async function reset() {
+      validate = function (msg: any, eventName: string): void {
+        eventName.should.equal('resetResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.not.exist(payload.error);
+      };
+      const offset = await commandTopic.$offset(-1);
       const resp = await service.command({
         name: 'reset'
       });
+      await commandTopic.$wait(offset);
 
       should.not.exist(resp.error);
       should.exist(resp.data);
@@ -156,35 +194,20 @@ describe('CommandInterfaceService', () => {
       const result = await co(db.findByID('tests', docID));
       result.should.be.length(0);
     });
+
   });
 
   describe('restore', function checkRestore() {
-    let restoreDoneListener: any;
     before(async function prepareKafka() {
       for (let i = 0; i < 10; i += 1) {
         testEvent.count = i;
-        await testTopic.emit('test-event', testEvent);
+        await testTopic.emit('testCreated', testEvent);
       }
     });
     beforeEach(async function prepareDB() {
       await co(db.truncate('test'));
     });
     it('should re-read all data from the topics the service listens to', async function restore() {
-      // restore conclusion is checked asynchronously, since it can take a variable
-      // and potentially large amount of time
-      restoreDoneListener = async function eventListener(msg: any,
-        context: any, config: any, eventName: string): Promise<any> {
-        const result = await co(db.find('test', {}, {
-          sort: {
-            count: 1
-          }
-        }));
-        result.should.be.length(10);
-        for (let i = 0; i < 10; i++) {
-          result[i].count.should.equal(i);
-        }
-      };
-
       const cmdPayload = encodeMsg({
         topics: [
           {
@@ -195,32 +218,37 @@ describe('CommandInterfaceService', () => {
         ],
       }
       );
+      validate = function (msg: any, eventName: string) {
+        eventName.should.equal('restoreResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.not.exist(payload.error);
+        // restore conclusion is checked asynchronously, since it can take a variable
+        // and potentially large amount of time
+        co(db.find('test', {}, {
+          sort: {
+            count: 1
+          }
+        })).then((result) => {
+          result.should.be.length(10);
+          for (let i = 0; i < 10; i++) {
+            result[i].count.should.equal(i);
+          }
+        });
+      };
 
+      // waiting for restore conclusion
+      const offset = await commandTopic.$offset(-1);
       const resp = await service.command({
         name: 'restore',
         payload: cmdPayload
       });
       should.not.exist(resp.error);
-
-      // waiting for restore conclusion
-      const offset = await commandTopic.$offset(-1);
-      await commandTopic.on('restoreResponse', restoreDoneListener);
       await commandTopic.$wait(offset);
-
     });
     it('should re-read all data from specified offset', async function restore() {
-      restoreDoneListener = async function eventListener(msg: any,
-        context: any, config: any, eventName: string): Promise<any> {
-        const result = await co(db.find('test', {}, {
-          sort: {
-            count: 1
-          }
-        }));
-        result.should.be.length(5);
-        for (let i = 5; i < 10; i++) {
-          result[i].count.should.equal(i);
-        }
-      };
       const cmdPayload = encodeMsg({
         topics: [
           {
@@ -229,25 +257,57 @@ describe('CommandInterfaceService', () => {
             ignore_offset: [],
           },
         ],
-      }
-      );
+      });
+      validate = function (msg: any, eventName: string) {
+        eventName.should.equal('restoreResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.not.exist(payload.error);
+        // restore conclusion is checked asynchronously, since it can take a variable
+        // and potentially large amount of time
+        co(db.find('test', {}, {
+          sort: {
+            count: 1
+          }
+        })).then((result) => {
+          result.should.be.length(5);
+          for (let i = 5; i < 10; i++) {
+            result[i].count.should.equal(i);
+          }
+        });
+      };
+
+      // waiting for restore conclusion
+      const offset = await commandTopic.$offset(-1);
       const resp = await service.command({
         name: 'restore',
         payload: cmdPayload
       });
       should.not.exist(resp.error);
 
-      // waiting for restore conclusion
-      const offset = await commandTopic.$offset(-1);
-      await commandTopic.on('restoreResponse', restoreDoneListener);
       await commandTopic.$wait(offset);
     });
   });
   describe('version', () => {
     it('should return the version of the package and nodejs', async function version() {
+      validate = function (msg: any, eventName: string): void {
+        eventName.should.equal('versionResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.exist(payload.version);
+        payload.version.should.equal(process.env.npm_package_version);
+        should.exist(payload.nodejs);
+        payload.nodejs.should.equal(process.version);
+      };
+      const offset = await commandTopic.$offset(-1);
       const resp = await service.command({
         name: 'version',
       });
+      await commandTopic.$wait(offset);
       should.not.exist(resp.error);
       should.exist(resp.data);
       const data = decodeMsg(resp.data);

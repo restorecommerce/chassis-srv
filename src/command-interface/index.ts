@@ -66,6 +66,7 @@ export class CommandInterface implements ICommandInterface {
   service: any;
   kafkaEvents: Events;
   commands: any;
+  commandTopic: Topic;
   constructor(server: Server, config: any, logger: Logger, events?: Events) {
     if (!_.has(config, 'server.services')) {
       throw new Error('missing config server.services');
@@ -75,7 +76,9 @@ export class CommandInterface implements ICommandInterface {
     this.logger = logger;
 
     // disable reset and restore if there are no databases in configs
-    if (!_.has(this.config, 'events')) {
+    if (!_.has(this.config, 'events')
+      || !_.has(this.config.events, 'kafka'
+        || !_.has(this.config.events.kafka, 'topics'))) {
       this.logger.warn('Missing events config. Disabling restore and reset operations.');
       this.reset = undefined;
       this.restore = undefined;
@@ -116,7 +119,7 @@ export class CommandInterface implements ICommandInterface {
         });
       });
     });
-
+    // list of available commands
     this.commands = [
       'reset',
       'restore',
@@ -124,6 +127,8 @@ export class CommandInterface implements ICommandInterface {
       'health_check',
       'version'
     ];
+    const topicCfg = config.events.kafka.topics.command;
+    this.commandTopic = events.topic(topicCfg.topic);
   }
   /**
    * Generic command operation, which demultiplexes a command by its name and parameters.
@@ -151,6 +156,7 @@ export class CommandInterface implements ICommandInterface {
     }
 
     let result;
+    let serviceNames = [];
     switch (call.request.name) {
       case 'reset':
         result = await this.reset();
@@ -174,13 +180,10 @@ export class CommandInterface implements ICommandInterface {
           throw new errors.InvalidArgument('Invalid payload for restore command');
         }
         const serviceName = payload.service;
-        if (_.isNil(serviceName)) {
-          throw new errors.InvalidArgument('No service name was provided for health check');
-        }
-        result = this.check(serviceName);
+        result = await this.check(serviceName);
         break;
       case 'version':
-        result = this.version();
+        result = await this.version();
         break;
     }
 
@@ -205,82 +208,94 @@ export class CommandInterface implements ICommandInterface {
    */
   async restore(topics: any[]): Promise<any> {
     const events = {};
-
-    const dbCfgs = this.config.database;
-    const dbCfgNames = _.keys(dbCfgs);
-    for (let i = 0; i < dbCfgNames.length; i += 1) {
-      const dbCfgName = dbCfgNames[i];
-      const dbCfg = dbCfgs[dbCfgName];
-      const collections = dbCfg.collections;
-      if (_.isNil(collections)) {
-        throw new errors.NotFound('No collections found on DB config');
-      }
-      const db = await co(database.get(dbCfg, this.logger));
-      for (let topic of topics) {
-        for (let collection of collections) {
-          if (topic.topic.includes(collection)) {
-            events[topic.topic] = {
-              topic: this.kafkaEvents.topic(topic.topic),
-              events: this.makeResourcesRestoreSetup(db, collection)
-            };
-            break;
-          }
+    try {
+      const dbCfgs = this.config.database;
+      const dbCfgNames = _.keys(dbCfgs);
+      for (let i = 0; i < dbCfgNames.length; i += 1) {
+        const dbCfgName = dbCfgNames[i];
+        const dbCfg = dbCfgs[dbCfgName];
+        const collections = dbCfg.collections;
+        if (_.isNil(collections)) {
+          throw new errors.NotFound('No collections found on DB config');
         }
-        if (!events[topic.topic]) {
-          throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
-        }
-      }
-    }
-
-    const commandTopic = this.kafkaEvents.topic(this.config.events.kafka.topics.command.topic);
-    const logger = this.logger;
-    // Start the restore process
-    logger.warn('restoring data');
-    for (let topic of topics) {
-      const restoreTopic = events[topic.topic];
-      const eventNames = _.keys(restoreTopic.events);
-      const targetOffset = (await restoreTopic.topic.$offset(-1)) - 1;
-      const ignoreOffsets = topic.ignore_offset;
-      this.logger.debug(`topic ${topic.topic} has current offset ${targetOffset}`);
-      for (let eventName of eventNames) {
-        const listener = restoreTopic.events[eventName];
-        const listenUntil = async function listenUntil(message: any, ctx: any,
-          config: any, eventNameRet: string): Promise<any> {
-          logger.debug(`received message ${ctx.offset}/${targetOffset}`, ctx);
-          if (_.includes(ignoreOffsets, ctx.offset)) {
-            return;
-          }
-          try {
-            await listener(message, ctx, config, eventNameRet);
-          } catch (e) {
-            logger.debug('Exception caught :', e.message);
-          }
-          if (ctx.offset >= targetOffset) {
-            await commandTopic.emit('restoreResponse', {
-              topic: topic.topic,
-              offset: ctx.offset
-            });
-
-            for (let k = 0; k < eventNames.length; k += 1) {
-              const eventToRemove = eventNames[k];
-              logger.debug('Number of listeners before removing :',
-                restoreTopic.topic.listenerCount(eventToRemove));
-              await restoreTopic.topic.removeAllListeners(eventToRemove);
-              logger.debug('Number of listeners after removing :',
-                restoreTopic.topic.listenerCount(eventToRemove));
+        const db = await co(database.get(dbCfg, this.logger));
+        for (let topic of topics) {
+          for (let collection of collections) {
+            if (topic.topic.includes(collection)) {
+              events[topic.topic] = {
+                topic: this.kafkaEvents.topic(topic.topic),
+                events: this.makeResourcesRestoreSetup(db, collection)
+              };
+              break;
             }
           }
-        };
-        logger.debug(`listening to topic ${topic.topic} event ${eventName}
-          until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
-        await restoreTopic.topic.on(eventName, listenUntil);
-        logger.debug(`resetting commit offset of topic ${topic.topic} to ${topic.offset}`);
-        restoreTopic.topic.$reset(eventName, topic.offset);
-        logger.debug(`reset done for topic ${topic.topic} to commit offset ${topic.offset}`);
+          if (!events[topic.topic]) {
+            throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
+          }
+        }
       }
+
+      const that = this;
+      // Start the restore process
+      this.logger.warn('restoring data');
+      for (let topic of topics) {
+        const restoreTopic = events[topic.topic];
+        const eventNames = _.keys(restoreTopic.events);
+        const targetOffset = (await restoreTopic.topic.$offset(-1)) - 1;
+        const ignoreOffsets = topic.ignore_offset;
+        this.logger.debug(`topic ${topic.topic} has current offset ${targetOffset}`);
+        for (let eventName of eventNames) {
+          const listener = restoreTopic.events[eventName];
+          const listenUntil = async function listenUntil(message: any, ctx: any,
+            config: any, eventNameRet: string): Promise<any> {
+            that.logger.debug(`received message ${ctx.offset}/${targetOffset}`, ctx);
+            if (_.includes(ignoreOffsets, ctx.offset)) {
+              return;
+            }
+            try {
+              await listener(message, ctx, config, eventNameRet);
+            } catch (e) {
+              that.logger.debug('Exception caught :', e.message);
+            }
+            if (ctx.offset >= targetOffset) {
+              await that.commandTopic.emit('restoreResponse', {
+                services: _.keys(that.service),
+                payload: {
+                  topic: topic.topic,
+                  offset: ctx.offset
+                }
+              });
+
+              for (let k = 0; k < eventNames.length; k += 1) {
+                const eventToRemove = eventNames[k];
+                that.logger.debug('Number of listeners before removing :',
+                  restoreTopic.topic.listenerCount(eventToRemove));
+                await restoreTopic.topic.removeAllListeners(eventToRemove);
+                that.logger.debug('Number of listeners after removing :',
+                  restoreTopic.topic.listenerCount(eventToRemove));
+              }
+            }
+          };
+          this.logger.debug(`listening to topic ${topic.topic} event ${eventName}
+            until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
+          await restoreTopic.topic.on(eventName, listenUntil);
+          this.logger.debug(`resetting commit offset of topic ${topic.topic} to ${topic.offset}`);
+          restoreTopic.topic.$reset(eventName, topic.offset);
+          this.logger.debug(`reset done for topic ${topic.topic} to commit offset ${topic.offset}`);
+        }
+      }
+      this.logger.debug('waiting until all messages are processed');
+      this.logger.info('restore process done');
+    } catch (err) {
+      this.logger.erro('Error occurred while restoring the system', err.message);
+      await this.commandTopic.emit('restoreCommand', {
+        services: _.keys(this.service),
+        payload: {
+          error: err.message
+        }
+      });
     }
-    logger.debug('waiting until all messages are processed');
-    logger.info('restore process done');
+
     return {};
   }
 
@@ -293,24 +308,53 @@ export class CommandInterface implements ICommandInterface {
     if (this.health.status !== ServingStatus.NOT_SERVING) {
       this.logger.warn('reset process starting while server is serving');
     }
-    const dbCfgs = this.config.database;
-    const dbCfgNames = _.keys(dbCfgs);
-    for (let i = 0; i < dbCfgNames.length; i += 1) {
-      const dbCfgName = dbCfgNames[i];
-      const dbCfg = dbCfgs[dbCfgName];
-      const db = await co(database.get(dbCfg, this.logger));
-      switch (dbCfg.provider) {
-        case 'arango':
-          await co(db.truncate());
-          this.logger.info(`arangodb ${dbCfg.database} truncated`);
-          break;
-        default:
-          this.logger.error(
-            `unsupported database provider ${dbCfg.provider} in database config ${dbCfgName}`);
-          break;
+
+    let errorMsg = null;
+    try {
+      const dbCfgs = this.config.database;
+      const dbCfgNames = _.keys(dbCfgs);
+      for (let i = 0; i < dbCfgNames.length; i += 1) {
+        const dbCfgName = dbCfgNames[i];
+        const dbCfg = dbCfgs[dbCfgName];
+        const db = await co(database.get(dbCfg, this.logger));
+        switch (dbCfg.provider) {
+          case 'arango':
+            await co(db.truncate());
+            this.logger.info(`arangodb ${dbCfg.database} truncated`);
+            break;
+          default:
+            this.logger.error(
+              `unsupported database provider ${dbCfg.provider} in database config ${dbCfgName}`);
+            break;
+        }
       }
+    } catch (err) {
+      this.logger.error('Unexpected error while resetting the system', err.message);
+      errorMsg = err.message;
     }
+
+    let eventObject;
+    if (errorMsg) {
+      eventObject = {
+        services: _.keys(this.service),
+        payload: encodeMsg({
+          error: errorMsg
+        })
+      };
+    } else {
+      eventObject = {
+        services: _.keys(this.service),
+      };
+    }
+    await this.commandTopic.emit('resetResponse', eventObject);
+
     this.logger.info('reset process ended');
+
+    if (errorMsg) {
+      return {
+        error: errorMsg
+      };
+    }
     return {};
   }
 
@@ -319,8 +363,14 @@ export class CommandInterface implements ICommandInterface {
    * @param call List of services to be checked
    * @param context
    */
-  check(serviceName: string): any {
+  async check(serviceName: string): Promise<any> {
     if (_.isNil(serviceName) || _.size(serviceName) === 0) {
+      await this.commandTopic.emit('healthCheckResponse', {
+        services: _.keys(this.service),
+        payload: {
+          status: this.health.status,
+        }
+      });
       return {
         status: this.health.status,
       };
@@ -330,11 +380,18 @@ export class CommandInterface implements ICommandInterface {
       this.logger.info('service ' + serviceName + ' does not exist');
       throw new errors.NotFound(`service ${serviceName} does not exist`);
     }
+
     let status = ServingStatus.UNKNOWN;
     // If one transports serves the service, set it to SERVING
     _.forEach(service.transport, (transportStatus) => {
       if (transportStatus === ServingStatus.SERVING) {
         status = transportStatus;
+      }
+    });
+    await this.commandTopic.emit('healthCheckResponse', {
+      services: [serviceName],
+      payload: {
+        status,
       }
     });
     return {
@@ -345,12 +402,16 @@ export class CommandInterface implements ICommandInterface {
   /**
    * Retrieve current NPM package and Node version of service
    */
-  version(): any {
-    this.logger.info('process version');
-    return {
+  async version(): Promise<any> {
+    const response = {
       nodejs: process.version,
       version: process.env.npm_package_version,
     };
+    await this.commandTopic.emit('versionResponse', {
+      services: _.keys(this.service),
+      payload: response
+    });
+    return response;
   }
 
   // Helper functions

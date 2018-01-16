@@ -62,7 +62,7 @@
         ]
       },
       "endpoints": {
-        "command":{}
+        "command": {}
       }
     },
     "test": {
@@ -200,16 +200,50 @@
         "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "test.TestEvent"
       },
+      "testCreated": {
+        "protos": [
+          "test/test.proto"
+        ],
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "messageObject": "test.TestEvent"
+      },
       "restoreResponse": {
         "protos": [
           "io/restorecommerce/commandinterface.proto"
         ],
-        "protoRoot":"node_modules/@restorecommerce/protos/",
-        "messageObject":"io.restorecommerce.commandinterface.RestoreResponse"
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "healthCheckResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "resetResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
+      },
+      "versionResponse": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "topics": {
         "command": {
-          "topic": "io.restorecommerce.command"
+          "topic": "io.restorecommerce.command",
+          "events": [
+            "resetResponse",
+            "restoreResponse",
+            "healthCheckResponse",
+            "versionResponse"
+          ]
         },
         "test": {
           "topic": "test"
