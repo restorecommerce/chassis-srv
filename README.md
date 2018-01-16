@@ -6,7 +6,7 @@
 [depend]: https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square
 
-An engine for diverse microservice operations.
+A chassis for [restorecommerce](https://github.com/restorecommerce/)-based microservices.
 
 ## Features
 
