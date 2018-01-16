@@ -230,7 +230,9 @@ export class CommandInterface implements ICommandInterface {
             }
           }
           if (!events[topic.topic]) {
-            throw new errors.NotFound(`topic ${topic.topic} is not registered for the restore process`);
+            this.logger.warn('No resource config matches topic', topic.topic,
+              '. Finishing restore operation.');
+            return {};
           }
         }
       }
@@ -287,7 +289,7 @@ export class CommandInterface implements ICommandInterface {
       this.logger.debug('waiting until all messages are processed');
       this.logger.info('restore process done');
     } catch (err) {
-      this.logger.erro('Error occurred while restoring the system', err.message);
+      this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreCommand', {
         services: _.keys(this.service),
         payload: {
