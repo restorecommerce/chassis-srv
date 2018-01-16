@@ -1,65 +1,75 @@
 # command-interface
 
-The command interface defines common functions for controlling and retrieving operational information from services. The commands are defined using [gRPC](https://grpc.io/docs/) interface. The message structures are defined using [Protocol Buffers](https://developers.google.com/protocol-buffers/) in the [commandinterface.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/commandinterface.proto) file.
+The command interface defines common functions for controlling and retrieving operational information from services through a unique endpoint named `Command`. This endpoint is mainly targeted for exposure through a [gRPC](https://grpc.io/docs/) interface and event-driven communication through Kafka. Request and response message structures  are defined using [Protocol Buffers](https://developers.google.com/protocol-buffers/) in the [commandinterface.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/commandinterface.proto) file. Due to the high variability among all command possible parametes, the `payload` field is defined as a `google.protobuf.Any` message (see [google] protos), as well as all gRPC response messages. The `CommandResponse` message is mainly used on Kafka events, as it contains a `services` field, which identifies all services binded to a specific microservice. 
 
-The following commands are available:
+The `CommandResource` message defines generically a command as a database resource. This message structure should be used to define all commands and associated fields in the database, so that they can be visualized whenever it is useful.
+The following system commands are implemented:
 
-- check (health check)
-- restore (re-process [Apache Kafka](https://kafka.apache.org/) event messages)
-- reset (reset any state)
+- check (microservice health check)
+- restore (re-process [Apache Kafka](https://kafka.apache.org/) event messages to restore system data and state)
+- reset (reset system data and state)
 - version (return runtime version information)
-- reconfigure (reload configuration, not yet implemented)
+
+Unimplemented:
+- reconfigure (reload configurations)
+
+Note that the provided implementation's commands can be extended or even overriden when it is partially or totally incompatible with a service's context. It is also straightforward to include new commands by extending the given [CommandInterface](src/command-interface/index.ts) class.
 
 ## gRPC Interface
 
-This interface describes the following gRPC endpoints.
+### Command 
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | string | required | name of the command |
+| payload | `google.protobuf.Any` | optional | command-specific parameters |
+
+## Implemented Commands
 
 ### Check
 
-This command is be used to get the health status of the implementing service. Requests are performed using `io.restorecommerce.commandinterface.HealthCheckRequest` and response are `io.restorecommerce.commandinterface.HealthCheckResponse`.
+This command allows the health status retrieval for a service (note that a [restorecommerce](https://github.com/restorecommerce/) microservice may have several service names binded to it). 
 
-`io.restorecommerce.commandinterface.HealthCheckRequest`
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| service | string | required | name of the implementing service |
-
-`io.restorecommerce.commandinterface.HealthCheckResponse`
+Possible `payload` fields in a request:
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| status | ServingStatus | required | ServingStatus is enum of SERVING, NOT_SERVING and UNKNOWN status |
+| service | string | required | name of the service to be checked |
+
+Possible fields in a response:
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| status | string | required | serving status; it can be SERVING, NOT_SERVING and UNKNOWN |
 
 ### Restore
 
-This command is used for restoring the system of implementing service.
-The implementing service would emit messages to Kafka Topic and upon receiving this command it would re-read those event messages from Kafka Topic and restore the system status to the point before failure.
-Requests are performed using `io.restorecommerce.commandinterface.RestoreRequest` and response are `io.restorecommerce.commandinterface.RestoreResponse` an empty message.
+This command is used for restoring the state of an implementing service, as well as all data managed by that service. The default implementation checks the configuration files for all DB instances binded to the implementing service and maps a set of Kafka events to a a set of CRUD operations. 
+These Kafka events are emitted by the service every time a modifying operation occurs in the database. The same events are re-processed in order to restore all data. 
 
-`io.restorecommerce.commandinterface.RestoreRequest`
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| topics | [ ]io.restorecommerce.commandinterface.RestoreTopic | required | list of topics for restoration |
-
-`io.restorecommerce.commandinterface.RestoreTopic`
+Possible `payload` fields in a request:
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| topic | string | required | topic name to restore |
-| offset | number | optional | offset at which to start the restore process, default is `0` |
-| ignore_offset | [ ]number | optional | offset values to ignore while restoring |
+| topics | [ ]Topic | required | list of topics for message re-processing |
+
+`Topic`
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| topic | string | required | topic name associated with a resource |
+| offset | number | optional | offset at which to start the restore process; default is 0 |
+| ignore_offset | [ ]number | optional | topic offset values to ignore while restoring |
 
 ### Reset
 
-This command is used to wipe all state maintained by a serice.
-Currently only the ArangoDB provider is supported and this command would truncate the DB. Both reqeusts and responses are emtpy messages, requests are performed using `io.restorecommerce.commandinterface.ResetRequest` and response are `io.restorecommerce.commandinterface.ResetResponse`.
+This command is used to wipe all data managed by a service.
+Currently only the ArangoDB provider is supported and this command's default implementation truncates the DB. There are no specific parameters either for the request payload and for the response.
 
 ### Version
 
-This command returns npm package and nodejs version of the implementing service. Request is `google.protobuf.Empty` message and response is `io.restorecommerce.commandinterface.VersionResponse`.
+This command returns the NPM package and Node.js version of the implementing service. 
 
-`io.restorecommerce.commandinterface.VersionResponse`
+Response fields:
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
@@ -69,4 +79,5 @@ This command returns npm package and nodejs version of the implementing service.
 
 ## Usage
 
-See [tests](test/command_test).
+See [tests](test/command_test.ts).
+
