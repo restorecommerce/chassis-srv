@@ -137,9 +137,11 @@ describe('CommandInterfaceService', () => {
         name: 'health_check',
         payload: cmdPayload
       });
-      should.not.exist(resp.data);
-      should.exist(resp.error);
-      resp.error.message.should.equal('not found');
+      should.exist(resp.data);
+      data = decodeMsg(resp.data);
+      should.not.exist(resp.error); // no exception thrown
+      should.exist(data.error);  // tolerant error handling
+      data.error.should.equal('Service does_not_exist does not exist');
       // should check all binded services if no service is specified
       cmdPayload = encodeMsg({
         service: ''

@@ -119,6 +119,7 @@ export class CommandInterface implements ICommandInterface {
         });
       });
     });
+
     // list of available commands
     this.commands = [
       'reset',
@@ -144,19 +145,10 @@ export class CommandInterface implements ICommandInterface {
       throw new errors.InvalidArgument('Invalid command name ' + call.request.name);
     }
     const name = call.name || call.request.name;
-    let payload;
-    try {
-      if (call.payload) {
-        payload = decodeMsg(call.payload);
-      } else if (call.request.payload) {
-        payload = decodeMsg(call.request.payload);
-      }
-    } catch (err) {
-      payload = null;
-    }
+    const payload = call.payload ? decodeMsg(call.payload) :
+      (call.request.payload ? decodeMsg(call.request.payload) : null);
 
-    let result;
-    let serviceNames = [];
+    let result: any;
     switch (call.request.name) {
       case 'reset':
         result = await this.reset();
@@ -216,7 +208,8 @@ export class CommandInterface implements ICommandInterface {
         const dbCfg = dbCfgs[dbCfgName];
         const collections = dbCfg.collections;
         if (_.isNil(collections)) {
-          throw new errors.NotFound('No collections found on DB config');
+          this.logger.warn('No collections found on DB config');
+          return {};
         }
         const db = await co(database.get(dbCfg, this.logger));
         for (let topic of topics) {
@@ -262,10 +255,10 @@ export class CommandInterface implements ICommandInterface {
             if (ctx.offset >= targetOffset) {
               await that.commandTopic.emit('restoreResponse', {
                 services: _.keys(that.service),
-                payload: {
+                payload: encodeMsg({
                   topic: topic.topic,
                   offset: ctx.offset
-                }
+                })
               });
 
               for (let k = 0; k < eventNames.length; k += 1) {
@@ -292,9 +285,9 @@ export class CommandInterface implements ICommandInterface {
       this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreCommand', {
         services: _.keys(this.service),
-        payload: {
+        payload: encodeMsg({
           error: err.message
-        }
+        })
       });
     }
 
@@ -369,9 +362,9 @@ export class CommandInterface implements ICommandInterface {
     if (_.isNil(serviceName) || _.size(serviceName) === 0) {
       await this.commandTopic.emit('healthCheckResponse', {
         services: _.keys(this.service),
-        payload: {
+        payload: encodeMsg({
           status: this.health.status,
-        }
+        })
       });
       return {
         status: this.health.status,
@@ -379,10 +372,12 @@ export class CommandInterface implements ICommandInterface {
     }
     const service = this.service[serviceName];
     if (_.isNil(service)) {
-      this.logger.info('service ' + serviceName + ' does not exist');
-      throw new errors.NotFound(`service ${serviceName} does not exist`);
+      const errorMsg = 'Service ' + serviceName + ' does not exist';
+      this.logger.warn(errorMsg);
+      return {
+        error: errorMsg
+      };
     }
-
     let status = ServingStatus.UNKNOWN;
     // If one transports serves the service, set it to SERVING
     _.forEach(service.transport, (transportStatus) => {
@@ -392,9 +387,9 @@ export class CommandInterface implements ICommandInterface {
     });
     await this.commandTopic.emit('healthCheckResponse', {
       services: [serviceName],
-      payload: {
+      payload: encodeMsg({
         status,
-      }
+      })
     });
     return {
       status,
@@ -411,7 +406,7 @@ export class CommandInterface implements ICommandInterface {
     };
     await this.commandTopic.emit('versionResponse', {
       services: _.keys(this.service),
-      payload: response
+      payload: encodeMsg(response)
     });
     return response;
   }
