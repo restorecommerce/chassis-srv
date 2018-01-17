@@ -125,13 +125,13 @@ export class CommandInterface implements ICommandInterface {
     });
 
     // list of available commands
-    this.commands = [
-      'reset',
-      'restore',
-      'reconfigure',
-      'health_check',
-      'version'
-    ];
+    this.commands = {
+      reset: this.reset,
+      restore: this.restore,
+      reconfigure: this.reconfigure,
+      health_check: this.check,
+      version: this.version
+    };
     const topicCfg = config.events.kafka.topics.command;
     this.commandTopic = events.topic(topicCfg.topic);
   }
@@ -145,43 +145,14 @@ export class CommandInterface implements ICommandInterface {
       throw new errors.InvalidArgument('No command name provided');
     }
 
-    if (this.commands.indexOf(call.request.name) == -1) {
-      throw new errors.InvalidArgument('Invalid command name ' + call.request.name);
+    if (_.isNil(this.commands[call.request.name])) {
+      throw new errors.InvalidArgument(`Command name ${call.request.name} does not exist`);
     }
     const name = call.name || call.request.name;
     const payload = call.payload ? decodeMsg(call.payload) :
       (call.request.payload ? decodeMsg(call.request.payload) : null);
-
-    let result: any;
-    switch (call.request.name) {
-      case 'reset':
-        result = await this.reset();
-        break;
-      case 'restore':
-        if (!payload) {
-          throw new errors.InvalidArgument('Invalid payload for restore command');
-        }
-        const topics = payload.topics;
-
-        if (_.isNil(topics)) {
-          throw new errors.NotFound('Invalid event configuration provided in restore operation');
-        }
-        result = await this.restore(topics);
-        break;
-      case 'reconfigure':
-        result = this.reconfigure();
-        break;
-      case 'health_check':
-        if (!payload) {
-          throw new errors.InvalidArgument('Invalid payload for restore command');
-        }
-        const serviceName = payload.service;
-        result = await this.check(serviceName);
-        break;
-      case 'version':
-        result = await this.version();
-        break;
-    }
+    // calling operation bound to the command name
+    const result = await this.commands[name].apply(this, [payload]);
 
     return encodeMsg(result);
   }
@@ -202,7 +173,16 @@ export class CommandInterface implements ICommandInterface {
    * the chassis-srv database provider.
    * @param topics list of Kafka topics to be restored
    */
-  async restore(topics: any[]): Promise<any> {
+  async restore(payload: any): Promise<any> {
+    if (_.isNil(payload)) {
+      throw new errors.InvalidArgument('Invalid payload for restore command');
+    }
+    const topics = payload.topics;
+
+    if (_.isNil(topics)) {
+      throw new errors.NotFound('Invalid event configuration provided in restore operation');
+    }
+
     const events = {};
     try {
       const dbCfgs = this.config.database;
@@ -362,7 +342,12 @@ export class CommandInterface implements ICommandInterface {
    * @param call List of services to be checked
    * @param context
    */
-  async check(serviceName: string): Promise<any> {
+  async check(payload: any): Promise<any> {
+    if (_.isNil(payload)) {
+      throw new errors.InvalidArgument('Invalid payload for restore command');
+    }
+    const serviceName = payload.service;
+
     if (_.isNil(serviceName) || _.size(serviceName) === 0) {
       await this.commandTopic.emit('healthCheckResponse', {
         services: _.keys(this.service),
