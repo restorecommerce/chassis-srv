@@ -21,32 +21,6 @@ export interface ICommandInterface {
 }
 
 /**
- *
- * @param msg google.protobuf.Any
- * @returns Arbitrary JSON
- */
-function decodeMsg(msg: any): any {
-  const decoded = Buffer.from(msg.value, 'base64').toString();
-  return JSON.parse(decoded);
-}
-
-/**
- *
- * @param msg Arbitrary JSON
- * @returns google.protobuf.Any formatted message
- */
-function encodeMsg(msg: any): any {
-
-  const stringified = JSON.stringify(msg);
-  const encoded = Buffer.from(stringified).toString('base64');
-  const ret = {
-    type_url: 'payload',
-    value: encoded
-  };
-  return ret;
-}
-
-/**
  * Base implementation.
  * Currently includes:
  * * 'check' - returns UNKNOWN, SERVING or NOT_SERVING
@@ -149,12 +123,12 @@ export class CommandInterface implements ICommandInterface {
       throw new errors.InvalidArgument(`Command name ${call.request.name} does not exist`);
     }
     const name = call.name || call.request.name;
-    const payload = call.payload ? decodeMsg(call.payload) :
-      (call.request.payload ? decodeMsg(call.request.payload) : null);
+    const payload = call.payload ? this.decodeMsg(call.payload) :
+      (call.request.payload ? this.decodeMsg(call.request.payload) : null);
     // calling operation bound to the command name
     const result = await this.commands[name].apply(this, [payload]);
 
-    return encodeMsg(result);
+    return this.encodeMsg(result);
   }
 
   /**
@@ -239,7 +213,7 @@ export class CommandInterface implements ICommandInterface {
             if (ctx.offset >= targetOffset) {
               await that.commandTopic.emit('restoreResponse', {
                 services: _.keys(that.service),
-                payload: encodeMsg({
+                payload: this.encodeMsg({
                   topic: topic.topic,
                   offset: ctx.offset
                 })
@@ -269,7 +243,7 @@ export class CommandInterface implements ICommandInterface {
       this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreCommand', {
         services: _.keys(this.service),
-        payload: encodeMsg({
+        payload: this.encodeMsg({
           error: err.message
         })
       });
@@ -316,7 +290,7 @@ export class CommandInterface implements ICommandInterface {
     if (errorMsg) {
       eventObject = {
         services: _.keys(this.service),
-        payload: encodeMsg({
+        payload: this.encodeMsg({
           error: errorMsg
         })
       };
@@ -351,7 +325,7 @@ export class CommandInterface implements ICommandInterface {
     if (_.isNil(serviceName) || _.size(serviceName) === 0) {
       await this.commandTopic.emit('healthCheckResponse', {
         services: _.keys(this.service),
-        payload: encodeMsg({
+        payload: this.encodeMsg({
           status: this.health.status,
         })
       });
@@ -376,7 +350,7 @@ export class CommandInterface implements ICommandInterface {
     });
     await this.commandTopic.emit('healthCheckResponse', {
       services: [serviceName],
-      payload: encodeMsg({
+      payload: this.encodeMsg({
         status,
       })
     });
@@ -395,7 +369,7 @@ export class CommandInterface implements ICommandInterface {
     };
     await this.commandTopic.emit('versionResponse', {
       services: _.keys(this.service),
-      payload: encodeMsg(response)
+      payload: this.encodeMsg(response)
     });
     return response;
   }
@@ -426,4 +400,31 @@ export class CommandInterface implements ICommandInterface {
       }
     };
   }
+
+  /**
+ *
+ * @param msg google.protobuf.Any
+ * @returns Arbitrary JSON
+ */
+  decodeMsg(msg: any): any {
+    const decoded = Buffer.from(msg.value, 'base64').toString();
+    return JSON.parse(decoded);
+  }
+
+  /**
+   *
+   * @param msg Arbitrary JSON
+   * @returns google.protobuf.Any formatted message
+   */
+  encodeMsg(msg: any): any {
+
+    const stringified = JSON.stringify(msg);
+    const encoded = Buffer.from(stringified).toString('base64');
+    const ret = {
+      type_url: 'payload',
+      value: encoded
+    };
+    return ret;
+  }
+
 }
