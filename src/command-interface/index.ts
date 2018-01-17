@@ -67,7 +67,13 @@ export class CommandInterface implements ICommandInterface {
   kafkaEvents: Events;
   commands: any;
   commandTopic: Topic;
-  constructor(server: Server, config: any, logger: Logger, events?: Events) {
+  constructor(server: Server, config: any, logger: Logger, events: Events) {
+    if (_.isNil(events)) {
+      if (logger.error) {
+        logger.error('No Kafka client was provided. Disabling all commands.');
+        return;
+      }
+    }
     if (!_.has(config, 'server.services')) {
       throw new Error('missing config server.services');
     }
@@ -79,9 +85,7 @@ export class CommandInterface implements ICommandInterface {
     if (!_.has(this.config, 'events')
       || !_.has(this.config.events, 'kafka'
         || !_.has(this.config.events.kafka, 'topics'))) {
-      this.logger.warn('Missing events config. Disabling restore and reset operations.');
-      this.reset = undefined;
-      this.restore = undefined;
+      throw new Error('Missing events config on command interface.');
     }
 
     this.kafkaEvents = events;
