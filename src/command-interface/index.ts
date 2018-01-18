@@ -148,16 +148,21 @@ export class CommandInterface implements ICommandInterface {
    * @param topics list of Kafka topics to be restored
    */
   async restore(payload: any): Promise<any> {
-    if (_.isNil(payload)) {
+    if (_.isNil(payload) || _.keys(payload).length == 0) {
       throw new errors.InvalidArgument('Invalid payload for restore command');
     }
-    const topics = payload.topics;
 
-    if (_.isNil(topics)) {
-      throw new errors.NotFound('Invalid event configuration provided in restore operation');
+
+    // the Kafka config should contains a key-value pair, mapping
+    // a label with the topic's name
+    // in case of a resource topic, the label should be the resource name itself
+    const kafkaCfg = this.config.events.kafka.topics;
+    if (_.isNil(kafkaCfg) || kafkaCfg.length == 0) {
+      throw new errors.Internal('Kafka topics config not available');
     }
-
+    const topicLabels = _.keys(kafkaCfg);
     const events = {};
+
     try {
       const dbCfgs = this.config.database;
       const dbCfgNames = _.keys(dbCfgs);
@@ -165,25 +170,21 @@ export class CommandInterface implements ICommandInterface {
         const dbCfgName = dbCfgNames[i];
         const dbCfg = dbCfgs[dbCfgName];
         const collections = dbCfg.collections;
+        const db = await co(database.get(dbCfg, this.logger));
+
         if (_.isNil(collections)) {
           this.logger.warn('No collections found on DB config');
           return {};
         }
-        const db = await co(database.get(dbCfg, this.logger));
-        for (let topic of topics) {
-          for (let collection of collections) {
-            if (topic.topic.includes(collection)) {
-              events[topic.topic] = {
-                topic: this.kafkaEvents.topic(topic.topic),
-                events: this.makeResourcesRestoreSetup(db, collection)
-              };
-              break;
-            }
-          }
-          if (!events[topic.topic]) {
-            this.logger.warn('No resource config matches topic', topic.topic,
-              '. Finishing restore operation.');
-            return {};
+
+        for (let collection of collections) {
+          if (topicLabels.indexOf(collection) > -1 && payload[collection]) {
+            const topicName = kafkaCfg[collection].topic;
+            events[topicName] = {
+              topic: this.kafkaEvents.topic(topicName),
+              events: this.makeResourcesRestoreSetup(db, collection),
+              resource: collection
+            };
           }
         }
       }
@@ -191,15 +192,21 @@ export class CommandInterface implements ICommandInterface {
       const that = this;
       // Start the restore process
       this.logger.warn('restoring data');
-      for (let topic of topics) {
-        const restoreTopic = events[topic.topic];
-        const eventNames = _.keys(restoreTopic.events);
-        const baseOffset = topic.offset || 0;
-        const targetOffset = (await restoreTopic.topic.$offset(-1)) - 1;
-        const ignoreOffsets = topic.ignore_offset;
-        this.logger.debug(`topic ${topic.topic} has current offset ${targetOffset}`);
+      for (let topic in events) {
+        const topicSetup: any = events[topic];
+        const restoreTopic: Topic = topicSetup.topic;
+        const topicEvents: any = topicSetup.events;
+        const resource: string = topicSetup.resource;
+
+        // const eventNames = _.keys(restoreTopic.events);
+        const baseOffset: number = payload[resource].offset || 0;
+        const targetOffset: number = (await restoreTopic.$offset(-1)) - 1;
+        const ignoreOffsets: number[] = payload[resource].ignore_offset || [];
+        const eventNames = _.keys(topicEvents);
+
+        this.logger.debug(`topic ${topic} has current offset ${targetOffset}`);
         for (let eventName of eventNames) {
-          const listener = restoreTopic.events[eventName];
+          const listener = topicEvents[eventName];
           const listenUntil = async function listenUntil(message: any, ctx: any,
             config: any, eventNameRet: string): Promise<any> {
             that.logger.debug(`received message ${ctx.offset}/${targetOffset}`, ctx);
@@ -212,30 +219,29 @@ export class CommandInterface implements ICommandInterface {
               that.logger.debug('Exception caught :', e.message);
             }
             if (ctx.offset >= targetOffset) {
+              const message = {};
+              message['topic'] = topic;
+              message['offset'] = ctx.offset;
               await that.commandTopic.emit('restoreResponse', {
                 services: _.keys(that.service),
-                payload: that.encodeMsg({
-                  topic: topic.topic,
-                  offset: ctx.offset
-                })
+                payload: that.encodeMsg(message)
               });
 
-              for (let k = 0; k < eventNames.length; k += 1) {
-                const eventToRemove = eventNames[k];
+              for (let name of eventNames) {
                 that.logger.debug('Number of listeners before removing :',
-                  restoreTopic.topic.listenerCount(eventToRemove));
-                await restoreTopic.topic.removeAllListeners(eventToRemove);
+                  restoreTopic.listenerCount(name));
+                await restoreTopic.removeAllListeners(name);
                 that.logger.debug('Number of listeners after removing :',
-                  restoreTopic.topic.listenerCount(eventToRemove));
+                  restoreTopic.listenerCount(name));
               }
             }
           };
-          this.logger.debug(`listening to topic ${topic.topic} event ${eventName}
+          this.logger.debug(`listening to topic ${topic} event ${eventName}
             until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
-          await restoreTopic.topic.on(eventName, listenUntil);
-          this.logger.debug(`resetting commit offset of topic ${topic.topic} to ${baseOffset}`);
-          await restoreTopic.topic.$reset(eventName, baseOffset);
-          this.logger.debug(`reset done for topic ${topic.topic} to commit offset ${baseOffset}`);
+          await restoreTopic.on(eventName, listenUntil);
+          this.logger.debug(`resetting commit offset of topic ${topic} to ${baseOffset}`);
+          await restoreTopic.$reset(eventName, baseOffset);
+          this.logger.debug(`reset done for topic ${topic} to commit offset ${baseOffset}`);
         }
       }
       this.logger.debug('waiting until all messages are processed');
@@ -403,10 +409,10 @@ export class CommandInterface implements ICommandInterface {
   }
 
   /**
- *
- * @param msg google.protobuf.Any
- * @returns Arbitrary JSON
- */
+  *
+  * @param msg google.protobuf.Any
+  * @returns Arbitrary JSON
+  */
   decodeMsg(msg: any): any {
     const decoded = Buffer.from(msg.value, 'base64').toString();
     return JSON.parse(decoded);

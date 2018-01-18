@@ -211,15 +211,11 @@ describe('CommandInterfaceService', () => {
     });
     it('should re-read all data from the topics the service listens to', async function restore() {
       const cmdPayload = encodeMsg({
-        topics: [
-          {
-            topic: 'test',
-            offset: 0,
-            ignore_offset: [],
-          },
-        ],
-      }
-      );
+        test: {
+          offset: 0,
+          ignore_offset: []
+        }
+      });
       validate = function (msg: any, eventName: string) {
         eventName.should.equal('restoreResponse');
         should.exist(msg.services);
@@ -252,13 +248,10 @@ describe('CommandInterfaceService', () => {
     });
     it('should re-read all data from specified offset', async function restore() {
       const cmdPayload = encodeMsg({
-        topics: [
-          {
-            topic: 'test',
-            offset: 5,
-            ignore_offset: [],
-          },
-        ],
+        test: {
+          offset: 5,
+          ignore_offset: [],
+        }
       });
       validate = function (msg: any, eventName: string) {
         eventName.should.equal('restoreResponse');
