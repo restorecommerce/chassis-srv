@@ -115,7 +115,7 @@ export class CommandInterface implements ICommandInterface {
    * @param context
    */
   async command(call, context?: any): Promise<any> {
-    if ((_.isNil(call.request) || _.isNil(call.request.name) && _.isNil(call.name))) {
+    if (_.isNil(call.request) && _.isNil(call.request.name) && _.isNil(call.name)) {
       throw new errors.InvalidArgument('No command name provided');
     }
 
