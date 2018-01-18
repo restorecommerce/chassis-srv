@@ -233,7 +233,7 @@ export class CommandInterface implements ICommandInterface {
             until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
           await restoreTopic.topic.on(eventName, listenUntil);
           this.logger.debug(`resetting commit offset of topic ${topic.topic} to ${topic.offset}`);
-          restoreTopic.topic.$reset(eventName, topic.offset);
+          await restoreTopic.topic.$reset(eventName, topic.offset);
           this.logger.debug(`reset done for topic ${topic.topic} to commit offset ${topic.offset}`);
         }
       }
