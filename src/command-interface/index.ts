@@ -214,7 +214,7 @@ export class CommandInterface implements ICommandInterface {
             if (ctx.offset >= targetOffset) {
               await that.commandTopic.emit('restoreResponse', {
                 services: _.keys(that.service),
-                payload: this.encodeMsg({
+                payload: that.encodeMsg({
                   topic: topic.topic,
                   offset: ctx.offset
                 })
