@@ -194,6 +194,7 @@ export class CommandInterface implements ICommandInterface {
       for (let topic of topics) {
         const restoreTopic = events[topic.topic];
         const eventNames = _.keys(restoreTopic.events);
+        const baseOffset = topic.offset || 0;
         const targetOffset = (await restoreTopic.topic.$offset(-1)) - 1;
         const ignoreOffsets = topic.ignore_offset;
         this.logger.debug(`topic ${topic.topic} has current offset ${targetOffset}`);
@@ -232,9 +233,9 @@ export class CommandInterface implements ICommandInterface {
           this.logger.debug(`listening to topic ${topic.topic} event ${eventName}
             until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
           await restoreTopic.topic.on(eventName, listenUntil);
-          this.logger.debug(`resetting commit offset of topic ${topic.topic} to ${topic.offset}`);
-          await restoreTopic.topic.$reset(eventName, topic.offset);
-          this.logger.debug(`reset done for topic ${topic.topic} to commit offset ${topic.offset}`);
+          this.logger.debug(`resetting commit offset of topic ${topic.topic} to ${baseOffset}`);
+          await restoreTopic.topic.$reset(eventName, baseOffset);
+          this.logger.debug(`reset done for topic ${topic.topic} to commit offset ${baseOffset}`);
         }
       }
       this.logger.debug('waiting until all messages are processed');
