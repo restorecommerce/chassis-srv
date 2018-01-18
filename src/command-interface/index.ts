@@ -118,11 +118,11 @@ export class CommandInterface implements ICommandInterface {
     if (_.isNil(call.request) && _.isNil(call.name)) {
       throw new errors.InvalidArgument('No command name provided');
     }
-
-    if (_.isNil(this.commands[call.request.name])) {
-      throw new errors.InvalidArgument(`Command name ${call.request.name} does not exist`);
-    }
     const name = call.name || call.request.name;
+
+    if (_.isNil(this.commands[name])) {
+      throw new errors.InvalidArgument(`Command name ${name} does not exist`);
+    }
     const payload = call.payload ? this.decodeMsg(call.payload) :
       (call.request.payload ? this.decodeMsg(call.request.payload) : null);
     // calling operation bound to the command name
