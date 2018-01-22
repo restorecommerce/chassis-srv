@@ -298,18 +298,19 @@ export class CommandInterface implements ICommandInterface {
       errorMsg = err.message;
     }
 
-    let eventObject;
+    const eventObject = {
+      services: _.keys(this.service),
+      payload: null
+    };
+
     if (errorMsg) {
-      eventObject = {
-        services: _.keys(this.service),
-        payload: this.encodeMsg({
-          error: errorMsg
-        })
-      };
+      eventObject.payload = this.encodeMsg({
+        error: errorMsg
+      });
     } else {
-      eventObject = {
-        services: _.keys(this.service),
-      };
+      eventObject.payload = this.encodeMsg({
+        status: 'Reset concluded successfully'
+      });
     }
     await this.commandTopic.emit('resetResponse', eventObject);
 
