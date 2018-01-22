@@ -160,7 +160,12 @@ export class CommandInterface implements ICommandInterface {
     if (_.isNil(kafkaCfg) || kafkaCfg.length == 0) {
       throw new errors.Internal('Kafka topics config not available');
     }
-    const topicLabels = _.keys(kafkaCfg);
+
+    const topicLabels = _.keys(kafkaCfg.map).filter((elem, index) => {
+      return elem.includes('.resource');
+    }).map((elem) => {
+      return elem.replace('.resource', '');
+    });
     const events = {};
 
     try {

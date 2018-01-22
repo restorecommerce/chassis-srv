@@ -69,7 +69,7 @@ describe('CommandInterfaceService', () => {
     await events.start();
 
     const topics = cfg.get('events:kafka:topics');
-    testTopic = events.topic(cfg.get('events:kafka:topics:test:topic'));
+    testTopic = events.topic(cfg.get('events:kafka:topics:test.resource:topic'));
     commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
     // subscribe all response events
     for (let eventName of cfg.get('events:kafka:topics:command:events')) {

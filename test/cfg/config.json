@@ -245,7 +245,7 @@
             "versionResponse"
           ]
         },
-        "test": {
+        "test.resource": {
           "topic": "test"
         }
       }
