@@ -234,6 +234,7 @@ export class CommandInterface implements ICommandInterface {
                 that.logger.debug('Number of listeners after removing :',
                   restoreTopic.listenerCount(name));
               }
+              that.logger.info('restore process done');
             }
           };
           this.logger.debug(`listening to topic ${topic} event ${eventName}
@@ -245,7 +246,6 @@ export class CommandInterface implements ICommandInterface {
         }
       }
       this.logger.debug('waiting until all messages are processed');
-      this.logger.info('restore process done');
     } catch (err) {
       this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreCommand', {
