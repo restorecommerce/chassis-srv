@@ -55,11 +55,11 @@ export class CommandInterface implements ICommandInterface {
     this.config = config;
     this.logger = logger;
 
-    // disable reset and restore if there are no databases in configs
     if (!_.has(this.config, 'events')
-      || !_.has(this.config.events, 'kafka'
-        || !_.has(this.config.events.kafka, 'topics'))) {
-      throw new Error('Missing events config on command interface.');
+      || !_.has(this.config.events, 'kafka')
+      || !_.has(this.config.events.kafka, 'topics')
+      || !_.has(this.config.events.kafka.topics, 'command')) {
+      throw new Error('Commands topic configuration was not provided.');
     }
 
     this.kafkaEvents = events;
