@@ -13,7 +13,7 @@ A chassis for [restorecommerce](https://github.com/restorecommerce/)-based micro
 - Expose your business logic as RPC endpoints
 - Customize server communication with middlewares
 - Endpoint discovery, load balancing, retry and timeout logic
-- Handle multiple microservice recurrent functionalities, such as logging, database access, cache handling or exposing system commands.
+- Provide multiple microservice functionalities from the Restore Commerce ecosystem, such as logging, database access, cache handling or exposing system commands.
 
 ## Architecture
 
