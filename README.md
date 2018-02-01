@@ -55,7 +55,7 @@ Although this module is mainly based on one type of transport for business logic
 
 ### Cache
 
-Multiple cache providers can be registered and loaded within a microservice. Such providers are managed with (node-cache-manager)[https://github.com/BryanDonovan/node-cache-manager].
+Multiple cache providers can be registered and loaded within a microservice. Such providers are managed with [node-cache-manager](https://github.com/BryanDonovan/node-cache-manager).
 
 ### Database 
 
