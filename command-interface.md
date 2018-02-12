@@ -37,6 +37,7 @@ Possible `payload` fields in a request:
 | service | string | required | name of the service to be checked |
 
 Possible fields in a response:
+
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | status | string | required | serving status; it can be SERVING, NOT_SERVING and UNKNOWN |
