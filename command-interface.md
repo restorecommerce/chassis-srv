@@ -45,7 +45,7 @@ Possible fields in a response:
 ### Restore
 
 This command is used for restoring the state of an implementing service, as well as all data managed by that service. The default implementation checks the configuration files for all DB instances bound to the implementing service and maps a set of Kafka events to a a set of CRUD operations. 
-These Kafka events are emitted by the service every time a modifying operation occurs in the database. The same events are re-processed in order to restore all data. 
+These Kafka events are emitted by the service every time a resource is created/modified in the database. The same events are re-processed in order to restore all data. 
 
 Possible `payload` fields in a request:
 
