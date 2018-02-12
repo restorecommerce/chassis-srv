@@ -18,12 +18,12 @@ A chassis for [restorecommerce](https://github.com/restorecommerce/)-based micro
 ## Architecture
 
 The chassis consists of 5 components:
-- a configuration loader;
-- a multi-transport configurable log infrastructure;
-- a [Server](src/microservice/server.ts), which can be instantiated in order to generically expose [gRPC](https://grpc.io/docs/) endpoints given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config;
-- a cache-loader based on configuration files;
-- a provider-based mechanism to access different databases;
-- a base implementation for the [command-interface](command-interface.md);
+- a configuration loader
+- a multi-transport configurable log infrastructure
+- a [Server](src/microservice/server.ts), which can be instantiated in order to generically expose [gRPC](https://grpc.io/docs/) endpoints given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
+- a cache-loader based on configuration files
+- a provider-based mechanism to access different databases
+- a base implementation for the [command-interface](command-interface.md)
 
 
 ### Config
@@ -75,5 +75,5 @@ This interface can be directly exposed as a gRPC endpoint and it can be extended
 
 ## Usage
 
-See [tests](tests/).
+See [tests](test/).
 
