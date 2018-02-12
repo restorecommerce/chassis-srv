@@ -207,6 +207,13 @@
         "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "test.TestEvent"
       },
+      "restoreCommand": {
+        "protos": [
+          "io/restorecommerce/commandinterface.proto"
+        ],
+        "protoRoot": "node_modules/@restorecommerce/protos/",
+        "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
+      },
       "restoreResponse": {
         "protos": [
           "io/restorecommerce/commandinterface.proto"

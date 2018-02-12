@@ -161,7 +161,7 @@ export class CommandInterface implements ICommandInterface {
       throw new errors.Internal('Kafka topics config not available');
     }
 
-    const topicLabels = _.keys(kafkaCfg.map).filter((elem, index) => {
+    const topicLabels = _.keys(kafkaCfg).filter((elem, index) => {
       return elem.includes('.resource');
     }).map((elem) => {
       return elem.replace('.resource', '');
@@ -184,7 +184,7 @@ export class CommandInterface implements ICommandInterface {
 
         for (let collection of collections) {
           if (topicLabels.indexOf(collection) > -1 && payload[collection]) {
-            const topicName = kafkaCfg[collection].topic;
+            const topicName = kafkaCfg[collection + '.resource'].topic;
             events[topicName] = {
               topic: this.kafkaEvents.topic(topicName),
               events: this.makeResourcesRestoreSetup(db, collection),
@@ -253,7 +253,7 @@ export class CommandInterface implements ICommandInterface {
       this.logger.debug('waiting until all messages are processed');
     } catch (err) {
       this.logger.error('Error occurred while restoring the system', err.message);
-      await this.commandTopic.emit('restoreCommand', {
+      await this.commandTopic.emit('restoreResponse', {
         services: _.keys(this.service),
         payload: this.encodeMsg({
           error: err.message
