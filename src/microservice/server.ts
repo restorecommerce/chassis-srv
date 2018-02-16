@@ -22,11 +22,7 @@ export function registerTransport(name: string, provider: any): void {
 
 // register included providers
 const grpc = require('./transport/provider/grpc');
-
 registerTransport('grpc', grpc.Server);
-const pipe = require('./transport/provider/pipe');
-
-registerTransport(pipe.Name, pipe.Server);
 
 /**
  * initializes all configured transports

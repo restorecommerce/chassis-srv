@@ -271,26 +271,22 @@
       "test": {
         "test": {
           "transport": [
-            "grpcTest",
-            "pipeline"
+            "grpcTest"
           ]
         },
         "throw": {
           "transport": [
-            "grpcTest",
-            "pipeline"
+            "grpcTest"
           ]
         },
         "notImplemented": {
           "transport": [
-            "grpcTest",
-            "pipeline"
+            "grpcTest"
           ]
         },
         "notFound": {
           "transport": [
-            "grpcTest",
-            "pipeline"
+            "grpcTest"
           ]
         }
       },
@@ -350,11 +346,6 @@
         ],
         "protoRoot": "node_modules/@restorecommerce/protos/",
         "addr": "localhost:50051"
-      },
-      {
-        "name": "pipeline",
-        "provider": "pipe",
-        "addr": "piplineAddr"
       },
       {
         "name": "grpcCIS",

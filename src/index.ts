@@ -25,7 +25,6 @@ export {grpc};
 export {Server as grpcServer} from './microservice/transport/provider/grpc';
 import {ServerReflection} from './microservice/transport/provider/grpc';
 export {ServerReflection};
-export {Server as pipeServer, Client as pipeClient}  from './microservice/transport/provider/pipe';
 
 import { ICommandInterface, CommandInterface as CommandInterface} from './command-interface';
 
