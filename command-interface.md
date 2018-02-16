@@ -40,7 +40,7 @@ Possible fields in a response:
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| status | string | required | serving status; it can be SERVING, NOT_SERVING and UNKNOWN |
+| status | string | required | serving status; it can be `SERVING`, `NOT_SERVING` and `UNKNOWN` |
 
 ### Restore
 
@@ -58,7 +58,7 @@ Possible `payload` fields in a request:
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | topic | string | required | topic name associated with a resource |
-| offset | number | optional | offset at which to start the restore process; default is 0 |
+| offset | number | optional | offset at which to start the restore process; default is `0` |
 | ignore_offset | [ ]number | optional | topic offset values to ignore while restoring |
 
 ### Reset
