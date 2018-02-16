@@ -200,7 +200,7 @@ describe('microservice.Server', () => {
             should.exist(result.error);
             result.error.should.be.Error();
             result.error.message.should.equal('internal');
-            result.error.details.should.equal('forced error');
+            result.error.details.should.containEql('forced error');
             should.not.exist(result.data);
 
             // 'notFound' endpoint
@@ -216,7 +216,7 @@ describe('microservice.Server', () => {
             should.exist(result.error);
             result.error.should.be.Error();
             result.error.message.should.equal('not found');
-            result.error.details.should.equal('test not found');
+            result.error.details.should.containEql('test not found');
             should.not.exist(result.data);
 
             // 'notImplemented' endpoint

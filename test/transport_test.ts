@@ -187,8 +187,10 @@ providers.forEach((provider) => {
               const result = yield endpointThrow(request);
               should.not.exist(result.data);
               should.exist(result.error);
+              should.exist(result.error.message);
+              should.exist(result.error.details);
               should.equal(result.error.message, 'internal');
-              should.equal(result.error.details, errMessage);
+              result.error.details.should.containEql(errMessage);
             });
         });
       });
