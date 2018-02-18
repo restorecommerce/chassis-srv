@@ -50,8 +50,7 @@ A [Server](src/microservice/server.ts) provides service endpoints. An endpoint i
 At the client side an endpoint is an exposed service function of one server.
 On the server it is one exposed business logic function. Endpoints connect to each other via transports. Clients connect to these endpoints.
 Endpoint calls may be intercepted with multiple chained middlewares, depending on the business logic. Service responses always include a result or an error.
-When a `Server` is instantiated, it is possible to bind one or more services to it, each of them exposing its own RPC endpoints with an associated transport configuration (port, protobuf interfaces, service name, etc).
-Although this module is mainly based on one type of transport for business logic exposure (gRPC), it is also possible to use `pipe` (in-process communication, designed for testing). Note that other transport types beside `gRPC` and `pipe` are theoretically possible, although that would require an extension of the `Server` class with a custom transport config.
+When a `Server` is instantiated, it is possible to bind one or more services to it, each of them exposing its own RPC endpoints with an associated transport configuration (port, protobuf interfaces, service name, etc). Note that other transport types beside `gRPC` are theoretically possible, although that would require an extension of the `Server` class with a custom transport config.
 
 ### Cache
 
