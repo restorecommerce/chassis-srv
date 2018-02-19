@@ -10,9 +10,9 @@ A chassis for [restorecommerce](https://github.com/restorecommerce/)-based micro
 
 ## Features
 
-- Expose your business logic as RPC endpoints
-- Customize server communication with middlewares
-- Endpoint discovery, retry and timeout logic
+- Business logic exposure through RPC endpoints
+- Endpoint discovery, as well as retry and timeout mechanisms
+- Endpoint calls with custom middleware
 - Provide multiple microservice functionalities from the Restore Commerce ecosystem, such as logging, database access, cache handling or exposing system commands.
 
 ## Architecture
@@ -46,9 +46,7 @@ Default logging levels are:
 
 ### Server
 
-A [Server](src/microservice/server.ts) provides service endpoints. An endpoint is a wrapped gRPC method accessible from any gRPC clients.
-At the client side an endpoint is an exposed service function of one server.
-On the server it is one exposed business logic function. Endpoints connect to each other via transports. Clients connect to these endpoints.
+A [Server](src/microservice/server.ts) provides service endpoints. An endpoint is a wrapped gRPC method accessible from any gRPC clients. 
 Endpoint calls may be intercepted with multiple chained middlewares, depending on the business logic. Service responses always include a result or an error.
 When a `Server` is instantiated, it is possible to bind one or more services to it, each of them exposing its own RPC endpoints with an associated transport configuration (port, protobuf interfaces, service name, etc). Note that other transport types beside `gRPC` are theoretically possible, although that would require an extension of the `Server` class with a custom transport config.
 
@@ -75,4 +73,3 @@ This interface can be directly exposed as a gRPC endpoint and it can be extended
 ## Usage
 
 See [tests](test/).
-
