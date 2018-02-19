@@ -74,9 +74,6 @@
           ],
           "protoRoot": "node_modules/@restorecommerce/protos/",
           "timeout": 3000
-        },
-        "pipe": {
-          "service": "test"
         }
       },
       "loadbalancer": {

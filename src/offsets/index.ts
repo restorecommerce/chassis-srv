@@ -79,9 +79,10 @@ export class OffsetStore {
    * @return {object}
    */
   async getOffset(topicName: string): Promise<any> {
+    const offsetValue = await this.redisClient.getAsync(topicName);
     this.logger.info('The offset value retreived from redis for topic is :',
-      topicName, await this.redisClient.getAsync(topicName));
-    return await this.redisClient.getAsync(topicName);
+      topicName, offsetValue);
+    return await this.redisClient.getAsync(offsetValue);
   }
 
   /**
