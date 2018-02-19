@@ -70,7 +70,6 @@ export class OffsetStore {
   async storeOffset(topic: Topic, topicName: string): Promise<any> {
     // get the latest offset here each time and store it.
     const offsetValue = await topic.$offset(-1);
-    console.log('The offset value is for topic is..', topicName, offsetValue);
     this.redisClient.set(topicName, offsetValue, this.redisClient.print);
   }
 
