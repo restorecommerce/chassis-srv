@@ -27,5 +27,7 @@ import {ServerReflection} from './microservice/transport/provider/grpc';
 export {ServerReflection};
 
 import { ICommandInterface, CommandInterface as CommandInterface} from './command-interface';
-
 export  { ICommandInterface, CommandInterface };
+
+import { OffsetStore } from './offsets';
+export { OffsetStore };
