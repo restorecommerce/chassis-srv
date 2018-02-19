@@ -30,6 +30,7 @@ export class OffsetStore {
     }
 
     this.config = config;
+    this.logger = logger;
 
     if (!(this.config.get('events'))
       || !(this.config.get('events:kafka'))
