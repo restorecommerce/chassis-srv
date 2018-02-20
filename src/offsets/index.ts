@@ -43,6 +43,7 @@ export class OffsetStore {
       this.redisClient = redis.createClient(this.config.get('redis'));
     }
     this.topics = {};
+    setTimeout(this.updateTopicOffsets.bind(this), 5000);
   }
 
   /**
