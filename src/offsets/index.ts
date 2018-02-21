@@ -59,7 +59,7 @@ export class OffsetStore {
       const topicName = kafkaCfg.topics[topicType].topic;
       this.topics[topicType] = this.kafkaEvents.topic(topicName);
       setInterval(this.storeOffset.bind(this),
-        this.config.get('redis:interval'), this.topics[topicType], topicName);
+        this.config.get('redis:offsetStoreInterval'), this.topics[topicType], topicName);
     }
   }
 
