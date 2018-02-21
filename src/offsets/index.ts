@@ -36,7 +36,11 @@ export class OffsetStore {
 
     this.kafkaEvents = events;
     if (this.config.get('redis')) {
-      this.redisClient = redis.createClient(this.config.get('redis'));
+      const redisConfig = this.config.get('redis');
+      if (this.config.get('redis:db-indexes:db-offsetStore')) {
+        redisConfig.db = this.config.get('redis:db-indexes:db-offsetStore');
+      }
+      this.redisClient = redis.createClient(redisConfig);
     }
     this.topics = {};
     setTimeout(this.updateTopicOffsets.bind(this), 5000);
