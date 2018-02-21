@@ -23,7 +23,6 @@
     "@restorecommerce/service-config": "^0.1.0",
     "aqb": "^2.1.0",
     "arangojs": "^6.1.1",
-    "bluebird": "^3.5.1",
     "cache-manager": "^2.5.0",
     "co": "^4.6.0",
     "grpc": "^1.9.1",

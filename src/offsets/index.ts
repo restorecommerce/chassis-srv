@@ -3,8 +3,6 @@ import * as _ from 'lodash';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as redis from 'redis';
-import * as bluebird from 'bluebird';
-bluebird.promisifyAll(redis.RedisClient.prototype);
 
 /**
  * Stores the offsets of the provided topics to redis periodically
@@ -81,7 +79,14 @@ export class OffsetStore {
    */
   async getOffset(topicName: string): Promise<any> {
     const redisKey = this.config.get('events:kafka:groupId') + ':' + topicName;
-    const offsetValue = await this.redisClient.getAsync(redisKey);
+    const offsetValue = await new Promise((resolve, reject) => {
+      this.redisClient.get(redisKey, (err, response) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(response);
+      });
+    });
     this.logger.info('The offset value retreived from redis for topic is :',
       topicName, offsetValue);
     return offsetValue;
