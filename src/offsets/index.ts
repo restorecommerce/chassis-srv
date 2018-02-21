@@ -1,10 +1,8 @@
 'use strict';
 import * as _ from 'lodash';
-import * as co from 'co';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as redis from 'redis';
-import { EventEmitter } from 'events';
 import * as bluebird from 'bluebird';
 bluebird.promisifyAll(redis.RedisClient.prototype);
 
