@@ -72,7 +72,7 @@ export class OffsetStore {
   async storeOffset(topic: Topic, topicName: string): Promise<any> {
     // get the latest offset here each time and store it.
     const offsetValue = await topic.$offset(-1);
-    const redisKey = this.config.get('events:kafka:groupId') + ':' + topicName;
+    const redisKey = this.config.get('events:kafka:clientId') + ':' + topicName;
     this.redisClient.set(redisKey, offsetValue, this.redisClient.print);
   }
 
@@ -82,7 +82,7 @@ export class OffsetStore {
    * @return {object}
    */
   async getOffset(topicName: string): Promise<any> {
-    const redisKey = this.config.get('events:kafka:groupId') + ':' + topicName;
+    const redisKey = this.config.get('events:kafka:clientId') + ':' + topicName;
     const offsetValue = await new Promise((resolve, reject) => {
       this.redisClient.get(redisKey, (err, response) => {
         if (err) {
