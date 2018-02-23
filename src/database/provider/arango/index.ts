@@ -1,8 +1,9 @@
 'use strict';
 const Arangojs = require('arangojs');
 import * as _ from 'lodash';
-import * as time from 'sleep';
 import * as qb from 'aqb';
+import * as retry from 'async-retry';
+import * as co from 'co';
 
 const DB_SYSTEM = '_system';
 
@@ -549,7 +550,7 @@ class Arango {
  * @param {Logger} logger
  * @return active ArangoDB connection
  */
-function* connect(conf: any, logger: any): any {
+async function connect(conf: any, logger: any): Promise<any> {
   const dbHost = conf.host || '127.0.0.1';
   const dbPort = conf.port || 8529;
   const dbName = conf.database || 'arango';
@@ -570,11 +571,13 @@ function* connect(conf: any, logger: any): any {
   url = url + `${dbHost}:${dbPort}`;
 
   let mainError;
-  for (let currentAttempt = 1; currentAttempt <= attempts; currentAttempt += 1) {
-    try {
+  let i = 1;
+  try {
+    return await retry(async () => {
       logger.info('Attempt to connect database', dbHost, dbPort, dbName, {
-        attempt: currentAttempt
+        attempt: i
       });
+      i += 1;
       const db = new Arangojs({
         url,
         arangoVersion,
@@ -585,14 +588,14 @@ function* connect(conf: any, logger: any): any {
         if (username && password) {
           db.useBasicAuth(username, password);
         }
-        yield db.get();
+        await co(db.get());
       } catch (err) {
         if (err.name === 'ArangoError' && err.errorNum === 1228) {
           if (autoCreate) {
             logger.verbose(`auto creating arango database ${dbName}`);
             // Database does not exist, create a new one
             db.useDatabase(DB_SYSTEM);
-            yield db.createDatabase(dbName);
+            await co(db.createDatabase(dbName));
             db.useDatabase(dbName);
             return db;
           }
@@ -600,15 +603,16 @@ function* connect(conf: any, logger: any): any {
         throw err;
       }
       return db;
-    } catch (err) {
-      logger.error(
-        'Database connection error',
-        err, dbHost, dbPort, dbName, {
-          attempt: currentAttempt
-        });
-      mainError = err;
-    }
-    yield time.msleep(delay);
+    }, { retries: attempts });
+    // throw mainError;
+  }
+  catch (err) {
+    logger.error(
+      'Database connection error',
+      err, dbHost, dbPort, dbName, {
+        attempt: i
+      });
+    mainError = err;
   }
   throw mainError;
 }
