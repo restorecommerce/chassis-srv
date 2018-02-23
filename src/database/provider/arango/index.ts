@@ -603,8 +603,7 @@ async function connect(conf: any, logger: any): Promise<any> {
         throw err;
       }
       return db;
-    }, { retries: attempts });
-    // throw mainError;
+    }, { retries: attempts, minTimeout: delay });
   }
   catch (err) {
     logger.error(
