@@ -1,14 +1,10 @@
 'use strict';
 
-/*  eslint-disable require-yield */
-/*  eslint-disable no-continue */
-
-import * as ProtoBuf from "protobufjs";
-const fs = require('fs');
-
-const grpc = require('grpc');
-const _ = require('lodash');
-const path = require('path');
+import * as ProtoBuf from 'protobufjs';
+import * as fs from 'fs';
+import * as grpc from 'grpc';
+import * as _ from 'lodash';
+import * as path from 'path';
 
 function findType(t: any, builder: any): any {
   let ns = t;
@@ -205,13 +201,13 @@ function applyProtoRoot(filename, root) {
     return filename;
   }
   filename.root = path.resolve(filename.root) + '/';
-  root.resolvePath = function(originPath, importPath, alreadyNormalized) {
+  root.resolvePath = function (originPath, importPath, alreadyNormalized) {
     return ProtoBuf.util.path.resolve(filename.root,
-                                      importPath,
-                                      alreadyNormalized);
-   };
+      importPath,
+      alreadyNormalized);
+  };
   return filename.file;
- }
+}
 /**
  * An implementation of the grpc.reflection.v1alpha.ServerReflection service.
  * Uses the provided builder and config to reflection on served endpoints.
@@ -233,7 +229,7 @@ export class ServerReflection {
     // TODO change this to param in config
     let files = config.transports[0].protos;
     _.forEach(files, (fileName, key) => {
-      let filename = {root: protoroot, file: fileName};
+      let filename = { root: protoroot, file: fileName };
       root.loadSync(applyProtoRoot(filename, root));
     });
     this.builder = root;
@@ -243,16 +239,16 @@ export class ServerReflection {
   /**
    * Service endpoint for gRPC ServerReflectionInfo.
    */
-  * serverReflectionInfo(call?: any, context?: any): any {
+  async serverReflectionInfo(call?: any, context?: any): Promise<any> {
     const logger = context.logger;
     let openCall = true;
     let req;
     while (openCall) {
       try {
-        req = yield call.read();
+        req = await call.read();
       } catch (error) {
         if (error.message === 'stream end') {
-          yield call.end();
+          await call.end();
           return;
         }
         logger.error(error);
@@ -263,7 +259,7 @@ export class ServerReflection {
       req = _.omitBy(req, isEmpty);
       if (_.isNil(methodName)) {
         logger.info('empty message_request', req);
-        yield call.write({
+        await call.write({
           validHost: req.host, // TODO Is this correct?
           originalRequest: req,
           errorResponse: {
@@ -294,8 +290,8 @@ export class ServerReflection {
         // allExtensionNumbersOfType
         default:
           logger.info(`method ${methodName} does not exist`, req);
-          yield call.write({
-            validHost: req.host, // TODO Is this correct?
+          await call.write({
+            validHost: req.host,
             originalRequest: req,
             errorResponse: {
               errorCode: grpc.status.UNIMPLEMENTED,
@@ -305,21 +301,21 @@ export class ServerReflection {
           continue;
       }
       try {
-        const result = yield method;
-        yield call.write(result);
+        const result = await method;
+        await call.write(result);
       } catch (error) {
         openCall = false;
         logger.info(error);
         break;
       }
     }
-    yield call.end();
+    await call.end();
   }
 
   /**
    * Find a proto file by the file name.
    */
-  * fileByFileName(fileName: string, req: any): any {
+  async fileByFileName(fileName: string, req: any): Promise<any> {
     const files = _.keys(this.builder.files);
     const file = _.find(files, (path) => {
       return _.endsWith(path, fileName);
@@ -359,7 +355,7 @@ export class ServerReflection {
    * @param {string} path Path to symbol
    * Format:  <package>.<service>[.<method>] or <package>.<type>)
    */
-  * findProtoFileByPath(path: string, req: any): any {
+  findProtoFileByPath(path: string, req: any): any {
     const t = this.builder.lookup(path);
     if (_.isNil(t)) {
       return {
@@ -391,13 +387,13 @@ export class ServerReflection {
    * Find the proto file which defines an extension extending the given
    * message type with the given field number.
    */
-  * fileContainingExtension(arg: any, req: any): any {
+  fileContainingExtension(arg: any, req: any): any {
     const path = arg.containingType;
     const t = this.builder.lookup(path);
     const id = arg.extensionNumber;
     if (_.isNil(t)) {
       return {
-        validHost: req.host, // TODO Is this correct?
+        validHost: req.host,
         originalRequest: req,
         errorResponse: {
           errorCode: grpc.status.NOT_FOUND,
@@ -405,10 +401,9 @@ export class ServerReflection {
         },
       };
     }
-    /* eslint no-underscore-dangle: "off"*/
     if (_.isNil(t._fieldsById[id])) {
       return {
-        validHost: req.host, // TODO Is this correct?
+        validHost: req.host,
         originalRequest: req,
         errorResponse: {
           errorCode: grpc.status.NOT_FOUND,
@@ -432,11 +427,11 @@ export class ServerReflection {
     };
   }
 
-  * allExtensionNumbersOfType(path: string, req: any): any {
+  allExtensionNumbersOfType(path: string, req: any): any {
     const t = this.builder.lookup(path);
     if (_.isNil(t)) {
       return {
-        validHost: req.host, // TODO Is this correct?
+        validHost: req.host,
         originalRequest: req,
         errorResponse: {
           errorCode: grpc.status.NOT_FOUND,
@@ -444,7 +439,6 @@ export class ServerReflection {
         },
       };
     }
-    /* eslint no-underscore-dangle: "off"*/
     const ids = _.map(t._fields, (field) => {
       return field.id;
     });
@@ -462,7 +456,7 @@ export class ServerReflection {
    * Lists all gRPC provided services.
    * NOTE: Services using other transport providers are not listed.
    */
-  * listServices(req: any): any {
+  listServices(req: any): any {
     const transports = _.filter(this.config.transports, { provider: 'grpc' });
     let services = [];
     _.forEach(transports, (transport) => {
@@ -486,5 +480,3 @@ export class ServerReflection {
     };
   }
 }
-
-// module.exports.ServerReflection = ServerReflection;

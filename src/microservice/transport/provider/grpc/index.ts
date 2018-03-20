@@ -1,15 +1,13 @@
 'use strict';
 
-/*  eslint-disable require-yield */
-
-import * as path from "path";
-import * as url from "url";
-import * as ProtoBuf from "protobufjs";
-import * as grpc from "grpc";
-import * as co from "co";
-import * as fs from "fs";
-import * as _ from "lodash";
-const errors = require('../../../errors');
+import * as path from 'path';
+import * as url from 'url';
+import * as ProtoBuf from 'protobufjs';
+import * as grpc from 'grpc';
+import * as co from 'co';
+import * as fs from 'fs';
+import * as _ from 'lodash';
+import * as errors from '../../../errors';
 
 /**
  * Name of the transport
@@ -17,15 +15,6 @@ const errors = require('../../../errors');
  * @const
  */
 const NAME = 'grpc';
-
-
-// function setGRPCLogger(logger: any): any {
-//   // gRPC logger
-//   const grpcLogger = {
-//     error: logger.debug,
-//   };
-//   grpc.setLogger(grpcLogger);
-// }
 
 const errorMap = new Map([
   [grpc.status.CANCELLED, errors.Cancelled],
@@ -46,21 +35,17 @@ const errorMap = new Map([
 ]);
 
 function makeNormalServerEndpoint(endpoint: any, logger: any): any {
-  return function normalServerEndpoint(call: any, callback: any): any {
+  return async function normalServerEndpoint(call: any, callback: any): Promise<any> {
     const req = call.request;
     if (!endpoint) {
-      callback({
+      return ({
         code: grpc.status.UNIMPLEMENTED
       });
     }
-    co(function* callEndpoint(): any {
-      const result = yield endpoint({ request: req });
-      return {
-        error: null,
-        result,
-      };
-    }).catch((error) => {
-      let err = error;
+    try {
+      const result = await endpoint({ request: req });
+      callback(null, result);
+    } catch (err) {
       err.code = grpc.status.INTERNAL;
       errorMap.forEach((Err, key) => {
         if (err.constructor.name === Err.name) {
@@ -68,37 +53,28 @@ function makeNormalServerEndpoint(endpoint: any, logger: any): any {
           err.code = key;
         }
       }, errorMap);
-      return {
-        error: err,
-        result: null
-      };
-    })
-      .then((resp) => {
-        callback(resp.error, resp.result);
-      })
-      .catch((err) => {
-        logger.error('grpc transport error', err, err.stack);
-      });
+      callback(err, null);
+    }
   };
 }
 
 function makeResponseStreamServerEndpoint(endpoint: any,
   logger: any): any {
-  return function responseStreamServerEndpoint(call: any): any {
-    co(endpoint({
+  return async function responseStreamServerEndpoint(call: any): Promise<any> {
+    await endpoint({
       request: call.request,
-      * write(response: any): any {
+      write(response: any): any {
         call.write(response);
       },
-      * end(): any {
+      end(): any {
         call.end();
-      },
-    }));
+      }
+    });
   };
 }
 
 function makeRequestStreamServerEndpoint(endpoint: any, logger: any): any {
-  return function requestStreamServerEndpoint(call: any, callback: any): any {
+  return async function requestStreamServerEndpoint(call: any, callback: any): Promise<any> {
     const requests = [];
     const fns = [];
     let end = false;
@@ -115,9 +91,10 @@ function makeRequestStreamServerEndpoint(endpoint: any, logger: any): any {
         fns.shift()(new Error('stream end'), null);
       }
     });
-    co(endpoint({
-      * read(): any {
-        return yield function r(cb: any): any {
+
+    const result = await endpoint({
+      read(): any {
+        return function r(cb: any): any {
           if (requests.length) {
             cb(null, requests.shift());
           } else if (end) {
@@ -126,17 +103,16 @@ function makeRequestStreamServerEndpoint(endpoint: any, logger: any): any {
             fns.push(cb);
           }
         };
-      },
-    })).then((result) => {
-      callback(null, result);
-    }).catch((err) => {
-      callback(err);
+      }
+    });
+    return new Promise((resolve, reject) => {
+      resolve(callback(null, result));
     });
   };
 }
 
 function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: any): any {
-  return function biDirectionalStreamServerEndpoint(call: any): any {
+  return async function biDirectionalStreamServerEndpoint(call: any): Promise<any> {
     const requests = [];
     const fns = [];
     let end = false;
@@ -153,12 +129,12 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: any): any 
         fns.shift()(new Error('stream end'), null);
       }
     });
-    co(endpoint({
-      * write(response: any): any {
+    await (endpoint({
+      async write(response: any): Promise<any> {
         call.write(response);
       },
-      * read(): any {
-        return yield function r(cb: any): any {
+      async read(): Promise<any> {
+        return await function r(cb: any): any {
           if (requests.length) {
             cb(null, requests.shift());
           } else if (end) {
@@ -168,7 +144,7 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: any): any 
           }
         };
       },
-      * end(): any {
+      end(): any {
         call.end();
       },
     }));
@@ -206,11 +182,11 @@ function buildProtobuf(files: Object, protoroot: string, logger: any): Object {
   let root = new ProtoBuf.Root();
 
   _.forEach(files, (fileName, key) => {
-    root.resolvePath = function(origin, target) {
-    // origin is the path of the importing file
-    // target is the imported path
-    // determine absolute path and return it ...
-    return protoroot + fileName;
+    root.resolvePath = function (origin, target) {
+      // origin is the path of the importing file
+      // target is the imported path
+      // determine absolute path and return it ...
+      return protoroot + fileName;
     };
     root.loadSync(protoroot + fileName);
   });
@@ -267,25 +243,25 @@ export class Server {
     if (_.isNil(protos) || _.size(protos) === 0) {
       throw new Error('config value protos is not set');
     }
-   this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, protos);
+    this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, protos);
 
 
     const proto = [];
-    for ( let i = 0; i < protos.length; i++) {
-      const filePath = {root: protoRoot, file: protos[i]};
+    for (let i = 0; i < protos.length; i++) {
+      const filePath = { root: protoRoot, file: protos[i] };
       this.proto = grpc.load(filePath);
       proto[i] = this.proto;
     }
 
     let k = 0;
     this.service = _.transform(this.config.services, (service, protobufServiceName, serviceName) => {
-        const serviceDef = _.get(proto[k], protobufServiceName);
-        if (_.isNil(serviceDef)) {
-            throw new Error(`Could not find ${protobufServiceName} protobuf service`);
-        }
-        _.set(service, serviceName, serviceDef.service);
-        k++;
-        logger.verbose('gRPC service loaded', serviceName);
+      const serviceDef = _.get(proto[k], protobufServiceName);
+      if (_.isNil(serviceDef)) {
+        throw new Error(`Could not find ${protobufServiceName} protobuf service`);
+      }
+      _.set(service, serviceName, serviceDef.service);
+      k++;
+      logger.verbose('gRPC service loaded', serviceName);
     });
     this.name = NAME;
   }
@@ -296,7 +272,7 @@ export class Server {
    * @param  {string} name Service name.
    * @param  {Object} service Business logic
    */
-  * bind(name: string, service: Object): any {
+  bind(name: string, service: Object): void {
     if (_.isNil(name)) {
       throw new Error('missing argument name');
     }
@@ -338,7 +314,7 @@ export class Server {
   /**
    * start launches the gRPC server and provides the service endpoints.
    */
-  * start(): any {
+  start(): void {
     if (!this.isBound) {
       let credentials = grpc.ServerCredentials.createInsecure();
       if (_.has(this.config, 'credentials.ssl')) {
@@ -354,20 +330,12 @@ export class Server {
   /**
    * end stops the gRPC server and no longer provides the service endpoints.
    */
-  * end(): any {
+  async end(): Promise<any> {
     const server = this.server;
-    const shutdown = function shutdownWrapper(): any {
-      return function tryShutdown(cb: any): any {
-        server.tryShutdown(cb);
-      };
-    };
-    yield shutdown();
+    server.forceShutdown();
   }
 }
 
 module.exports.Name = NAME;
-// module.exports.Client = Client;
-// module.exports.Server = Server;
-import {ServerReflection} from './reflection';
-// const ServerReflection = require('./reflection.ts').ServerReflection;
-export {ServerReflection};
+import { ServerReflection } from './reflection';
+export { ServerReflection };

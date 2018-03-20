@@ -1,8 +1,5 @@
 'use strict';
 
-/* eslint import/no-extraneous-dependencies: ["error", {"devDependencies": true}] */
-/*  eslint-disable require-yield */
-
 import * as mocha from 'mocha';
 import * as coMocha from 'co-mocha';
 
@@ -11,7 +8,7 @@ coMocha(mocha);
 import * as should from 'should';
 const isGeneratorFn = require('is-generator').fn;
 // const chain = require('../lib').microservice.endpoint.chain;
-import {endpoint as chain} from '../lib';
+import { endpoint as chain } from '../lib';
 
 /* global describe it*/
 

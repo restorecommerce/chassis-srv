@@ -1,9 +1,7 @@
 'use strict';
 
-/*  eslint-disable require-yield */
-
-import * as _ from "lodash";
-import * as cacheManager from "cache-manager";
+import * as _ from 'lodash';
+import * as cacheManager from 'cache-manager';
 
 
 /**
@@ -22,8 +20,6 @@ const providers = {};
 export function register(name: string, provider: any): void {
   providers[name] = provider;
 }
-
-// module.exports.register = register;
 
 // register defaults
 // add memory provider by default, since it is included with the cache-manager.
@@ -46,7 +42,7 @@ register('memory', (config, logger) => {
  * @param [Logger] logger
  * @return Cache instance
  */
-export function* get(config: any, logger: any): any {
+export function get(config: any, logger: any): any {
   if (_.isNil(config)) {
     throw new Error('missing argument config');
   }

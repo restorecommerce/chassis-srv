@@ -234,21 +234,3 @@ export class DataLoss extends Error {
     this.details = details;
   }
 }
-
-// module.exports = {
-//   Cancelled,
-//   InvalidArgument,
-//   NotFound,
-//   AlreadyExists,
-//   PermissionDenied,
-//   Unauthenticated,
-//   FailedPrecondition,
-//   Aborted,
-//   OutOfRange,
-//   Unimplemented,
-//   ResourceExhausted,
-//   DeadlineExceeded,
-//   Internal,
-//   Unavailable,
-//   DataLoss,
-// };

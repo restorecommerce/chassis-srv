@@ -2,7 +2,6 @@
 
 import * as co from 'co';
 import * as mocha from 'mocha';
-import * as coMocha from 'co-mocha';
 // microservice chassis
 import * as _ from 'lodash';
 import { config, CommandInterface, database, Server } from './../lib';
@@ -12,7 +11,6 @@ import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as sconfig from '@restorecommerce/service-config';
-coMocha(mocha);
 
 
 /**
@@ -84,14 +82,14 @@ describe('CommandInterfaceService', () => {
     delete config.database.nedb;  // not supported in default implementation
 
     const cis = new CommandInterface(server, config, server.logger, events);
-    await co(server.bind('commandinterface', cis));
-    await co(server.start());
+    await server.bind('commandinterface', cis);
+    await server.start();
 
     const client = new Client(cfg.get('client:commandinterface'));
     service = await client.connect();
   });
   after(async function teardown() {
-    await co(server.end());
+    await server.end();
     await events.stop();
   });
   describe('check', () => {

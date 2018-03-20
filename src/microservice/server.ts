@@ -1,11 +1,9 @@
 'use strict';
 
-/*  eslint-disable no-continue */
-
-const chainMiddleware = require('./endpoint').chain;
-const Logger = require('../logger').Logger;
+import { chain as chainMiddleware } from './endpoint';
+import { Logger } from '../logger';
 import * as _ from "lodash";
-import {EventEmitter} from "events";
+import { EventEmitter } from 'events';
 
 const transports: any = {};
 
@@ -18,7 +16,6 @@ const transports: any = {};
 export function registerTransport(name: string, provider: any): void {
   transports[name] = provider;
 }
-// module.exports.registerTransport = registerTransport;
 
 // register included providers
 const grpc = require('./transport/provider/grpc');
@@ -57,8 +54,8 @@ function setupTransport(config: any, logger: any): any {
 
 // calls middleware and business logic
 function makeEndpoint(middleware: any, service: any, transportName: string,
-              methodName: string, logger: any): any {
-  return function* callEndpoint(request: any, context: any): any {
+  methodName: string, logger: any): any {
+  return async function callEndpoint(request: any, context: any): Promise<any> {
     const ctx = context || {};
     ctx.transport = transportName;
     ctx.method = methodName;
@@ -66,14 +63,14 @@ function makeEndpoint(middleware: any, service: any, transportName: string,
     let e;
     if (middleware.length > 0) {
       const chain = chainMiddleware(middleware);
-      e = yield chain(service[methodName].bind(service));
+      e = await chain(service[methodName].bind(service));
     } else {
       e = service[methodName].bind(service);
     }
     try {
       logger.verbose(`received request to method ${ctx.method} over transport ${ctx.transport}`,
         request);
-      const result = yield e(request, ctx);
+      const result = await e(request, ctx);
       logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} result`,
         request, result);
       return result;
@@ -173,7 +170,7 @@ export class Server extends EventEmitter {
    * @param  {string} name Service name.
    * @param  {object} service A business logic service.
    */
-  * bind(name: string, service: any): any {
+  async bind(name: string, service: any): Promise<any> {
     if (_.isNil(name)) {
       throw new Error('missing argument name');
     }
@@ -251,10 +248,10 @@ export class Server extends EventEmitter {
       }
       if (_.size(_.functions(binding)) === 0) {
         logger.verbose(`service ${name} has no endpoints configured
-      for transport ${transportName}, skipping service binding`);
+          for transport ${transportName}, skipping service binding`);
         continue;
       }
-      yield provider.bind(name, binding);
+      await provider.bind(name, binding);
       this.emit('bound', name, binding, provider);
     }
   }
@@ -262,12 +259,12 @@ export class Server extends EventEmitter {
   /**
    * start launches the server by starting transports and listening to events.
    */
-  * start(): any {
+  async start(): Promise<any> {
     const transportNames = Object.keys(this.transport);
     for (let i = 0; i < transportNames.length; i += 1) {
       const name = transportNames[i];
       const provider = this.transport[name];
-      yield provider.start();
+      await provider.start();
       this.logger.info(`transport ${name} started`);
     }
     this.emit('serving', this.transport);
@@ -276,16 +273,14 @@ export class Server extends EventEmitter {
   /**
    * Shutsdown all transport provider servers.
    */
-  * end(): any {
+  async end(): Promise<any> {
     const transportNames = Object.keys(this.transport);
     for (let i = 0; i < transportNames.length; i += 1) {
       const name = transportNames[i];
       if (this.transport[name].end) {
-        yield this.transport[name].end();
+        await this.transport[name].end();
       }
     }
     this.emit('stopped', this.transport);
   }
 }
-
-// module.exports.Server = Server;

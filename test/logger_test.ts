@@ -1,7 +1,5 @@
 'use strict';
 
-/* eslint no-console: ["error", { allow: ["error"] }] */
-
 // logger which only logs errors
 module.exports = {
   silly() {},

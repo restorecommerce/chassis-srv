@@ -10,17 +10,15 @@ let config;
  * @param {string} baseDir Directory which contains the folder cfg with the config files.
  * @param [Logger] logger
  */
-export function load(baseDir: string, logger?: any): any {
-  return (cb) => {
+export async function load(baseDir: string, logger?: any): Promise<any> {
+  return new Promise((resolve, reject) => {
     readConfig(baseDir, logger, (err, cfg) => {
-      if (err) {
-        cb(err, cfg);
-      } else {
-        config = cfg;
-        cb(null, cfg);
-      }
+      if (err)
+        reject(err);
+      config = cfg;
+      resolve(cfg);
     });
-  };
+  });
 }
 
 /**
@@ -29,10 +27,10 @@ export function load(baseDir: string, logger?: any): any {
  * @param [Logger] logger
  * @return {Object} nconf configuration object
  */
-export function* get(logger?: any): any {
+export async function get(logger?: any): Promise<any> {
   if (config) {
     return config;
   }
-  yield load(process.cwd(), logger);
+  config = await load(process.cwd(), logger);
   return config;
 }
