@@ -36,7 +36,15 @@ const service = {
     while (stream) {
       try {
         req = await call.read();
-        req = req();
+        // Promisify callback to get response
+        req = await new Promise((resolve, reject) => {
+          req((err, response) => {
+            if (err) {
+              reject(err);
+            }
+            resolve(response);
+          });
+        });
       } catch (e) {
         stream = false;
         if (e.message === 'stream end') {
@@ -277,24 +285,30 @@ describe('microservice.Server', () => {
           result.result.should.be.equal(`${i}`);
         }
 
-        // 'biStream' - TODO: fix below test
-        /*const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
+        // 'biStream'
+        const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
         instance = cfg.get(biStreamCfgPath);
         const biStream = client.makeEndpoint('biStream', instance);
-        let call = yield biStream();
+        call = await biStream();
         for (let i = 0; i < 3; i += 1) {
-          yield call.write({ value: 'ping' });
+          await call.write({ value: 'ping' });
         }
         for (let i = 0; i < 3; i += 1) {
-          result = yield call.read();
-          result = yield result;
+          result = await call.read();
+          result = await new Promise((resolve, reject) => {
+            result((err, response) => {
+              if (err) {
+                reject(err);
+              }
+              resolve(response);
+            });
+          });
           should.ifError(result.error);
           should.exist(result);
           should.exist(result.result);
           result.result.should.be.equal('pong');
-        }*/
-        // yield call.end();
-
+        }
+        await call.end();
         await client.end();
       });
   });

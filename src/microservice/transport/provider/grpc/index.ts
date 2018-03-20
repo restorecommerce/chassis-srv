@@ -130,11 +130,11 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: any): any 
       }
     });
     await (endpoint({
-      async write(response: any): Promise<any> {
+      write(response: any): any {
         call.write(response);
       },
-      async read(): Promise<any> {
-        return await function r(cb: any): any {
+      read(): any {
+        return function r(cb: any): any {
           if (requests.length) {
             cb(null, requests.shift());
           } else if (end) {
