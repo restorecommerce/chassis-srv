@@ -1,33 +1,22 @@
 'use strict';
 
-import * as ProtoBuf from 'protobufjs';
+import * as protoBuf from 'protobufjs';
 import * as fs from 'fs';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as path from 'path';
+import * as co from 'co';
 
-function findType(t: any, builder: any): any {
-  let ns = t;
-  while (ns.className !== 'Namespace') {
-    ns = ns.parent;
-  }
-  const pkgName = ns.fqn().substring(1);
-  const fqn = t.fqn();
-  const subPath = fqn.substring(pkgName.length + 2);
+function findType(t: any, root: any): any {
+  const pkgName = t.parent.name;
 
-  const files = _.keys(builder.files);
+  const files = _.keys(root.files);
   let foundAst;
   const foundFile = _.find(files, (file) => {
-    // TODO - there is no old ProtoBuf.Dot.Parse method - modify this accordingly.
-    const parser = builder;
-    const ast = parser.parse();
+    const protoFilepath = root.files[file];
+    let ast: any = protoBuf.parse(fs.readFileSync(protoFilepath).toString(), new protoBuf.Root());
     if (pkgName === ast.package) {
-      const lt = lookupType(subPath, ast);
-      if (_.isNil(lt)) {
-        return false;
-      }
       foundAst = ast;
-      // TODO lookup subPath + name
       return true;
     }
     return false;
@@ -181,7 +170,7 @@ function createDescriptorProto(message: any): any {
 function createFileDescriptorProto(file: any, ast: any): any {
   const messages = _.map(ast.messages, createDescriptorProto);
   return {
-    name: file,
+    name: ast.root.name,
     package: ast.package,
     dependency: ast.imports,
     // publicDependency
@@ -202,7 +191,7 @@ function applyProtoRoot(filename, root) {
   }
   filename.root = path.resolve(filename.root) + '/';
   root.resolvePath = function (originPath, importPath, alreadyNormalized) {
-    return ProtoBuf.util.path.resolve(filename.root,
+    return protoBuf.util.path.resolve(filename.root,
       importPath,
       alreadyNormalized);
   };
@@ -214,25 +203,39 @@ function applyProtoRoot(filename, root) {
  */
 export class ServerReflection {
 
-  builder: any;
+  root: protoBuf.Root;
   config: any;
 
   /**
    * @param (ProtoBuf.Builder) The protobuf builder  which the gRPC transport provider is using.
    * @config (Object) Server cofnig.
    */
-  constructor(builder: ProtoBuf.Root, config: any) {
+  constructor(root: protoBuf.Root, config: any) {
     // this.builder = builder;
-    let root = new ProtoBuf.Root();
-    let protoroot = config.transports[0].protoRoot;
+    root = new protoBuf.Root();
+    // let protoRoot = config.transports[0].protoRoot;
+    // // Extract protoFilePath and protoRoot from the config.
     // let files = config.transports[0].protos;
-    // TODO change this to param in config
+    // _.forEach(files, (fileName, key) => {
+    //   // let filename = { root: protoroot, file: fileName };
+    //   const protoFilePath = fileName;
+    //   root.resolvePath = function (origin: string, target: string): string {
+    //     // ignore the same file
+    //     if (target == protoFilePath) {
+    //       return protoFilePath;
+    //     }
+    //     // Resolved target path for the import files
+    //     return protoRoot + target;
+    //   };
+    // });
+
+    let protoroot = config.transports[0].protoRoot;
     let files = config.transports[0].protos;
     _.forEach(files, (fileName, key) => {
       let filename = { root: protoroot, file: fileName };
       root.loadSync(applyProtoRoot(filename, root));
     });
-    this.builder = root;
+    this.root = root;
     this.config = config;
   }
 
@@ -246,6 +249,14 @@ export class ServerReflection {
     while (openCall) {
       try {
         req = await call.read();
+        req = await new Promise((resolve, reject) => {
+          req((err, response) => {
+            if (err) {
+              reject(err);
+            }
+            resolve(response);
+          });
+        });
       } catch (error) {
         if (error.message === 'stream end') {
           await call.end();
@@ -260,11 +271,11 @@ export class ServerReflection {
       if (_.isNil(methodName)) {
         logger.info('empty message_request', req);
         await call.write({
-          validHost: req.host, // TODO Is this correct?
-          originalRequest: req,
-          errorResponse: {
-            errorCode: grpc.status.INVALID_ARGUMENT,
-            errorMessage: 'message_request is empty',
+          valid_host: req.host,
+          original_request: req,
+          error_response: {
+            error_code: grpc.status.INVALID_ARGUMENT,
+            error_message: 'message_request is empty',
           },
         });
         continue;
@@ -272,30 +283,30 @@ export class ServerReflection {
       const methodArg = req[methodName];
       let method;
       switch (`${methodName}`) {
-        case 'fileByFilename':
+        case 'file_by_filename':
           method = this.fileByFileName(methodArg, req);
           break;
-        case 'fileContainingSymbol':
+        case 'file_containing_symbol':
           method = this.findProtoFileByPath(methodArg, req);
           break;
-        case 'fileContainingExtension':
+        case 'file_containing_extension':
           method = this.fileContainingExtension(methodArg, req);
           break;
-        case 'allExtensionNumbersOfType':
+        case 'all_extension_numbers_of_type':
           method = this.allExtensionNumbersOfType(methodArg, req);
           break;
-        case 'listServices':
+        case 'list_services':
           method = this.listServices(req);
           break;
         // allExtensionNumbersOfType
         default:
           logger.info(`method ${methodName} does not exist`, req);
           await call.write({
-            validHost: req.host,
-            originalRequest: req,
-            errorResponse: {
-              errorCode: grpc.status.UNIMPLEMENTED,
-              errorMessage: `method ${methodName} does not exist`,
+            valid_host: req.host,
+            original_request: req,
+            error_response: {
+              error_code: grpc.status.UNIMPLEMENTED,
+              error_message: `method ${methodName} does not exist`,
             },
           });
           continue;
@@ -303,6 +314,7 @@ export class ServerReflection {
       try {
         const result = await method;
         await call.write(result);
+        openCall = false;
       } catch (error) {
         openCall = false;
         logger.info(error);
@@ -315,36 +327,33 @@ export class ServerReflection {
   /**
    * Find a proto file by the file name.
    */
-  async fileByFileName(fileName: string, req: any): Promise<any> {
-    const files = _.keys(this.builder.files);
+  fileByFileName(fileName: string, req: any): any {
+    const files = _.keys(this.root.files);
     const file = _.find(files, (path) => {
-      return _.endsWith(path, fileName);
+      return _.endsWith(this.root.files[path], fileName);
     });
     if (_.isNil(file)) {
       return {
-        validHost: req.host, // TODO Is this correct?
-        originalRequest: req,
-        errorResponse: {
-          errorCode: grpc.status.NOT_FOUND,
-          errorMessage: `file ${fileName} does not exist`,
+        valid_host: req.host,
+        error_response: {
+          error_code: grpc.status.NOT_FOUND,
+          error_message: `file ${fileName} does not exist`,
         },
       };
     }
-    // TODO - add new parser here - modify it after testing.
-    // const parser = new ProtoBuf.DotProto.Parser(fs.readFileSync(file));
-    const parser = files;
-    const ast = parser.parse();
-    const FileDescriptorProto = this.builder.build('google.protobuf.FileDescriptorProto');
+    const FileDescriptorProto: any = this.root.lookupType('google.protobuf.FileDescriptorProto');
+    const protoFilepath = this.root.files[file];
+    const ast: any = protoBuf.parse(fs.readFileSync(protoFilepath).toString(), new protoBuf.Root());
     if (_.isNil(FileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
-    const fdp = createFileDescriptorProto(file, ast);
-    const fDescProto = new FileDescriptorProto(fdp);
+    const fdp = createFileDescriptorProto(protoFilepath, ast);
+    const fDescProto = FileDescriptorProto.create(fdp);
     return {
-      validHost: req.host,
-      originalRequest: req,
-      fileDescriptorResponse: {
-        fileDescriptorProto: [fDescProto.encode()],
+      valid_host: req.host,
+      original_request: req,
+      file_descriptor_response: {
+        file_descriptor_proto: Buffer.from(JSON.stringify(fDescProto)),
       },
     };
   }
@@ -356,29 +365,29 @@ export class ServerReflection {
    * Format:  <package>.<service>[.<method>] or <package>.<type>)
    */
   findProtoFileByPath(path: string, req: any): any {
-    const t = this.builder.lookup(path);
+    const t = this.root.lookup(path);
     if (_.isNil(t)) {
       return {
-        validHost: req.host, // TODO Is this correct?
-        originalRequest: req,
-        errorResponse: {
-          errorCode: grpc.status.NOT_FOUND,
-          errorMessage: `symbol ${path} not found`,
+        valid_host: req.host, // TODO Is this correct?
+        original_request: req,
+        error_response: {
+          error_code: grpc.status.NOT_FOUND,
+          error_message: `symbol ${path} not found`,
         },
       };
     }
-    const res = findType(t, this.builder);
-    const FileDescriptorProto = this.builder.build('google.protobuf.FileDescriptorProto');
+    const res = findType(t, this.root);
+    const FileDescriptorProto: any = this.root.lookupType('google.protobuf.FileDescriptorProto');
     if (_.isNil(FileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
     const fdp = createFileDescriptorProto(res.file, res.ast);
-    const fDescProto = new FileDescriptorProto(fdp);
+    const fDescProto = FileDescriptorProto.create(fdp);
     return {
-      validHost: req.host,
-      originalRequest: req,
-      fileDescriptorResponse: {
-        fileDescriptorProto: [fDescProto.encode()],
+      valid_host: req.host,
+      original_request: req,
+      file_descriptor_response: {
+        file_descriptor_proto: Buffer.from(JSON.stringify(fDescProto)),
       },
     };
   }
@@ -388,20 +397,28 @@ export class ServerReflection {
    * message type with the given field number.
    */
   fileContainingExtension(arg: any, req: any): any {
-    const path = arg.containingType;
-    const t = this.builder.lookup(path);
-    const id = arg.extensionNumber;
+    const path = arg.containing_type;
+    const t: any = this.root.lookupType(path);
+    const id = arg.extension_number;
     if (_.isNil(t)) {
       return {
-        validHost: req.host,
-        originalRequest: req,
-        errorResponse: {
-          errorCode: grpc.status.NOT_FOUND,
-          errorMessage: `symbol ${path} not found`,
+        valid_host: req.host,
+        original_request: req,
+        error_response: {
+          error_code: grpc.status.NOT_FOUND,
+          error_message: `symbol ${path} not found`,
         },
       };
     }
-    if (_.isNil(t._fieldsById[id])) {
+
+    let ids = _.map(t.fields, (field) => {
+      return field.id;
+    });
+
+    if (ids.indexOf(id) > -1) {
+      console.log('Extension number is being used');
+    } else {
+      // extension_number is not being used, so return error message
       return {
         validHost: req.host,
         originalRequest: req,
@@ -411,43 +428,44 @@ export class ServerReflection {
         },
       };
     }
-    const res = findType(t, this.builder);
-    const FileDescriptorProto = this.builder.build('google.protobuf.FileDescriptorProto');
+    const res = findType(t, this.root);
+    const FileDescriptorProto: any = this.root.lookupType('google.protobuf.FileDescriptorProto');
     if (_.isNil(FileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
     const fdp = createFileDescriptorProto(res.file, res.ast);
-    const fDescProto = new FileDescriptorProto(fdp);
+    const fDescProto = FileDescriptorProto.create(fdp);
     return {
-      validHost: req.host,
-      originalRequest: req,
-      fileDescriptorResponse: {
-        fileDescriptorProto: [fDescProto.encode()],
+      valid_host: req.host,
+      original_request: req,
+      file_descriptor_response: {
+        file_descriptor_proto: Buffer.from(JSON.stringify(fDescProto)),
       },
     };
   }
 
   allExtensionNumbersOfType(path: string, req: any): any {
-    const t = this.builder.lookup(path);
+    const t: any = this.root.lookup(path);
     if (_.isNil(t)) {
       return {
-        validHost: req.host,
-        originalRequest: req,
-        errorResponse: {
-          errorCode: grpc.status.NOT_FOUND,
-          errorMessage: `symbol ${path} not found`,
+        valid_host: req.host,
+        original_request: req,
+        error_response: {
+          error_code: grpc.status.NOT_FOUND,
+          error_message: `symbol ${path} not found`,
         },
       };
     }
-    const ids = _.map(t._fields, (field) => {
+    // Iterate through each of fields and get the ID.
+    let ids = _.map(t.fields, (field) => {
       return field.id;
     });
     return {
-      validHost: req.host,
-      originalRequest: req,
-      allExtensionNumbersResponse: {
-        baseTypeName: t.fqn().substring(1),
-        extensionNumber: ids,
+      valid_host: req.host,
+      original_request: req,
+      all_extension_numbers_response: {
+        base_type_name: t.fullName,
+        extension_number: ids,
       },
     };
   }
@@ -472,9 +490,9 @@ export class ServerReflection {
       };
     });
     return {
-      validHost: req.host,
-      originalRequest: req,
-      listServicesResponse: {
+      valid_host: req.host,
+      original_request: req,
+      list_services_response: {
         service: services,
       },
     };

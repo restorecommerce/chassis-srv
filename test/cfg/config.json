@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "error",
+      "level": "silly",
       "colorize": true,
       "prettyPrint": true
     }
@@ -58,7 +58,7 @@
       "publisher": {
         "name": "static",
         "instances": [
-          "grpc://localhost:50061"
+          "grpc://localhost:50051"
         ]
       },
       "endpoints": {
@@ -290,14 +290,14 @@
       "not_bound": {
         "notImplemented": {
           "transport": [
-            "grpcCIS"
+            "grpcTest"
           ]
         }
       },
       "commandinterface": {
         "command": {
           "transport": [
-            "grpcCIS"
+            "grpcTest"
           ]
         }
       },
@@ -333,30 +333,18 @@
         "services": {
           "test": "test.Test",
           "stream": "test.Stream",
+          "commandinterface": "io.restorecommerce.commandinterface.Service",
           "reflection": "grpc.reflection.v1alpha.ServerReflection"
         },
         "protos": [
           "test/test.proto",
           "test/test.proto",
+          "io/restorecommerce/commandinterface.proto",
           "grpc/reflection/v1alpha/reflection.proto",
           "google/protobuf/descriptor.proto"
         ],
         "protoRoot": "node_modules/@restorecommerce/protos/",
         "addr": "localhost:50051"
-      },
-      {
-        "name": "grpcCIS",
-        "provider": "grpc",
-        "services": {
-          "test": "test.Test",
-          "commandinterface": "io.restorecommerce.commandinterface.Service"
-        },
-        "protos": [
-          "test/test.proto",
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
-        "addr": "localhost:50061"
       }
     ]
   }
