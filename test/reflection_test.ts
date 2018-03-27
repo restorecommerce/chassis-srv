@@ -1,16 +1,9 @@
 
 'use strict';
 
-const mocha = require('mocha');
-const coMocha = require('co-mocha');
-
-coMocha(mocha);
-
-const should = require('should');
-const _ = require('lodash');
-const logger = require('./logger_test.js');
-
-
+import * as should from 'should';
+import * as _ from 'lodash';
+import * as logger from './logger_test';
 import * as chassis from '../lib';
 import { grpc } from '../lib';
 import { Server } from '../lib/microservice/server';
@@ -26,12 +19,6 @@ describe('binding the grpc.ServerReflection service', () => {
     await chassis.config.load(process.cwd() + '/test', logger);
     const cfg = await chassis.config.get();
     server = new Server(cfg.get('server'));
-    // // change addr port to avoid conflict with microservice tests
-    // const trasnportCfg = cfg.get('server:transports:0');
-    // trasnportCfg.addr = 'localhost:50058';
-    // cfg.set('server:transports:0', trasnportCfg);
-    // cfg.set('server:transports:0:addr', 'localhost:50052');
-    console.log('The transport cfg is...', cfg.get('server:transports'));
     const transportName: string = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
     const transport = server.transport[transportName];
     let root;

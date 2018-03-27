@@ -2,7 +2,7 @@
 
 import * as should from 'should';
 import * as co from 'co';
-const logger = require('./logger_test.js');
+import logger from './logger_test';
 import * as gRPCClient from '@restorecommerce/grpc-client';
 import * as chassis from '../lib';
 const grpcClient = gRPCClient.grpcClient;
@@ -36,8 +36,8 @@ const providers = [{
   Client: grpcClient,
   Server: grpcServer,
 }];
+
 providers.forEach((provider) => {
-  logger.level = 'silly';
   describe(`transport provider ${provider.name}`, () => {
     describe('the server', () => {
       const Server = provider.Server;

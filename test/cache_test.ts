@@ -1,7 +1,7 @@
 'use strict';
 import * as mocha from 'mocha';
 import * as should from 'should';
-const logger = require('./logger_test.js');
+import  logger from './logger_test.js';
 import * as chassis from '../lib';
 import * as config from '../lib/config';
 import * as cache from '../lib/cache';

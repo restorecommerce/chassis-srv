@@ -6,8 +6,8 @@ import * as co from 'co';
 coMocha(mocha);
 import * as should from 'should';
 import * as _ from 'lodash';
-const logger = require('./logger_test.js');
-const Arangojs = require('arangojs');
+import logger from './logger_test.js';
+import { Database as Arangojs } from 'arangojs';
 import * as chassis from '../lib';
 const config = chassis.config;
 const database = chassis.database;
@@ -88,10 +88,10 @@ function testProvider(providerCfg) {
   describe('count', () => {
     it(`should return the number of documents
     in the collection with blank filter`, async function checkCount() {
-      const result = await co(db.count(collection, {}));
-      should.exist(result);
-      result.should.equal(testData.length);
-    });
+        const result = await co(db.count(collection, {}));
+        should.exist(result);
+        result.should.equal(testData.length);
+      });
     it('should return one for filtering based on id', async function checkCount() {
       const result = await co(db.count(collection, { id: testData[0].id }));
       should.exist(result);

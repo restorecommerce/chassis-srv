@@ -2,7 +2,7 @@
 
 import * as should from 'should';
 import * as _ from 'lodash';
-const logger = require('./logger_test.js');
+import logger from './logger_test';
 import * as sleep from 'sleep';
 import * as chassis from '../lib';
 import * as sconfig from '@restorecommerce/service-config';
@@ -348,7 +348,7 @@ describe('microservice.Server', () => {
     it('should stop the server and no longer provide endpoints',
       async function endServer() {
         server.on('stopped', () => {
-          logger.info('server stopped');
+          // logger.info('server stopped');
         });
         await server.end();
       });
@@ -493,7 +493,7 @@ describe('microservice.Client', () => {
       it('should disconnect from all endpoints',
         async function disconn() {
           client.on('disconnected', () => {
-            logger.info('all endpoints disconnected');
+            // logger.info('all endpoints disconnected');
           });
           await client.end();
         });

@@ -1,12 +1,12 @@
 'use strict';
 
 // logger which only logs errors
-module.exports = {
-  silly() {},
-  verbose() {},
-  debug() {},
-  info() {},
-  warn() {},
+export default {
+  silly() { },
+  verbose() { },
+  debug() { },
+  info() { },
+  warn() { },
   error(...args) {
     console.error.apply(this, args);
   },
