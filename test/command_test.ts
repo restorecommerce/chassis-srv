@@ -1,7 +1,6 @@
 'use strict';
 
 import * as co from 'co';
-import * as mocha from 'mocha';
 // microservice chassis
 import * as _ from 'lodash';
 import { config, CommandInterface, database, Server } from './../lib';

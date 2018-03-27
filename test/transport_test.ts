@@ -143,7 +143,7 @@ providers.forEach((provider) => {
           after(async function stopServer() {
             await server.end();
           });
-          it('should create an endpoint', function* makeEndpoint() {
+          it('should create an endpoint', function makeEndpoint() {
             endpoint = client.makeEndpoint(methodName, instance);
             should.exist(endpoint);
           });

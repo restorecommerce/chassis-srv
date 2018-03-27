@@ -1,9 +1,6 @@
 'use strict';
 
-import * as mocha from 'mocha';
-import * as coMocha from 'co-mocha';
 import * as co from 'co';
-coMocha(mocha);
 import * as should from 'should';
 import * as _ from 'lodash';
 import logger from './logger_test.js';

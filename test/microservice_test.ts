@@ -458,18 +458,15 @@ describe('microservice.Client', () => {
   context('without a running server', () => {
     describe('connect', () => {
       it('Call should not be created from a closed channel ',
-        function* connectToEndpoints() {
-          const testService = yield client.connect();
+        async function connectToEndpoints() {
+          const testService = await client.connect();
           should.exist(testService);
           should.exist(testService.test);
-          // should.ok(isGeneratorFn(testService.test));
           should.exist(testService.throw);
-          // should.ok(isGeneratorFn(testService.throw));
           should.exist(testService.notImplemented);
-          // should.ok(isGeneratorFn(testService.notImplemented));
 
           // test
-          const result = yield testService.test({
+          const result = await testService.test({
             value: 'hello',
           },
             {
@@ -491,7 +488,7 @@ describe('microservice.Client', () => {
     });
     describe('end', () => {
       it('should disconnect from all endpoints',
-        async function disconn() {
+        async function disconnect() {
           client.on('disconnected', () => {
             // logger.info('all endpoints disconnected');
           });
