@@ -25,6 +25,14 @@
       }
     }
   },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "offsetStoreInterval": 1000,
+    "db-indexes": {
+      "db-offsetStore": 0
+    }
+  },
   "cache": {
     "one": [
       {

@@ -13,6 +13,7 @@ export class OffsetStore {
   kafkaEvents: Events;
   redisClient: any;
   topics: any;
+  timerID: any;
 
   constructor(events: Events, config: any, logger) {
     if (!logger) {
@@ -37,12 +38,13 @@ export class OffsetStore {
     this.kafkaEvents = events;
     if (this.config.get('redis')) {
       const redisConfig = this.config.get('redis');
-      if (this.config.get('redis:db-indexes:db-offsetStore')) {
-        redisConfig.db = this.config.get('redis:db-indexes:db-offsetStore');
+      if (_.has(redisConfig, 'db-indexes.db-offsetStore')) {
+        redisConfig.db = _.get(redisConfig, 'db-indexes.db-offsetStore');
       }
       this.redisClient = redis.createClient(redisConfig);
     }
     this.topics = {};
+    this.timerID = [];
     setTimeout(this.updateTopicOffsets.bind(this), 5000);
   }
 
@@ -55,10 +57,11 @@ export class OffsetStore {
     // events.topic(TopicName) - gives the topic object
     const kafkaCfg = this.config.get('events:kafka');
     const topicTypes = _.keys(kafkaCfg.topics);
-    for (let topicType of topicTypes) {
+    for (let i = 0; i < topicTypes.length; i += 1) {
+      const topicType = topicTypes[i];
       const topicName = kafkaCfg.topics[topicType].topic;
       this.topics[topicType] = this.kafkaEvents.topic(topicName);
-      setInterval(this.storeOffset.bind(this),
+      this.timerID[i] = setInterval(this.storeOffset.bind(this),
         this.config.get('redis:offsetStoreInterval'), this.topics[topicType], topicName);
     }
   }
@@ -103,6 +106,9 @@ export class OffsetStore {
    * @return {object}
    */
   async stop(): Promise<any> {
+    for (let i = 0; i < this.timerID.length; i += 1) {
+      clearInterval(this.timerID[i]);
+    }
     if (this.redisClient) {
       await this.redisClient.quit();
     }
