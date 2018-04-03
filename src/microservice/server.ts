@@ -273,8 +273,8 @@ export class Server extends EventEmitter {
   /**
    * Shutsdown all transport provider servers.
    */
-  async end(): Promise<any> {
-    const transportNames = Object.keys(this.transport);
+  async stop(): Promise<any> {
+    const transportNames = _.keys(this.transport);
     for (let i = 0; i < transportNames.length; i += 1) {
       const name = transportNames[i];
       if (this.transport[name].end) {

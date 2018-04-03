@@ -347,10 +347,7 @@ describe('microservice.Server', () => {
   describe('calling end', () => {
     it('should stop the server and no longer provide endpoints',
       async function endServer() {
-        server.on('stopped', () => {
-          // logger.info('server stopped');
-        });
-        await server.end();
+        await server.stop();
       });
   });
 });
@@ -405,7 +402,7 @@ describe('microservice.Client', () => {
       sleep.sleep(1);
     });
     after(async function stopServer() {
-      await server.end();
+      await server.stop();
     });
     describe('connect', () => {
       it('should return a service object with endpoint functions',

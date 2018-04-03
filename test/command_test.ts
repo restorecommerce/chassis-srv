@@ -88,7 +88,7 @@ describe('CommandInterfaceService', () => {
     service = await client.connect();
   });
   after(async function teardown() {
-    await server.end();
+    await server.stop();
     await events.stop();
   });
   describe('check', () => {

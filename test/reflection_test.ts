@@ -24,7 +24,6 @@ describe('binding the grpc.ServerReflection service', () => {
     let root;
     const reflectionService: chassis.ServerReflection =
       new grpc.ServerReflection(root, server.config);
-      // server.transports[0].addr
     await server.bind('reflection', reflectionService);
     await server.start();
     sleep.sleep(1);
@@ -32,7 +31,7 @@ describe('binding the grpc.ServerReflection service', () => {
 
   after(async function end() {
     this.timeout(4000);
-    await server.end();
+    await server.stop();
     sleep.sleep(2);
   });
   it('should provide an endpoint ServerReflectionInfo',
