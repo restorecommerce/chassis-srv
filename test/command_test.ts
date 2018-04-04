@@ -167,7 +167,7 @@ describe('CommandInterfaceService', () => {
   describe('reset', () => {
     const docID = 'test/value';
     before(async function prepareDatabase() {
-      await co(db.insert('tests', {
+      await co(db.insert('test', {
         id: docID,
         value: 101,
       }));
@@ -190,7 +190,7 @@ describe('CommandInterfaceService', () => {
       should.not.exist(resp.error);
       should.exist(resp.data);
 
-      const result = await co(db.findByID('tests', docID));
+      const result = await co(db.findByID('test', docID));
       result.should.be.length(0);
     });
 

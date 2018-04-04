@@ -7,6 +7,8 @@ import * as database from './../database';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 
+import * as kafkaNode from 'kafka-node';
+
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
   SERVING: 'SERVING',
@@ -156,6 +158,7 @@ export class CommandInterface implements ICommandInterface {
     // the Kafka config should contains a key-value pair, mapping
     // a label with the topic's name
     // in case of a resource topic, the label should be the resource name itself
+    const kafkaEventsCfg = this.config.events.kafka;
     const kafkaCfg = this.config.events.kafka.topics;
     if (_.isNil(kafkaCfg) || kafkaCfg.length == 0) {
       throw new errors.Internal('Kafka topics config not available');
@@ -210,46 +213,80 @@ export class CommandInterface implements ICommandInterface {
         const eventNames = _.keys(topicEvents);
 
         this.logger.debug(`topic ${topic} has current offset ${targetOffset}`);
-        for (let eventName of eventNames) {
-          const listener = topicEvents[eventName];
-          const listenUntil = async function listenUntil(message: any, ctx: any,
-            config: any, eventNameRet: string): Promise<any> {
-            that.logger.debug(`received message ${ctx.offset}/${targetOffset}`, ctx);
-            if (_.includes(ignoreOffsets, ctx.offset)) {
-              return;
-            }
-            try {
-              await listener(message, ctx, config, eventNameRet);
-            } catch (e) {
-              that.logger.debug('Exception caught :', e.message);
-            }
-            if (ctx.offset >= targetOffset) {
-              const message = {};
-              message['topic'] = topic;
-              message['offset'] = ctx.offset;
-              await that.commandTopic.emit('restoreResponse', {
-                services: _.keys(that.service),
-                payload: that.encodeMsg(message)
-              });
 
-              for (let name of eventNames) {
-                that.logger.debug('Number of listeners before removing :',
-                  restoreTopic.listenerCount(name));
-                await restoreTopic.removeAllListeners(name);
-                that.logger.debug('Number of listeners after removing :',
-                  restoreTopic.listenerCount(name));
-              }
-              that.logger.info('restore process done');
-            }
-          };
-          this.logger.debug(`listening to topic ${topic} event ${eventName}
-            until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
-          await restoreTopic.on(eventName, listenUntil);
-          this.logger.debug(`resetting commit offset of topic ${topic} to ${baseOffset}`);
-          await restoreTopic.$reset(eventName, baseOffset);
-          this.logger.debug(`reset done for topic ${topic} to commit offset ${baseOffset}`);
-        }
+        // 'raw' Kafka subscription
+        const consumerClient = new kafkaNode.Client(kafkaEventsCfg.connectionString,
+          kafkaEventsCfg.clientId);
+        const consumer: any = new kafkaNode.Consumer(
+          consumerClient,
+          [
+            { topic, offset: baseOffset }
+          ],
+          {
+            autoCommit: true,
+            encoding: 'buffer',
+            fromOffset: true
+          }
+        );
+
+        const listener = async function listener(message: any, offset: number,
+          eventName: string): Promise<any> {
+          that.logger.debug(`received message ${offset}/${targetOffset}`);
+          if (_.includes(ignoreOffsets, offset)) {
+            return;
+          }
+          try {
+            const eventListener = topicEvents[eventName];
+            await eventListener(message, eventName);
+          } catch (e) {
+            that.logger.debug('Exception caught :', e.message);
+          }
+          if (offset >= targetOffset) {
+            const message = {
+              topic,
+              offset
+            };
+
+            await new Promise((resolve, reject) => {
+              consumer.removeTopics(topic, (error, removed) => {
+                if (error) {
+                  that.logger.error(error);
+                  reject(error);
+                }
+
+                consumer.close((err) => {
+                  if (err) {
+                    reject(err);
+                  }
+                  resolve();
+                });
+              });
+            });
+
+            await that.commandTopic.emit('restoreResponse', {
+              services: _.keys(that.service),
+              payload: that.encodeMsg(message)
+            });
+
+            that.logger.info('restore process done');
+          }
+        };
+
+        consumer.on('message', (message) => {
+          const eventName = message.key.toString('utf8');
+          const msg = message.value;
+          const offset = message.offset;
+
+          if (_.includes(eventNames, eventName)) {
+            restoreTopic.provider.decodeObject(kafkaEventsCfg, eventName, msg);
+            this.logger.debug(`listening to topic ${topic} event ${eventName}
+              until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
+            // restoreTopic.makeDataHandler(eventName)(message);
+            listener(message, offset, eventName);
+          }
+        });
       }
+
       this.logger.debug('waiting until all messages are processed');
     } catch (err) {
       this.logger.error('Error occurred while restoring the system', err.message);
@@ -396,18 +433,15 @@ export class CommandInterface implements ICommandInterface {
    */
   makeResourcesRestoreSetup(db: any, collectionName: string): any {
     return {
-      [`${collectionName}Created`]: async function restoreCreated(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
+      [`${collectionName}Created`]: async function restoreCreated(message: any, eventName: string): Promise<any> {
         await co(db.insert(`${collectionName}s`, message));
         return {};
       },
-      [`${collectionName}Modified`]: async function restoreModified(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
+      [`${collectionName}Modified`]: async function restoreModified(message: any, eventName: string): Promise<any> {
         await co(db.update(collectionName, { id: message.id }, _.omitBy(message, _.isNil)));
         return {};
       },
-      [`${collectionName}Deleted`]: async function restoreDeleted(message: any, context: any,
-        config: any, eventName: string): Promise<any> {
+      [`${collectionName}Deleted`]: async function restoreDeleted(message: any, eventName: string): Promise<any> {
         await co(db.delete(collectionName, { id: message.id }));
         return {};
       }
