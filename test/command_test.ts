@@ -39,7 +39,7 @@ function encodeMsg(msg: any): any {
 }
 
 /*
- * Note: A running Kafka instance is required for 'restore' test case.
+ * Note: Running Kafka and ArangoDB instances are required.
  */
 describe('CommandInterfaceService', () => {
   let db: any;
@@ -208,10 +208,13 @@ describe('CommandInterfaceService', () => {
     });
     it('should re-read all data from the topics the service listens to', async function restore() {
       const cmdPayload = encodeMsg({
-        test: {
-          offset: 0,
-          ignore_offset: []
-        }
+        data: [
+          {
+            entity: 'test',
+            base_offset: 0,
+            ignore_offset: []
+          }
+        ]
       });
       validate = function (msg: any, eventName: string) {
         eventName.should.equal('restoreResponse');
@@ -245,10 +248,13 @@ describe('CommandInterfaceService', () => {
     });
     it('should re-read all data from specified offset', async function restore() {
       const cmdPayload = encodeMsg({
-        test: {
-          offset: 5,
-          ignore_offset: [],
-        }
+        data: [
+          {
+            entity: 'test',
+            base_offset: 5,
+            ignore_offset: []
+          }
+        ]
       });
       validate = function (msg: any, eventName: string) {
         eventName.should.equal('restoreResponse');

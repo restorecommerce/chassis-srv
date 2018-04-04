@@ -22,6 +22,12 @@ export interface ICommandInterface {
   command(call, context);
 }
 
+interface RestoreData {
+  base_offset: number;
+  ignore_offset: number[];
+  entity: string; // resource name
+}
+
 /**
  * Base implementation.
  * Currently includes:
@@ -144,20 +150,20 @@ export class CommandInterface implements ICommandInterface {
   }
 
   /**
-   * Restore the system by re-reading Kafka messages. Default implementation
-   * restores collection documents from a set of ArangoDB databases, using
-   * the chassis-srv database provider.
+   * Restore the system by re-reading Kafka messages.
+   * This base implementation restores documents from a set of
+   * ArangoDB database collections, using the chassis-srv database provider.
    * @param topics list of Kafka topics to be restored
    */
   async restore(payload: any): Promise<any> {
-    if (_.isNil(payload) || _.keys(payload).length == 0) {
+    if (_.isEmpty(payload) || _.isEmpty(payload.data)) {
       throw new errors.InvalidArgument('Invalid payload for restore command');
     }
 
+    const restoreData: RestoreData[] = payload.data || [];
 
     // the Kafka config should contains a key-value pair, mapping
     // a label with the topic's name
-    // in case of a resource topic, the label should be the resource name itself
     const kafkaEventsCfg = this.config.events.kafka;
     const kafkaCfg = this.config.events.kafka.topics;
     if (_.isNil(kafkaCfg) || kafkaCfg.length == 0) {
@@ -169,7 +175,18 @@ export class CommandInterface implements ICommandInterface {
     }).map((elem) => {
       return elem.replace('.resource', '');
     });
-    const events = {};
+
+    const restoreSetup = {};
+    const restoreEventSetup = {};
+
+    restoreData.forEach((data) => {
+      restoreSetup[data.entity] = {
+        baseOffset: data.base_offset || 0,
+        ignoreOffset: data.ignore_offset || []
+      };
+    });
+
+    const restoreCollections = _.keys(restoreSetup);
 
     try {
       const dbCfgs = this.config.database;
@@ -185,13 +202,16 @@ export class CommandInterface implements ICommandInterface {
           return {};
         }
 
-        for (let collection of collections) {
-          if (topicLabels.indexOf(collection) > -1 && payload[collection]) {
-            const topicName = kafkaCfg[collection + '.resource'].topic;
-            events[topicName] = {
+        let intersection: string[] = _.intersection(restoreCollections, collections);
+        if (intersection.length > 0) {
+          intersection = _.intersection(intersection, topicLabels);
+          for (let resource of intersection) {
+            const topicName = kafkaCfg[`${resource}.resource`].topic;
+            restoreEventSetup[topicName] = {
               topic: this.kafkaEvents.topic(topicName),
-              events: this.makeResourcesRestoreSetup(db, collection),
-              resource: collection
+              events: this.makeResourcesRestoreSetup(db, resource),
+              baseOffset: restoreSetup[resource].baseOffset,
+              ignoreOffset: restoreSetup[resource].ignoreOffset
             };
           }
         }
@@ -200,19 +220,18 @@ export class CommandInterface implements ICommandInterface {
       const that = this;
       // Start the restore process
       this.logger.warn('restoring data');
-      for (let topic in events) {
-        const topicSetup: any = events[topic];
+      for (let topicName in restoreEventSetup) {
+        const topicSetup: any = restoreEventSetup[topicName];
         const restoreTopic: Topic = topicSetup.topic;
         const topicEvents: any = topicSetup.events;
-        const resource: string = topicSetup.resource;
 
         // const eventNames = _.keys(restoreTopic.events);
-        const baseOffset: number = payload[resource].offset || 0;
+        const baseOffset: number = topicSetup.baseOffset;
         const targetOffset: number = (await restoreTopic.$offset(-1)) - 1;
-        const ignoreOffsets: number[] = payload[resource].ignore_offset || [];
+        const ignoreOffsets: number[] = topicSetup.ignoreOffset;
         const eventNames = _.keys(topicEvents);
 
-        this.logger.debug(`topic ${topic} has current offset ${targetOffset}`);
+        this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
 
         // 'raw' Kafka subscription
         const consumerClient = new kafkaNode.Client(kafkaEventsCfg.connectionString,
@@ -220,7 +239,7 @@ export class CommandInterface implements ICommandInterface {
         const consumer: any = new kafkaNode.Consumer(
           consumerClient,
           [
-            { topic, offset: baseOffset }
+            { topic: topicName, offset: baseOffset }
           ],
           {
             autoCommit: true,
@@ -243,12 +262,12 @@ export class CommandInterface implements ICommandInterface {
           }
           if (offset >= targetOffset) {
             const message = {
-              topic,
+              topic: topicName,
               offset
             };
 
             await new Promise((resolve, reject) => {
-              consumer.removeTopics(topic, (error, removed) => {
+              consumer.removeTopics(topicName, (error, removed) => {
                 if (error) {
                   that.logger.error(error);
                   reject(error);
@@ -277,7 +296,7 @@ export class CommandInterface implements ICommandInterface {
           const msg = message.value;
           const offset = message.offset;
 
-          this.logger.debug(`listening to topic ${topic} event ${eventName}
+          this.logger.debug(`listening to topic ${topicName} event ${eventName}
             until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
 
           if (_.includes(eventNames, eventName)) {
