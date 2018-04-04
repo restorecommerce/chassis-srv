@@ -278,7 +278,7 @@ export class CommandInterface implements ICommandInterface {
           const offset = message.offset;
 
           if (_.includes(eventNames, eventName)) {
-            restoreTopic.provider.decodeObject(kafkaEventsCfg, eventName, msg);
+            message = restoreTopic.provider.decodeObject(kafkaEventsCfg, eventName, msg);
             this.logger.debug(`listening to topic ${topic} event ${eventName}
               until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
             // restoreTopic.makeDataHandler(eventName)(message);
