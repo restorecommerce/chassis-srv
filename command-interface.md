@@ -6,12 +6,12 @@ The `CommandResource` message defines generically a command as a database resour
 The following system commands are implemented:
 
 - check (microservice health check)
-- restore (re-process [Apache Kafka](https://kafka.apache.org/) event messages to restore system data and state)
+- restore (re-process [Apache Kafka](https://kafka.apache.org/) event messages to restore system data)
 - reset (reset system data and state)
 - version (return runtime version information)
 
 Unimplemented:
-- reconfigure (reload configurations)
+- reconfigure (reload configurations for one or more microservices)
 
 Note that the provided implementation's commands can be extended or even overriden when it is partially or totally incompatible with a service's context. It is also straightforward to include new commands by extending the given [CommandInterface](src/command-interface/index.ts) class.
 
@@ -45,26 +45,28 @@ Possible fields in a response:
 ### Restore
 
 This command is used for restoring the state of an implementing service, as well as all data managed by that service. The default implementation checks the configuration files for all DB instances bound to the implementing service and maps a set of Kafka events to a a set of CRUD operations. 
-These Kafka events are emitted by the service every time a resource is created/modified in the database. The same events are re-processed in order to restore all data. 
+These Kafka events are emitted by the service every time a resource is created/modified in the database. The same events are processed from a base offset in order to restore all data since a previous a point in time. 
+
+**Note**: this event processing can only be done in the correct order with single partitioned-topics, as Kafka ensures offset order per-partition.
 
 Possible `payload` fields in a request:
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| topics | [ ]Topic | required | list of topics for message re-processing |
+| data | [ ]RestoreData | required | list of topics for message re-processing |
 
-`Topic`
+`RestoreData`
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| topic | string | required | topic name associated with a resource |
-| offset | number | optional | offset at which to start the restore process; default is `0` |
-| ignore_offset | [ ]number | optional | topic offset values to ignore while restoring |
+| entity | string | required | The resource's entity name |
+| base_offset | number | optional | Base offset at which to start the restore process; default is `0` |
+| ignore_offset | [ ]number | optional | Topic offset values to ignore while restoring |
 
 ### Reset
 
-This command is used to wipe all data managed by a service.
-Currently only the ArangoDB provider is supported and this command's default implementation truncates the DB. There are no specific parameters either for the request payload and for the response.
+This command is used to wipe all data owned by a microservice.
+The `chassis-srv` default implementation only supports the chassis ArangoDB database provider as a valid provider. When `reset` is called, each of the specified resource's DB is truncated. There are no specific parameters either for the request payload and for the response.
 
 ### Version
 
