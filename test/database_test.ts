@@ -228,6 +228,14 @@ function testProvider(providerCfg) {
         }));
         result.should.be.length(1);
         result[0].should.deepEqual(testData[0]);
+
+        result = await co(db.find(collection, {
+          value: {
+            $isEmpty: null,
+          },
+        }));
+        // 3 fields with value as an empty field
+        should.not.exist(result.error);
       });
     });
   });

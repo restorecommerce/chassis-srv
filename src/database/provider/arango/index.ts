@@ -1,9 +1,8 @@
-'use strict';
-const Arangojs = require('arangojs');
+const Arangojs = require('arangojs');  // issue with 'import' due to call-signature
 import * as _ from 'lodash';
 import * as qb from 'aqb';
-import * as retry from 'async-retry';
 import * as co from 'co';
+import * as retry from 'async-retry';
 
 const DB_SYSTEM = '_system';
 
@@ -167,6 +166,10 @@ function buildField(key: any, value: any): any {
   }
   if (value.$not) {
     return qb.not(buildField(key, value.$not));
+  }
+  if (_.has(value, '$isEmpty')) {
+    // will always search for an empty string
+    return qb.eq(autoCastKey(key, ''), autoCastValue(value.$eq));
   }
   if (value.$startswith) {
     const k = qb.ref(autoCastKey(key)).toAQL();

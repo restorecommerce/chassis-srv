@@ -19,6 +19,10 @@ function convertToRegexp(filter: Object): Object {
       f[key] = {
         $regex: new RegExp(`^.*${value.$endswith}$`, 'i'),
       };
+    } else if (_.has(value, '$isEmpty')) {
+      f[key] = {
+        $regex: new RegExp(`^$`),
+      };
     } else if (_.isObject(value)) {
       f[key] = convertToRegexp(value);
     }
@@ -26,13 +30,13 @@ function convertToRegexp(filter: Object): Object {
   return f;
 }
 
-  /**
-   * Construct or operator.
-   * @param {Object} options the or statement
-   * example: { $or: [{ planet: 'Earth' }, { planet: 'Mars' }] }
-   * @param {string} name the field name the comparison is based on.
-   * @return {Object} NeDB or operator query filter.
-   */
+/**
+ * Construct or operator.
+ * @param {Object} options the or statement
+ * example: { $or: [{ planet: 'Earth' }, { planet: 'Mars' }] }
+ * @param {string} name the field name the comparison is based on.
+ * @return {Object} NeDB or operator query filter.
+ */
 function buildOrQuery(options: any, name: string): Object {
   let opts = options;
   if (!_.isArray(options)) {
