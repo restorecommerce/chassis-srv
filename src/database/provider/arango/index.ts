@@ -169,7 +169,7 @@ function buildField(key: any, value: any): any {
   }
   if (_.has(value, '$isEmpty')) {
     // will always search for an empty string
-    return qb.eq(autoCastKey(key, ''), autoCastValue(value.$eq));
+    return qb.eq(autoCastKey(key, ''), autoCastValue(''));
   }
   if (value.$startswith) {
     const k = qb.ref(autoCastKey(key)).toAQL();
