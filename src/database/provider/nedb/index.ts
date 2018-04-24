@@ -1,5 +1,3 @@
-'use strict';
-
 import * as Datastore from "nedb";
 import * as _ from "lodash";
 

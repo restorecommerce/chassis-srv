@@ -1,5 +1,3 @@
-'use strict';
-
 import * as should from 'should';
 import * as _ from 'lodash';
 import logger from './logger_test';
@@ -7,6 +5,7 @@ import * as sleep from 'sleep';
 import * as chassis from '../lib';
 import * as sconfig from '@restorecommerce/service-config';
 import * as gRPCClient from '@restorecommerce/grpc-client';
+
 const config = chassis.config;
 const Client = gRPCClient.Client;
 const Server = chassis.Server;

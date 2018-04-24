@@ -1,5 +1,3 @@
-'use strict';
-
 import * as should from 'should';
 import * as _ from 'lodash';
 import { errors } from '../lib';

@@ -1,5 +1,3 @@
-'use strict';
-
 import * as readConfig from "@restorecommerce/service-config";
 
 // singleton

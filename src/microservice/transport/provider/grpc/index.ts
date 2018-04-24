@@ -1,5 +1,3 @@
-'use strict';
-
 import * as path from 'path';
 import * as url from 'url';
 import * as ProtoBuf from 'protobufjs';

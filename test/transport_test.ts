@@ -1,5 +1,3 @@
-'use strict';
-
 import * as should from 'should';
 import * as co from 'co';
 import logger from './logger_test';

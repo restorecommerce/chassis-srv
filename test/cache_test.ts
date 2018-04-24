@@ -1,5 +1,3 @@
-'use strict';
-
 import * as should from 'should';
 import  logger from './logger_test.js';
 import * as chassis from '../lib';

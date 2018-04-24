@@ -1,5 +1,3 @@
-'use strict';
-
 import * as should from 'should';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as Logger from '@restorecommerce/logger';

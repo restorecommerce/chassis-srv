@@ -1,5 +1,3 @@
-'use strict';
-
 import * as RestoreLogger from "@restorecommerce/logger";
 import * as _ from "lodash";
 

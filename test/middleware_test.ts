@@ -1,7 +1,5 @@
-'use strict';
-
 import * as should from 'should';
-import { endpoint as chain } from '../lib';
+import { chainMiddleware as chain } from '../lib';
 
 /* global describe it*/
 

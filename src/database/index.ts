@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * A key, value map containing database providers.
  * Database providers are registered with the register function.

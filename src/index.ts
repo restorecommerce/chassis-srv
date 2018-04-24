@@ -14,8 +14,8 @@ export { Logger };
 import { Server as Server } from './microservice/server';
 export { Server };
 
-import { chain as endpoint } from './microservice/endpoint';
-export { endpoint };
+import { makeEndpoint, chainMiddleware } from './microservice/endpoint';
+export { makeEndpoint, chainMiddleware };
 
 import * as errors from './microservice/errors';
 export { errors };

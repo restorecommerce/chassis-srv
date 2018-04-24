@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  * Canceled indicates the operation was cancelled (typically by the caller).
  */

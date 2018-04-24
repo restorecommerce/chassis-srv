@@ -1,6 +1,4 @@
-'use strict';
-
-import { chain as chainMiddleware } from './endpoint';
+import { makeEndpoint } from './endpoint';
 import { Logger } from '../logger';
 import * as _ from "lodash";
 import { EventEmitter } from 'events';
@@ -22,7 +20,7 @@ const grpc = require('./transport/provider/grpc');
 registerTransport('grpc', grpc.Server);
 
 /**
- * initializes all configured transports
+ * Initializes all configured transports.
  * @param  {object} config Configuration
  * @param  {object} logger
  * @return {object} Transport
@@ -50,42 +48,6 @@ function setupTransport(config: any, logger: any): any {
   }
   logger.debug('using transports', Object.keys(transport).join(','));
   return transport;
-}
-
-// calls middleware and business logic
-function makeEndpoint(middleware: any, service: any, transportName: string,
-  methodName: string, logger: any): any {
-  return async function callEndpoint(request: any, context: any): Promise<any> {
-    const ctx = context || {};
-    ctx.transport = transportName;
-    ctx.method = methodName;
-    ctx.logger = logger;
-    let e;
-    if (middleware.length > 0) {
-      const chain = chainMiddleware(middleware);
-      e = await chain(service[methodName].bind(service));
-    } else {
-      e = service[methodName].bind(service);
-    }
-    try {
-      logger.verbose(`received request to method ${ctx.method} over transport ${ctx.transport}`,
-        request);
-      const result = await e(request, ctx);
-      logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} result`,
-        request, result);
-      return result;
-    } catch (err) {
-      if (err instanceof SyntaxError || err instanceof RangeError ||
-        err instanceof ReferenceError || err instanceof TypeError) {
-        logger.error(`request to method ${ctx.method} over transport ${ctx.transport} error`,
-          request, err.stack);
-      } else {
-        logger.info(`request to method ${ctx.method} over transport ${ctx.transport} error`,
-          request, err);
-      }
-      throw err;
-    }
-  };
 }
 
 /**
@@ -271,7 +233,7 @@ export class Server extends EventEmitter {
   }
 
   /**
-   * Shutsdown all transport provider servers.
+   * Shuts down all transport provider servers.
    */
   async stop(): Promise<any> {
     const transportNames = _.keys(this.transport);

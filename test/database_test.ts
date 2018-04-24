@@ -1,5 +1,3 @@
-'use strict';
-
 import * as co from 'co';
 import * as should from 'should';
 import * as _ from 'lodash';

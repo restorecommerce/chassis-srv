@@ -1,5 +1,3 @@
-'use strict';
-
 import * as protoBuf from 'protobufjs';
 import * as fs from 'fs';
 import * as grpc from 'grpc';

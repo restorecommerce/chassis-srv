@@ -1,5 +1,3 @@
-'use strict';
-
 // logger which only logs errors
 export default {
   silly() { },

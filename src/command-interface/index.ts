@@ -1,4 +1,3 @@
-'use strict';
 import * as _ from 'lodash';
 import * as co from 'co';
 import { Server } from './../microservice/server';

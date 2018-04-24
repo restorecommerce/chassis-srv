@@ -1,8 +1,5 @@
-'use strict';
-
 import * as _ from 'lodash';
 import * as cacheManager from 'cache-manager';
-
 
 /**
  * A key, value map containing cache providers.

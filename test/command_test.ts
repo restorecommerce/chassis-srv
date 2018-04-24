@@ -1,5 +1,3 @@
-'use strict';
-
 import * as co from 'co';
 // microservice chassis
 import * as _ from 'lodash';
