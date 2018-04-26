@@ -46,6 +46,7 @@ export class CommandInterface implements ICommandInterface {
   kafkaEvents: Events;
   commands: any;
   commandTopic: Topic;
+  bufferedCollection: Map<string, string>;
   constructor(server: Server, config: any, logger: Logger, events: Events) {
     if (_.isNil(events)) {
       if (logger.error) {
@@ -113,6 +114,15 @@ export class CommandInterface implements ICommandInterface {
     };
     const topicCfg = config.events.kafka.topics.command;
     this.commandTopic = events.topic(topicCfg.topic);
+    // check for buffer fields
+    this.bufferedCollection = new Map<string, string>();
+    if (this.config.fieldHandlers && this.config.fieldHandlers.bufferFields) {
+      for (let bufferedCollection in this.config.fieldHandlers.bufferFields) {
+        this.bufferedCollection.set(bufferedCollection,
+          this.config.fieldHandlers.bufferFields[bufferedCollection]);
+      }
+      this.logger.info('Buffered collections are:', this.bufferedCollection);
+    }
   }
   /**
    * Generic command operation, which demultiplexes a command by its name and parameters.
@@ -410,23 +420,42 @@ export class CommandInterface implements ICommandInterface {
   /**
    * Generic resource restore setup.
    * @param db
-   * @param collectionName
+   * @param resource
    */
-  makeResourcesRestoreSetup(db: any, collectionName: string): any {
+  makeResourcesRestoreSetup(db: any, resource: string): any {
+    const that = this;
     return {
-      [`${collectionName}Created`]: async function restoreCreated(message: any, eventName: string): Promise<any> {
-        await co(db.insert(`${collectionName}s`, message));
+      [`${resource}Created`]: async function restoreCreated(message: any, eventName: string): Promise<any> {
+        that.decodeBufferField(message, resource);
+        await co(db.insert(`${resource}s`, message));
         return {};
       },
-      [`${collectionName}Modified`]: async function restoreModified(message: any, eventName: string): Promise<any> {
-        await co(db.update(collectionName, { id: message.id }, _.omitBy(message, _.isNil)));
+      [`${resource}Modified`]: async function restoreModified(message: any, eventName: string): Promise<any> {
+        that.decodeBufferField(message, resource);
+        await co(db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil)));
         return {};
       },
-      [`${collectionName}Deleted`]: async function restoreDeleted(message: any, eventName: string): Promise<any> {
-        await co(db.delete(collectionName, { id: message.id }));
+      [`${resource}Deleted`]: async function restoreDeleted(message: any, eventName: string): Promise<any> {
+        await co(db.delete(`${resource}s`, { id: message.id }));
         return {};
       }
     };
+  }
+
+  /**
+   * Check if the message contains buffered field, if so decode it.
+   * @param message
+   * @param collectionName
+   */
+  decodeBufferField(message: any, resource: string): any {
+    if (this.bufferedCollection.has(resource)) {
+      const bufferField = this.bufferedCollection.get(resource);
+      // check if received message contains buffered data, if so
+      // decode the bufferField and store in DB
+      if (message[bufferField] && message[bufferField].value) {
+        message[bufferField] = JSON.parse(message[bufferField].value.toString());
+      }
+    }
   }
 
   /**
