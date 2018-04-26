@@ -175,23 +175,6 @@ function wrapServerEndpoint(endpoint: any, logger: any, stream: any): any {
   return makeNormalServerEndpoint(endpoint, logger);
 }
 
-function buildProtobuf(files: Object, protoroot: string, logger: any): Object {
-  // build protobuf
-  let root = new ProtoBuf.Root();
-
-  _.forEach(files, (fileName, key) => {
-    root.resolvePath = function (origin, target) {
-      // origin is the path of the importing file
-      // target is the imported path
-      // determine absolute path and return it ...
-      return protoroot + fileName;
-    };
-    root.loadSync(protoroot + fileName);
-  });
-
-  return root;
-}
-
 /**
  * Server transport provider.
  * @class

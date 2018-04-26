@@ -6,8 +6,6 @@ import * as database from './../database';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 
-import * as kafkaNode from 'kafka-node';
-
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
   SERVING: 'SERVING',
@@ -216,100 +214,61 @@ export class CommandInterface implements ICommandInterface {
         }
       }
 
-      const that = this;
-      // Start the restore process
-      this.logger.warn('restoring data');
-      for (let topicName in restoreEventSetup) {
-        const topicSetup: any = restoreEventSetup[topicName];
-        const restoreTopic: Topic = topicSetup.topic;
-        const topicEvents: any = topicSetup.events;
+      if (_.isEmpty(restoreEventSetup)) {
+        this.logger.warn('No data was setup for the restore process.');
+      } else {
+        const that = this;
+        // Start the restore process
+        this.logger.warn('restoring data');
+        for (let topicName in restoreEventSetup) {
+          const topicSetup: any = restoreEventSetup[topicName];
+          const restoreTopic: Topic = topicSetup.topic;
+          const topicEvents: any = topicSetup.events;
 
-        // const eventNames = _.keys(restoreTopic.events);
-        const baseOffset: number = topicSetup.baseOffset;
-        const targetOffset: number = (await restoreTopic.$offset(-1)) - 1;
-        const ignoreOffsets: number[] = topicSetup.ignoreOffset;
-        const eventNames = _.keys(topicEvents);
+          // const eventNames = _.keys(restoreTopic.events);
+          const baseOffset: number = topicSetup.baseOffset;
+          const targetOffset: number = (await restoreTopic.$offset(-1)) - 1;
+          const ignoreOffsets: number[] = topicSetup.ignoreOffset;
+          const eventNames = _.keys(topicEvents);
 
-        this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
+          this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
+          const listener = async function listener(message: any, ctx: any,
+            config: any, eventName: string): Promise<any> {
+            that.logger.debug(`received message ${ctx.offset}/${targetOffset}`);
+            if (_.includes(ignoreOffsets, ctx.offset)) {
+              return;
+            }
+            try {
+              const eventListener = topicEvents[eventName];
+              await eventListener(message, eventName);
+            } catch (e) {
+              that.logger.debug('Exception caught :', e.message);
+            }
 
-        // 'raw' Kafka subscription
-        const consumerClient = new kafkaNode.Client(kafkaEventsCfg.connectionString,
-          kafkaEventsCfg.clientId);
-        const consumer: any = new kafkaNode.Consumer(
-          consumerClient,
-          [
-            { topic: topicName, offset: baseOffset }
-          ],
-          {
-            autoCommit: true,
-            encoding: 'buffer',
-            fromOffset: true
-          }
-        );
+            if (ctx.offset >= targetOffset) {
+              for (let event of eventNames) {
+                await restoreTopic.removeAllListeners(eventName);
+              }
 
-        const listener = async function listener(message: any, offset: number,
-          eventName: string): Promise<any> {
-          that.logger.debug(`received message ${offset}/${targetOffset}`);
-          if (_.includes(ignoreOffsets, offset)) {
-            return;
-          }
-          try {
-            const eventListener = topicEvents[eventName];
-            await eventListener(message, eventName);
-          } catch (e) {
-            that.logger.debug('Exception caught :', e.message);
-          }
-          if (offset >= targetOffset) {
-            const message = {
-              topic: topicName,
-              offset
-            };
-
-            await new Promise((resolve, reject) => {
-              consumer.removeTopics(topicName, (error, removed) => {
-                if (error) {
-                  that.logger.error(error);
-                  reject(error);
-                }
-
-                consumer.close((err) => {
-                  if (err) {
-                    reject(err);
-                  }
-                  resolve();
-                });
+              const msg = {
+                topic: topicName,
+                offset: ctx.offset
+              };
+              await that.commandTopic.emit('restoreResponse', {
+                services: _.keys(that.service),
+                payload: that.encodeMsg(msg)
               });
-            });
 
-            await that.commandTopic.emit('restoreResponse', {
-              services: _.keys(that.service),
-              payload: that.encodeMsg(message)
-            });
-
-            that.logger.info('restore process done');
+              that.logger.info('restore process done');
+            }
+          };
+          for (let eventName of eventNames) {
+            await restoreTopic.on(eventName, listener, baseOffset);
           }
-        };
+        }
 
-        consumer.on('message', (message) => {
-          const eventName = message.key.toString('utf8');
-          const msg = message.value;
-          const offset = message.offset;
-
-          this.logger.debug(`listening to topic ${topicName} event ${eventName}
-            until offset ${targetOffset} while ignoring offset`, ignoreOffsets);
-
-          if (_.includes(eventNames, eventName)) {
-            restoreTopic.provider.decodeObject(kafkaEventsCfg, eventName, msg).then((decoded) => {
-              listener(decoded, offset, eventName);
-            }).catch((err) => {
-              that.logger.error(err);
-              throw err;
-            });
-          }
-        });
+        this.logger.debug('waiting until all messages are processed');
       }
-
-      this.logger.debug('waiting until all messages are processed');
     } catch (err) {
       this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreResponse', {
