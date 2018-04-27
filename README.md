@@ -21,10 +21,10 @@ A chassis for [restorecommerce](https://github.com/restorecommerce/)-based micro
 The chassis consists of 5 components:
 - a configuration loader
 - a multi-transport configurable log infrastructure
-- a [Server](src/microservice/server.ts), which can be instantiated in order to generically expose [gRPC](https://grpc.io/docs/) endpoints given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
+- a base Restore Commerce microservice structure provided by the [Server](src/microservice/server.ts) class, which emits state-related events and can be bound to a number of [gRPC](https://grpc.io/docs/) endpoints, given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
 - a cache-loader based on configuration files
 - a provider-based mechanism to access different databases
-- a base implementation for the [command-interface](command-interface.md)
+- a base implementation for a [command-interface](command-interface.md)
 - storage for [Apache Kafka](https://kafka.apache.org/) topic offsets in a [Redis](https://redis.io/) database
 
 ### Config
@@ -47,8 +47,8 @@ Default logging levels are:
 
 ### Server
 
-A [Server](src/microservice/server.ts) provides service endpoints. An endpoint is a wrapped gRPC method accessible from any gRPC clients.
-Endpoint calls may be intercepted with multiple chained middlewares, depending on the business logic. Service responses always include a result or an error.
+A [Server](src/microservice/server.ts) instance can provide multiple service endpoints and emits events related with the microservice's state. An endpoint is a wrapped gRPC method accessible from any gRPC clients.
+Endpoint calls may be intercepted with any number of chained middlewares. Service responses always include a result or an error.
 When a `Server` is instantiated, it is possible to bind one or more services to it, each of them exposing its own RPC endpoints with an associated transport configuration (port, protobuf interfaces, service name, etc). Note that other transport types beside `gRPC` are theoretically possible, although that would require an extension of the `Server` class with a custom transport config.
 
 ### Cache
@@ -73,7 +73,7 @@ This interface can be directly exposed as a gRPC endpoint and it can be extended
 
 ### Offset Store
 
-This stores the offset values for Kafka topics for each microservice at regular intervals to Redis. Such intervals are configurable through the `offsetStoreInterval` configuration value.
+This stores the offset values for each Kafka topic within each microservice at a fixed interval to Redis. Such intervals are configurable through the `offsetStoreInterval` configuration value.
 The offset values are stored with key `{kafka:clientId}:{topicName}`.
 In case of a service failure, a microservice can then read the last offset it stored before crashing and thus consume all pending messages since that moment.
 This feature can be disabled if the `latestOffset` configuration value is set to `true` - in this case, the service subscribes to the latest topic offset value upon system restart.
