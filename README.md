@@ -18,7 +18,7 @@ A chassis for [restorecommerce](https://github.com/restorecommerce/)-based micro
 
 ## Architecture
 
-The chassis consists of 5 components:
+The chassis consists of 6 components:
 - a configuration loader
 - a multi-transport configurable log infrastructure
 - a base Restore Commerce microservice structure provided by the [Server](src/microservice/server.ts) class, which emits state-related events and can be bound to a number of [gRPC](https://grpc.io/docs/) endpoints, given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
