@@ -155,10 +155,13 @@ function buildField(key: any, value: any): any {
   if (value.$ne) {
     return qb.neq(autoCastKey(key, value), autoCastValue(value.$ne));
   }
-  if (value.$inAttr) {
-    return qb.in(autoCastValue(value.$inAttr), autoCastKey(key, value));
-  }
   if (value.$in) {
+    if (_.isString(value.$in)) {
+      // if it is a field which should be an array
+      // (useful for querying within a document list-like attribute)
+      return qb.in(autoCastValue(key), autoCastKey(value.$in, null));
+    }
+    // assuming it is a list of provided values
     return qb.in(autoCastKey(key, value), autoCastValue(value.$in));
   }
   if (value.$nin) {
