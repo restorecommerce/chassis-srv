@@ -25,7 +25,7 @@ The chassis consists of 6 components:
 - a cache-loader based on configuration files
 - a provider-based mechanism to access different databases
 - a base implementation for a [command-interface](command-interface.md)
-- storage for [Apache Kafka](https://kafka.apache.org/) topic offsets in a [Redis](https://redis.io/) database
+- periodic storage for [Apache Kafka](https://kafka.apache.org/) topic offsets
 
 ### Config
 
@@ -63,7 +63,7 @@ The following database providers are implemented:
 * [NeDB](https://github.com/louischatriot/nedb)
 
 Providers include generic database handling operations (find, insert, upsert delete, truncate, etc). Query parameter structure for all exposed operations is similar with the structure used in [MongoDB](https://docs.mongodb.com/manual/tutorial/getting-started/) queries.
-Database providers can be used as a database abstration by any service that owns a set of resources. Furthermore, services can later expose their database operations via gRPC.
+Database providers can be used as a database abstration by any service that owns a set of resources. Furthermore, services can later expose their database operations via gRPC. Exposure of these operations is easily achieved using the [resource-base-interface](https://github.com/restorecommerce/resource-base-interface).
 
 ### Command interface
 
@@ -73,7 +73,7 @@ This interface can be directly exposed as a gRPC endpoint and it can be extended
 
 ### Offset Store
 
-This stores the offset values for each Kafka topic within each microservice at a fixed interval to Redis. Such intervals are configurable through the `offsetStoreInterval` configuration value.
+This stores the offset values for each Kafka topic within each microservice at a fixed interval to a [Redis](https://redis.io/) database. Such intervals are configurable through the `offsetStoreInterval` configuration value.
 The offset values are stored with key `{kafka:clientId}:{topicName}`.
 In case of a service failure, a microservice can then read the last offset it stored before crashing and thus consume all pending messages since that moment.
 This feature can be disabled if the `latestOffset` configuration value is set to `true` - in this case, the service subscribes to the latest topic offset value upon system restart.
