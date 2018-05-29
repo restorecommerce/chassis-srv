@@ -1,7 +1,5 @@
-const Arangojs = require('arangojs');  // issue with 'import' due to call-signature
+import { Database, aql } from 'arangojs';
 import * as _ from 'lodash';
-import * as qb from 'aqb';
-import * as co from 'co';
 import * as retry from 'async-retry';
 
 const DB_SYSTEM = '_system';
@@ -9,29 +7,30 @@ const DB_SYSTEM = '_system';
 /**
  * Ensure that the collection exists and process the query
  * @param {Object} db arangodb connection
- * @param {string} collection collection name
- * @param {aqb.QB} q aqb query builder
- * @param {Object} bind key, value map of bind variables
- * @return {Object} arangojs query result
+ * @param {string} collectionName collection name
+ * @param {string} query query string
+ * @param {Object} args list of arguments, optional
+ * @return {Promise} arangojs query result
  */
-function* query(db: any, collection: string, q: any, bind: Object): any {
+async function query(db: any, collectionName: string, query: any,
+  args?: Object): Promise<any> {
   try {
-    return yield db.query(q, bind);
+    return await db.query(query, args);
   } catch (err) {
     if (err.message && err.message.indexOf('collection not found') == -1) {
       throw err;
     }
   }
-  const c = db.collection(collection);
-  yield c.create();
-  yield c.load(false);
-  return yield db.query(q, bind);
+  const collection = db.collection(collectionName);
+  await collection.create();
+  await collection.load(false);
+  return await db.query(query, args);
 }
 
 /**
  * Convert id to arangodb friendly key.
  * @param {string} id document identification
- * @return {string} arangodb friendly key
+ * @return {any} arangodb friendly key
  */
 function idToKey(id: string): any {
   return id.replace(/\//g, '_');
@@ -40,7 +39,7 @@ function idToKey(id: string): any {
 /**
  * Ensure that the _key exists.
  * @param {Object} document Document template.
- * @return {Object} Clone of the document with the _key field set.
+ * @return {any} Clone of the document with the _key field set.
  */
 function ensureKey(document: any): any {
   const doc = _.clone(document);
@@ -71,12 +70,12 @@ function sanitizeFields(document: Object): Object {
  * Auto-casting reference value by using native function of arangoDB
  *
  * @param {string} key
- * @param {object} value - raw value
- * @returns {object} interpreted value
+ * @param {object} value - raw value optional
+ * @return {object} interpreted value
  */
 function autoCastKey(key: any, value?: any): any {
   if (_.isDate(value)) { // Date
-    return qb.fn('DATE_TIMESTAMP')('node.' + key);
+    return `DATE_TIMESTAMP(node.${key})`;
   }
   return 'node.' + key;
 }
@@ -85,27 +84,27 @@ function autoCastKey(key: any, value?: any): any {
  * Auto-casting raw data
  *
  * @param {object} value - raw value
- * @returns {object} interpreted value
+ * @returns {any} interpreted value
  */
 function autoCastValue(value: any): any {
   if (_.isArray(value)) {
-    return value.map(qb.str);
+    return value.map(value => `"${value.toString()}"`);
   }
   if (_.isString(value)) { // String
-    return qb.str(value);
+    return value;
   }
   if (_.isBoolean(value)) { // Boolean
-    return qb.bool(value);
+    return Boolean(value);
   }
   if (_.isNumber(value)) {
     const i = parseInt(value, 10);
     if (i.toFixed(0) === value) { // Integer
-      return qb.int(value);
+      return parseInt(value);
     }
-    return qb.num(value);
+    return Number(value);
   }
   if (_.isDate(value)) { // Date
-    return qb.fn('DATE_TIMESTAMP')(qb.int(value));
+    return new Date(value);
   }
   return value;
 }
@@ -114,16 +113,29 @@ function autoCastValue(value: any): any {
  * Links children of filter together via a comparision operator.
  * @param {Object} filter
  * @param {string} op comparision operator
+ * @param {number} index to keep track of bind variables
+ * @param {any} bindVarsMap mapping of keys to values for bind variables
+ * @return {any} query template string and bind variables
  */
-function buildComparison(filter: any, op: string): any {
+function buildComparison(filter, op, index, bindVarsMap): any {
   const ele = _.map(filter, (e) => {
-    return buildFilter(e);
+    if (!_.isArray(e)) {
+      e = [e];
+    }
+    e = buildFilter(e, index, bindVarsMap);
+    index += 1;
+    return e.q;
   });
-  let e = ele[0];
-  for (let i = 1; i < ele.length; i += 1) {
-    e = e[op](ele[i]);
+
+  let q = '( ';
+  for (let i = 0; i < ele.length; i += 1) {
+    if (i == ele.length - 1) {
+      q = `${q}  ${ele[i]} )`;
+    } else {
+      q = `${q}  ${ele[i]} ${op} `;
+    }
   }
-  return e;
+  return { q, bindVarsMap };
 }
 
 /**
@@ -132,57 +144,86 @@ function buildComparison(filter: any, op: string): any {
  * Otherwise if the key corresponds to a known operator, the operator is constructed.
  * @param {string} key
  * @param {string|boolean|number|date|object} value
+ * @param {number} index to keep track of bind variables
+ * @param {any} bindVarsMap mapping of keys to values for bind variables
+ * @return {String} query template string
  */
-function buildField(key: any, value: any): any {
+function buildField(key: any, value: any, index: number, bindVarsMap: any):
+  string {
+  let bindValueVar = `@value${index}`;
+  let bindValueVarWithOutPrefix = `value${index}`;
   if (_.isString(value) || _.isBoolean(value) || _.isNumber(value || _.isDate(value))) {
-    return qb.eq(autoCastKey(key, value), autoCastValue(value));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value);
+    return autoCastKey(key, value) + ' == ' + bindValueVar;
   }
   if (value.$eq) {
-    return qb.eq(autoCastKey(key, value), autoCastValue(value.$eq));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$eq);
+    return autoCastKey(key, value) + ' == ' + bindValueVar;
   }
   if (value.$gt) {
-    return qb.gt(autoCastKey(key, value), autoCastValue(value.$gt));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$gt);
+    return autoCastKey(key, value) + ' > ' + bindValueVar;
   }
   if (value.$gte) {
-    return qb.gte(autoCastKey(key, value), autoCastValue(value.$gte));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$gte);
+    return autoCastKey(key, value) + ' >= ' + bindValueVar;
   }
   if (value.$lt) {
-    return qb.lt(autoCastKey(key, value), autoCastValue(value.$lt));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$lt);
+    return autoCastKey(key, value) + ' < ' + bindValueVar;
   }
   if (value.$lte) {
-    return qb.lte(autoCastKey(key, value), autoCastValue(value.$lte));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$lte);
+    return autoCastKey(key, value) + ' <= ' + bindValueVar;
   }
   if (value.$ne) {
-    return qb.neq(autoCastKey(key, value), autoCastValue(value.$ne));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$ne);
+    return autoCastKey(key, value) + ' != ' + bindValueVar;
+  }
+  if (value.$inVal) {
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$inVal);
+    return bindValueVar + ' IN ' + autoCastKey(key, value);
   }
   if (value.$in) {
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$in);
     if (_.isString(value.$in)) {
       // if it is a field which should be an array
       // (useful for querying within a document list-like attributen
-      return qb.in(autoCastValue(value.$in), autoCastKey(key, null));
+      return bindValueVar + ' IN ' + autoCastKey(key);
     }
     // assuming it is a list of provided values
-    return qb.in(autoCastKey(key, value), autoCastValue(value.$in));
+    return autoCastKey(key, value) + ' IN ' + bindValueVar;
   }
   if (value.$nin) {
-    return qb.notIn(autoCastKey(key, value), autoCastValue(value.$nin));
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$nin);
+    return autoCastKey(key, value) + ' NOT IN ' + bindValueVar;
   }
   if (value.$not) {
-    return qb.not(buildField(key, value.$not));
+    const temp = buildField(key, value.$not, index, bindVarsMap);
+    return `!(${temp})`;
   }
   if (_.has(value, '$isEmpty')) {
+    bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue('');
     // will always search for an empty string
-    return qb.eq(autoCastKey(key, ''), autoCastValue(''));
+    return autoCastKey(key, '') + ' == ' + bindValueVar;
   }
   if (value.$startswith) {
-    const k = qb.ref(autoCastKey(key)).toAQL();
-    const v = autoCastValue(value.$startswith).toAQL();
-    return qb.expr(`LEFT(${k}, LENGTH(${v})) == ${v}`);
+    let bindValueVar1 = `@value${index + 1}`;
+    let bindValueVarWithOutPrefix1 = `value${index + 1}`;
+    const k = autoCastKey(key);
+    const v = autoCastValue(value.$startswith);
+    bindVarsMap[bindValueVarWithOutPrefix] = v;
+    bindVarsMap[bindValueVarWithOutPrefix1] = v;
+    return `LEFT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;
   }
   if (value.$endswith) {
-    const k = qb.ref(autoCastKey(key)).toAQL();
-    const v = autoCastValue(value.$endswith).toAQL();
-    return qb.expr(`RIGHT(${k}, LENGTH(${v})) == ${v}`);
+    let bindValueVar1 = `@value${index + 1}`;
+    let bindValueVarWithOutPrefix1 = `value${index + 1}`;
+    const k = autoCastKey(key);
+    const v = autoCastValue(value.$endswith);
+    bindVarsMap[bindValueVarWithOutPrefix] = v;
+    bindVarsMap[bindValueVarWithOutPrefix1] = v;
+    return `RIGHT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;
   }
   throw new Error(`unsupported operator ${_.keys(value)} in ${key}`);
 }
@@ -190,101 +231,154 @@ function buildField(key: any, value: any): any {
 /**
  * Build ArangoDB query based on filter.
  * @param {Object} filter key, value tree object.
- * @return {aqb.QB} query builder.
+ * @param {number} index to keep track of bind variables
+ * @param {any} bindVarsMap mapping of keys to values for bind variables
+ * @return {any} query template string and bind variables
  */
-function buildFilter(filter: Object): any {
-  let q = qb;
-  _.forEach(filter, (value, key) => {
-    switch (key) {
-      case '$or':
-        if (q === qb) {
-          q = buildComparison(value, 'or');
-        } else {
-          q = q.and(buildComparison(value, 'or'));
+function buildFilter(filter: any, index?: number, bindVarsMap?: any): any {
+  if (!index) {
+    index = 0;
+  }
+  if (!bindVarsMap) {
+    bindVarsMap = {};
+  }
+  if (filter.length > 0) {
+    let q: any = '';
+    let multipleFilters = false;
+    for (let eachFilter of filter) {
+      _.forEach(eachFilter, (value, key) => {
+        switch (key) {
+          case '$or':
+            if (!multipleFilters) {
+              q = buildComparison(value, '||', index, bindVarsMap).q;
+              multipleFilters = true;
+              // since there is a possiblility for recursive call from buildComparision to buildFilter again.
+              index += 1;
+            } else {
+              q = q + '&& ' + buildComparison(value, '||', index, bindVarsMap).q;
+              index += 1;
+            }
+            break;
+          case '$and':
+            if (!multipleFilters) {
+              q = buildComparison(value, '&&', index, bindVarsMap).q;
+              multipleFilters = true;
+              index += 1;
+            } else {
+              q = q + '&& ' + buildComparison(value, '&&', index, bindVarsMap).q;
+              index += 1;
+            }
+            break;
+          default:
+            if (_.startsWith(key, '$')) {
+              throw new Error(`unsupported query operator ${key}`);
+            }
+            if (!multipleFilters) {
+              q = buildField(key, value, index, bindVarsMap);
+              multipleFilters = true;
+              index += 1;
+            } else {
+              q = q + ' && ' + buildField(key, value, index, bindVarsMap);
+              index += 1;
+            }
+            break;
         }
-        break;
-      case '$and':
-        if (q === qb) {
-          q = buildComparison(value, 'and');
-        } else {
-          q = q.and(buildComparison(value, 'and'));
-        }
-        break;
-      default:
-        if (_.startsWith(key, '$')) {
-          throw new Error(`unsupported query operator ${key}`);
-        }
-        if (q === qb) {
-          q = buildField(key, value);
-        } else {
-          q = q.and(buildField(key, value));
-        }
-        break;
+      });
     }
-  });
-  return q;
+    return { q, bindVarsMap };
+  }
 }
 
 /**
  * Build count and offset filters.
- * @param {aqb.QB} q query Builder
  * @param {Object} options query options
- * @return {aqb.QB} query builder
+ * @return {String} template query string
  */
-function buildLimiter(q: qb.QB, options: any): qb.QB {
+function buildLimiter(options: any): string {
   // LIMIT count
   // LIMIT offset, count
   if (!_.isNil(options.limit)) {
     if (!_.isNil(options.offset)) {
-      return q.limit(options.offset, options.limit);
+      return `LIMIT @offset, @limit`;
     }
-    return q.limit(options.limit);
+    return `LIMIT @limit`;
   }
-  return q;
+  return '';
 }
 
 /**
  * Build sort filter.
- * @param {aqb.QB} q query builder
  * @param {Object} options query options
- * @return {aqb.QB} query builder
+ * @param {number} index to keep track of bind variables
+ * @param {any} bindVarsMap Object containing bind key to values
+ * @return {any} template query string and bind variables Object
  */
-function buildSorter(q: qb.QB, options: any): any {
+function buildSorter(options: any, index?: number, bindVarsMap?: any): any {
   if (_.isNil(options.sort) || _.isEmpty(options.sort)) {
-    return q;
+    return '';
   }
+
+  if (!index) {
+    index = 0;
+  }
+  if (!bindVarsMap) {
+    bindVarsMap = {};
+  }
+
   const sort = _.mapKeys(options.sort, (value, key) => {
-    return 'node.' + key;
+    return autoCastKey(key);
   });
-  const pairs = _.flatten(_.toPairs(sort));
-  return q.sort(...pairs);
+  let sortKeysOrder = '';
+  let i = 1;
+  let objLength = Object.keys(sort).length;
+  for (let key in sort) {
+    if (objLength == i) {
+      // Do not append ',' for the last element
+      sortKeysOrder = `${sortKeysOrder} ${key} ${sort[key]} `;
+    } else {
+      sortKeysOrder = `${sortKeysOrder} ${key} ${sort[key]},`;
+    }
+    i += 1;
+  }
+  return 'SORT ' + sortKeysOrder;
 }
 
-function buildReturn(q: qb.QB, options: any): any {
+function buildReturn(options: any): any {
+  let excludeIndex = 0;
+  let includeIndex = 0;
+  let bindVarsMap = {};
+  let q = '';
   if (_.isNil(options.fields) || _.isEmpty(options.fields)) {
-    return q.return('node');
+    return { q, bindVarsMap };
   }
   const keep = [];
   const exclude = [];
   _.forEach(options.fields, (value, key) => {
     switch (value) {
       case 0:
-        exclude.push(key);
+        bindVarsMap[`exclude${excludeIndex}`] = key;
+        exclude.push(`@exclude${excludeIndex}`);
+        excludeIndex += 1;
         break;
       case 1:
       default:
-        keep.push(key);
+        bindVarsMap[`include${includeIndex}`] = key;
+        keep.push(`@include${includeIndex}`);
+        includeIndex += 1;
     }
   });
   if (keep.length > 0) {
-    const include = _.join(_.map(keep, (e) => { return '"' + e + '"'; }));
-    return q.return(qb.expr(`KEEP( node, ${include} )`));
+    const include = _.join(_.map(keep, (e) => { return e; }));
+    q = `RETURN KEEP( node, ${include} )`;
+    return { q, bindVarsMap };
   }
   if (exclude.length > 0) {
-    const unset = _.join(_.map(exclude, (e) => { return '"' + e + '"'; }));
-    return q.return(qb.expr(`UNSET( node, ${unset} )`));
+    const unset = _.join(_.map(exclude, (e) => { return e; }));
+    q = `RETURN UNSET( node, ${unset} )`;
+    return { q, bindVarsMap };
   }
-  return q.return('result');
+  q = 'RETURN result';
+  return { q, bindVarsMap };
 }
 
 /**
@@ -307,8 +401,8 @@ class Arango {
    * @param  {String} collection Collection name
    * @param  {Object|array.Object} documents  A single or multiple documents.
    */
-  * insert(collection: string, documents: any): any {
-    if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
+  async insert(collectionName: string, documents: any): Promise<any> {
+    if (_.isNil(collectionName) || !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
     if (_.isNil(documents)) {
@@ -321,13 +415,9 @@ class Arango {
     _.forEach(docs, (document, i) => {
       docs[i] = ensureKey(document);
     });
-    let q = qb.for('document').in(qb(docs));
-    q = q.insert('document').in('@@collection');
-    const bindVars = {
-      '@collection': collection,
-    };
-
-    yield query(this.db, collection, q, bindVars);
+    const collection = this.db.collection(collectionName);
+    const queryTemplate = aql`FOR document in ${docs} INSERT document INTO ${collection}`;
+    await query(this.db, collectionName, queryTemplate);
   }
 
   /**
@@ -336,28 +426,66 @@ class Arango {
    * @param  {String} collection Collection name
    * @param  {Object} filter     Key, value Object
    * @param  {Object} options     options.limit, options.offset
-   * @return {array.Object}            A list of found documents.
+   * @return {Promise<any>}  Promise for list of found documents.
    */
-  * find(collection: string, filter: any, options: any): any {
-    if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
+  async find(collectionName: string, filter: any, options: any): Promise<any> {
+    if (_.isNil(collectionName) || !_.isString(collectionName) ||
+      _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
 
-    const fil = filter || {};
+    let filterQuery: any = filter || {};
     const opts = options || {};
-    let q = qb.for('node').in('@@collection');
-    if (_.size(fil) > 0) {
-      const f = buildFilter(fil);
-      q = q.filter(f);
+    let filterResult: any;
+    let bindVars: any;
+
+    if (!_.isArray(filterQuery)) {
+      filterQuery = [filterQuery];
     }
-    q = buildSorter(q, opts);
-    q = buildLimiter(q, opts);
-    q = buildReturn(q, opts);
-    const bindVars = {
-      '@collection': collection,
-    };
-    const res = yield query(this.db, collection, q, bindVars);
-    const docs = yield res.all();
+    if (_.isEmpty(filterQuery[0])) {
+      filterQuery = true;
+    }
+    else {
+      filterResult = buildFilter(filterQuery);
+      filterQuery = filterResult.q;
+    }
+
+    let sortQuery = buildSorter(opts);
+    let limitQuery = buildLimiter(opts);
+    let returnResult = buildReturn(opts);
+    let returnQuery = returnResult.q;
+    // return complete node in case no specific fields are specified
+    if (_.isEmpty(returnQuery)) {
+      returnQuery = 'RETURN node';
+    }
+    let queryString = `FOR node in @@collection FILTER ${filterQuery} ${sortQuery}
+      ${limitQuery} ${returnQuery}`;
+    let varArgs = {};
+    if (filterResult && filterResult.bindVarsMap) {
+      varArgs = filterResult.bindVarsMap;
+    }
+    let returnArgs = {};
+    if (returnResult && returnResult.bindVarsMap) {
+      returnArgs = returnResult.bindVarsMap;
+    }
+    let limitArgs;
+    if (_.isEmpty(limitQuery)) {
+      limitArgs = {};
+    } else {
+      if (!_.isNil(opts.limit)) {
+        limitArgs = { limit: opts.limit };
+        if (!_.isNil(opts.offset)) {
+          limitArgs = { offset: opts.offset, limit: opts.limit };
+        }
+      }
+    }
+    varArgs = Object.assign(varArgs, limitArgs);
+    varArgs = Object.assign(varArgs, returnArgs);
+    bindVars = Object.assign({
+      '@collection': collectionName
+    }, varArgs);
+    const res = await query(this.db, collectionName, queryString, bindVars);
+    const docs = await res.all();
     _.forEach(docs, (doc, i) => {
       docs[i] = sanitizeFields(doc);
     });
@@ -368,35 +496,40 @@ class Arango {
    * Find documents by id (_key).
    *
    * @param  {String} collection Collection name
-   * @param  {String|array.String} identifications        A single ID or multiple IDs.
-   * @return {array.Object}            A list of found documents.
+   * @param  {String|array.String} ids  A single ID or multiple IDs.
+   * @return {Promise<any>} A list of found documents.
    */
-  * findByID(collection: string, identifications: any): any {
-    if (_.isNil(collection) || !_.isString(collection) || _.isEmpty(collection)) {
+  async findByID(collectionName: string, ids: any): Promise<any> {
+    if (_.isNil(collectionName) || !_.isString(collectionName) ||
+      _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
 
-    if (_.isNil(identifications)) {
+    if (_.isNil(ids)) {
       throw new Error('invalid or missing ids argument');
     }
-    let ids = identifications;
-    if (!_.isArray(identifications)) {
-      ids = [identifications];
+    if (!_.isArray(ids)) {
+      ids = [ids];
     }
-    const keys = new Array(ids.length);
-    _.forEach(ids, (id, i) => {
-      keys[i] = idToKey(id);
+    const idVals = new Array(ids.length);
+    const filter = ids.map((id) => {
+      return { id };
     });
 
-    let q = qb.for('key').in(qb(keys));
-    q = q.for('node').in('@@collection');
-    q = q.filter(qb.eq('node._key', 'key'));
-    q = q.return('node');
-    const bindVars = {
-      '@collection': collection,
-    };
-    const res = yield query(this.db, collection, q, bindVars);
-    const docs = yield res.all();
+    let filterResult = buildFilter(filter);
+    let filterQuery = filterResult.q;
+
+    let varArgs = {};
+    if (filterResult && filterResult.bindVarsMap) {
+      varArgs = filterResult.bindVarsMap;
+    }
+
+    const queryString = `FOR node in @@collection FILTER ${filterQuery} RETURN node`;
+    const bindVars = Object.assign({
+      '@collection': collectionName
+    }, varArgs);
+    const res = await query(this.db, collectionName, queryString, bindVars);
+    const docs = await res.all();
     _.forEach(docs, (doc, i) => {
       docs[i] = sanitizeFields(doc);
     });
@@ -410,30 +543,22 @@ class Arango {
    * @param  {Object} filter     Key, value Object
    * @param  {Object} document  A document patch.
    */
-  * update(collection: string, filter: any, document: any): any {
-    if (_.isNil(collection) ||
-      !_.isString(collection) || _.isEmpty(collection)) {
+  async update(collectionName: string, filter: any, document: any): Promise<any> {
+    if (_.isNil(collectionName) ||
+      !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
     if (_.isNil(document)) {
       throw new Error('invalid or missing document argument');
     }
     const doc = ensureKey(_.clone(document));
-    const fil = filter || {};
-    let q = qb.for('node').in('@@collection');
-    if (_.size(fil) > 0) {
-      const f = buildFilter(fil);
-      q = q.filter(f);
-    }
-    q = q.update('node')
-      .with(qb(doc))
-      .in('@@collection')
-      .return('NEW');
-    const bindVars = {
-      '@collection': collection,
-    };
-    const res = yield query(this.db, collection, q, bindVars);
-    const upDocs = yield res.all();
+    const collection = this.db.collection(collectionName);
+    let queryString = aql`FOR node in ${collection}
+      FILTER node.id == ${doc.id}
+      UPDATE node WITH ${doc} in ${collection} return NEW`;
+
+    const res = await query(this.db, collectionName, queryString);
+    const upDocs = await res.all();
     return _.map(upDocs, (d) => {
       return sanitizeFields(d);
     });
@@ -446,9 +571,9 @@ class Arango {
    * @param  {String} collection Collection name
    * @param {Object|Array.Object} documents
    */
-  * upsert(collection: string, documents: any): any {
-    if (_.isNil(collection) ||
-      !_.isString(collection) || _.isEmpty(collection)) {
+  async upsert(collectionName: string, documents: any): Promise<any> {
+    if (_.isNil(collectionName) ||
+      !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
     if (_.isNil(documents)) {
@@ -461,18 +586,12 @@ class Arango {
     _.forEach(docs, (document, i) => {
       docs[i] = ensureKey(document);
     });
-    const q = qb.for('document').in('@documents')
-      .upsert(qb.obj({ _key: 'document._key' }))
-      .insert('document')
-      .update('document')
-      .in('@@collection')
-      .return('NEW');
-    const bindVars = {
-      '@collection': collection,
-      documents: docs,
-    };
-    const res = yield query(this.db, collection, q, bindVars);
-    const newDocs = yield res.all();
+    const collection = this.db.collection(collectionName);
+    const queryTemplate = aql`FOR document in ${docs} UPSERT { _key: document._key }
+      INSERT document UPDATE document IN ${collection} return NEW`;
+
+    const res = await query(this.db, collectionName, queryTemplate);
+    const newDocs = await res.all();
     _.forEach(newDocs, (doc, i) => {
       newDocs[i] = sanitizeFields(doc);
     });
@@ -485,22 +604,37 @@ class Arango {
    * @param  {String} collection Collection name
    * @param  {Object} filter
    */
-  * delete(collection: string, filter: any): any {
-    if (_.isNil(collection) ||
-      !_.isString(collection) || _.isEmpty(collection)) {
+  async delete(collectionName: string, filter: any): Promise<any> {
+    if (_.isNil(collectionName) ||
+      !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
-    const fil = filter || {};
-    let q = qb.for('node').in('@@collection');
-    if (_.size(fil) > 0) {
-      const f = buildFilter(fil);
-      q = q.filter(f);
+
+    let filterQuery: any = filter || {};
+    let filterResult: any;
+    if (!_.isArray(filterQuery)) {
+      filterQuery = [filterQuery];
     }
-    q = q.remove('node').in('@@collection');
-    const bindVars = {
-      '@collection': collection,
-    };
-    yield query(this.db, collection, q, bindVars);
+
+    if (_.isEmpty(filterQuery[0])) {
+      filterQuery = true;
+    }
+    else {
+      filterResult = buildFilter(filterQuery);
+      filterQuery = filterResult.q;
+    }
+    let varArgs = {};
+    if (filterResult && filterResult.bindVarsMap) {
+      varArgs = filterResult.bindVarsMap;
+    }
+
+    let queryString = `FOR node in @@collection FILTER ${filterQuery} REMOVE
+      node in @@collection`;
+    const bindVars = Object.assign({
+      '@collection': collectionName
+    }, varArgs);
+
+    await query(this.db, collectionName, queryString, bindVars);
   }
 
   /**
@@ -509,24 +643,37 @@ class Arango {
    * @param  {String} collection Collection name
    * @param  {Object} filter
    */
-  * count(collection: string, filter: any): any {
-    if (_.isNil(collection) ||
-      !_.isString(collection) || _.isEmpty(collection)) {
+  async count(collectionName: string, filter: any): Promise<any> {
+    if (_.isNil(collectionName) ||
+      !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
-    const fil = filter || {};
-    let q = qb.for('node').in('@@collection');
-    if (_.size(fil) > 0) {
-      const f = buildFilter(fil);
-      q = q.filter(f);
+    let filterQuery: any = filter || {};
+    let filterResult: any;
+    if (!_.isArray(filterQuery)) {
+      filterQuery = [filterQuery];
     }
-    q = q.collectWithCountInto('n');
-    q = q.return('n');
-    const bindVars = {
-      '@collection': collection,
-    };
-    const res = yield query(this.db, collection, q, bindVars);
-    const nn = yield res.all();
+
+    if (_.isEmpty(filterQuery[0])) {
+      filterQuery = true;
+    }
+    else {
+      filterResult = buildFilter(filterQuery);
+      filterQuery = filterResult.q;
+    }
+
+    let varArgs = {};
+    if (filterResult && filterResult.bindVarsMap) {
+      varArgs = filterResult.bindVarsMap;
+    }
+    let queryString = `FOR node in @@collection FILTER ${filterQuery} COLLECT WITH COUNT
+      INTO length RETURN length`;
+    const bindVars = Object.assign({
+      '@collection': collectionName
+    }, varArgs);
+
+    const res = await query(this.db, collectionName, queryString, bindVars);
+    const nn = await res.all();
     return nn[0];
   }
 
@@ -537,15 +684,15 @@ class Arango {
    * delete all documents in specified collection in the database.
    * @param [string] collection Collection name.
    */
-  * truncate(collection: string): any {
+  async truncate(collection: string): Promise<any> {
     if (_.isNil(collection)) {
-      const collections = yield this.db.collections();
+      const collections = await this.db.collections();
       for (let i = 0; i < collections.length; i += 1) {
-        yield collections[i].truncate();
+        await collections[i].truncate();
       }
     } else {
       const c = this.db.collection(collection);
-      yield c.truncate();
+      await c.truncate();
     }
   }
 }
@@ -584,7 +731,7 @@ async function connect(conf: any, logger: any): Promise<any> {
         attempt: i
       });
       i += 1;
-      const db = new Arangojs({
+      const db = new Database({
         url,
         arangoVersion,
       });
@@ -594,14 +741,14 @@ async function connect(conf: any, logger: any): Promise<any> {
         if (username && password) {
           db.useBasicAuth(username, password);
         }
-        await co(db.get());
+        await db.get();
       } catch (err) {
         if (err.name === 'ArangoError' && err.errorNum === 1228) {
           if (autoCreate) {
             logger.verbose(`auto creating arango database ${dbName}`);
             // Database does not exist, create a new one
             db.useDatabase(DB_SYSTEM);
-            await co(db.createDatabase(dbName));
+            await db.createDatabase(dbName);
             db.useDatabase(dbName);
             return db;
           }
@@ -629,7 +776,7 @@ async function connect(conf: any, logger: any): Promise<any> {
  * @param  {Object} [logger] Logger
  * @return {Arango}        ArangoDB provider
  */
-export function* create(conf: any, logger: any): any {
+export async function create(conf: any, logger: any): Promise<any> {
   let log = logger;
   if (_.isNil(logger)) {
     log = {
@@ -638,6 +785,6 @@ export function* create(conf: any, logger: any): any {
       error: () => { },
     };
   }
-  const conn = yield connect(conf, log);
+  const conn = await connect(conf, log);
   return new Arango(conn);
 }

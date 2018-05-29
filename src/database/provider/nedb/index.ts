@@ -1,5 +1,5 @@
-import * as Datastore from "nedb";
-import * as _ from "lodash";
+import * as Datastore from 'nedb';
+import * as _ from 'lodash';
 
 /**
  * Converts unsupported functions to regexp.
@@ -67,24 +67,19 @@ class NedbProvider {
    * @param  {String} collection Collection name
    * @param  {Object|array.Object} documents  A single or multiple documents.
    */
-  * insert(collection: string, document: any): any {
+  insert(collection: string, document: any): any {
     const collections = this.collections;
     const doc = _.cloneDeep(document);
     _.set(doc, '_id', doc.id);
-    return yield (() => {
-      return (cb) => {
-        collections[collection].insert(doc, (err, newdoc) => {
-          // docs
-          if (err) {
-            cb(err);
-            throw err;
-          } else {
-            _.unset(newdoc, '_id');
-            cb(null, newdoc);
-          }
-        });
-      };
-    })();
+    collections[collection].insert(doc, (err, newdoc) => {
+      // docs
+      if (err) {
+        throw err;
+      } else {
+        _.unset(newdoc, '_id');
+        return newdoc;
+      }
+    });
   }
 
   /**
@@ -95,7 +90,8 @@ class NedbProvider {
    * @param  {Object} options     options.limit, options.offset
    * @return {array.Object}            A list of found documents.
    */
-  * find(collection: string, filter: Object = {}, options: any = {}): any {
+  async find(collection: string, filter: Object = {}, options: any = {}):
+    Promise<any> {
     const fil = convertToRegexp(filter || {});
     let q = this.collections[collection].find(fil, options.fields);
     if (options.offset) {
@@ -107,24 +103,24 @@ class NedbProvider {
     if (options.sort) {
       q = q.sort(options.sort);
     }
-    return yield (() => {
-      return (cb) => {
-        q.exec((err, docs) => {
-          // docs
-          if (err) {
-            cb(err);
-          } else {
-            _.map(docs, (doc) => {
-              if (_.isNil(doc.id)) {
-                _.set(doc, '_id', doc._id);
-              }
-              _.unset(doc, '_id');
-            });
-            cb(null, docs);
-          }
-        });
-      };
-    })();
+
+    const result = new Promise( (resolve, reject) => {
+      q.exec((err, docs) => {
+        // docs
+        if (err) {
+          reject(err);
+        } else {
+          _.map(docs, (doc) => {
+            if (_.isNil(doc.id)) {
+              _.set(doc, '_id', doc._id);
+            }
+            _.unset(doc, '_id');
+          });
+          resolve(docs);
+        }
+      });
+    });
+    return result;
   }
 
   /**
@@ -134,28 +130,27 @@ class NedbProvider {
    * @param  {String|array.String} identifications        A single ID or multiple IDs.
    * @return {array.Object}            A list of found documents.
    */
-  * findByID(collection: string, identifications: any): any {
+  async findByID(collection: string, identifications: any): Promise<any> {
     let ids = identifications;
     if (!_.isArray(identifications)) {
       ids = [identifications];
     }
     const q = buildOrQuery(ids, 'id');
     const collections = this.collections;
-    return yield (() => {
-      return (cb) => {
-        collections[collection].find(q).exec((err, docs) => {
-          if (docs) {
-            const l = docs.length;
-            for (let i = 0; i < l; i += 1) {
-              _.unset(docs[i], '_id');
-            }
-            cb(null, docs);
-          } else if (err) {
-            cb(err);
+    const result = new Promise((resolve, reject) => {
+      collections[collection].find(q).exec((err, docs) => {
+        if (docs) {
+          const l = docs.length;
+          for (let i = 0; i < l; i += 1) {
+            _.unset(docs[i], '_id');
           }
-        });
-      };
-    })();
+          resolve(docs);
+        } else if (err) {
+          reject(err);
+        }
+      });
+    });
+    return result;
   }
 
   /**
@@ -165,7 +160,7 @@ class NedbProvider {
    * @param  {Object} filter     Key, value Object
    * @param  {Object} document  A document patch.
    */
-  * update(collection: string, filter: any, document: any): any {
+  update(collection: string, filter: any, document: any): any {
     const collections = this.collections;
     const obj = {
       $set: {},
@@ -174,17 +169,13 @@ class NedbProvider {
       obj.$set[key] = document[key];
     });
     const fil = convertToRegexp(filter || {});
-    return yield (() => {
-      return (cb) => {
-        collections[collection].update(fil, obj, { multi: true }, (err, numReplaced) => {
-          if (err) {
-            cb(err);
-          } else {
-            cb(null);
-          }
-        });
-      };
-    })();
+    collections[collection].update(fil, obj, { multi: true }, (err, numReplaced) => {
+      if (err) {
+        return err;
+      } else {
+        return null;
+      }
+    });
   }
 
   /**
@@ -194,30 +185,29 @@ class NedbProvider {
    * @param  {String} collection Collection name
    * @param {Object|Array.Object} documents
    */
-  * upsert(collection: string, documents: any): any {
+  async upsert(collection: string, documents: any): Promise<any> {
     const collections = this.collections;
     let docs = _.cloneDeep(documents);
     if (!_.isArray(docs)) {
       docs = [docs];
     }
-    const calls = [];
-    _.forEach(docs, (doc) => {
+    let results = [];
+    for (let doc of docs) {
       _.set(doc, '_id', doc.id);
-      function upsert(): any {
-        return (cb) => {
-          /* eslint no-underscore-dangle: "off"*/
-          collections[collection].update({ _id: doc._id },
-            doc,
-            { upsert: true, returnUpdatedDocs: true },
-            (err, numReplaced, upserted) => {
-              cb(err, upserted);
-            });
-        };
-      }
-      calls.push(upsert());
-    });
-    const result = yield calls;
-    return _.map(result, (doc) => {
+      const result = new Promise((resolve, reject) => {
+        collections[collection].update({ _id: doc._id },
+          doc,
+          { upsert: true, returnUpdatedDocs: true },
+          (err, numReplaced, upserted) => {
+            if (err) {
+              reject(err);
+            }
+            resolve(upserted);
+          });
+      });
+      results.push(await result);
+    }
+    return _.map(results, (doc) => {
       _.unset(doc, '_id');
       return doc;
     });
@@ -229,18 +219,14 @@ class NedbProvider {
    * @param  {String} collection Collection name
    * @param  {Object} filter
    */
-  * delete(collection: string, filter: Object = {}): any {
-    try {
-      const collections = this.collections;
-      const fil = convertToRegexp(filter || {});
-      return yield (() => {
-        return (cb) => {
-          collections[collection].remove(fil, { multi: true }, cb);
-        };
-      })();
-    } catch (e) {
-      throw new Error(e);
-    }
+  delete(collection: string, filter: Object = {}): any {
+    const collections = this.collections;
+    const fil = convertToRegexp(filter || {});
+    collections[collection].remove(fil, { multi: true }, (err, numRemoved) => {
+      if (err)
+        throw new Error(err);
+      return numRemoved;
+    });
   }
 
   /**
@@ -249,14 +235,17 @@ class NedbProvider {
    * @param  {String} collection Collection name
    * @param  {Object} filter
    */
-  * count(collection: string, filter: Object = {}): any {
+  async count(collection: string, filter: Object = {}): Promise<any> {
     const collections = this.collections;
     const fil = convertToRegexp(filter || {});
-    return yield (() => {
-      return (cb) => {
-        collections[collection].count(fil, cb);
-      };
-    })();
+    const result =  new Promise((resolve, reject) => {
+      collections[collection].count(fil, (err, count) => {
+        if (err)
+          reject(err);
+        resolve(count);
+      });
+    });
+    return result;
   }
 
   /**
@@ -266,14 +255,14 @@ class NedbProvider {
    * delete all documents in specified collection in the database.
    * @param [string] collection Collection name.
    */
-  * truncate(collection: string): any {
+  async truncate(collection: string): Promise<any> {
     if (_.isNil(collection)) {
       const collections = _.keys(this.collections);
       for (let i = 0; i < collections.length; i += 1) {
-        yield this.delete(collections[i], {});
+        await this.delete(collections[i], {});
       }
     } else {
-      yield this.delete(collection, {});
+      await this.delete(collection, {});
     }
   }
 }
@@ -292,7 +281,7 @@ class NedbProvider {
  * @return {Object} key, value map containing collection names
  * as keys and the corresponding NeDB datastores as values.
  */
-function* loadDatastores(config: any, logger: any): Object {
+async function loadDatastores(config: any, logger: any): Promise<Object> {
   if (_.isNil(config.collections)) {
     throw new Error('missing collection config value');
   }
@@ -310,7 +299,7 @@ function* loadDatastores(config: any, logger: any): Object {
           collections[name] = new Datastore(conf);
         };
       };
-      yield load();
+      await load();
     } else {
       collections[name] = new Datastore(conf);
     }
@@ -325,13 +314,13 @@ function* loadDatastores(config: any, logger: any): Object {
  * @param {Object} [logger] Logger
  * @return {NedbProvider} NeDB provider
  */
-export function* create(conf: Object, logger: any): any {
+export async function create(conf: Object, logger: any): Promise<any> {
   let log = logger;
   if (_.isNil(logger)) {
     log = {
       verbose: () => { },
     };
   }
-  const collections = yield loadDatastores(conf, log);
+  const collections = await loadDatastores(conf, log);
   return new NedbProvider(collections);
 }
