@@ -281,4 +281,41 @@ function testProvider(providerCfg) {
       result.should.be.length(0);
     });
   });
+  describe('query by date', () => {
+    it('should be able to query document by its time stamp', async function
+    queryDocByTimeStamp() {
+      const currentDate = new Date();
+      const timeStamp1 = currentDate.setFullYear(currentDate.getFullYear());
+      const timeStamp2 = currentDate.setFullYear(currentDate.getFullYear() + 1);
+      const timeStamp3 = currentDate.setFullYear(currentDate.getFullYear() + 2);
+      const timeData = [
+        { id: "a", created: timeStamp1 },
+        { id: "b", created: timeStamp2 },
+        { id: "c", created: timeStamp3 }
+      ];
+      await db.insert(collection, timeData);
+      // should return first two documents
+      const result = await db.find(collection, {
+        $and: [
+          {
+            created: {
+              $gte: timeStamp1
+            }
+          },
+          {
+            created: {
+              $lte: timeStamp2
+            }
+          }
+        ],
+      });
+      should.exist(result);
+      result.should.be.Array();
+      result.should.be.length(2);
+      timeData.splice(2, 1);
+      result.should.deepEqual(timeData);
+      // truncate test DB
+      await db.truncate();
+    });
+  });
 }
