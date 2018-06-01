@@ -23,7 +23,6 @@
     "arangojs": "^6.2.4",
     "async-retry": "^1.2.1",
     "cache-manager": "^2.9.0",
-    "co": "^4.6.0",
     "grpc": "^1.10.1",
     "lodash": "^4.17.5",
     "nedb": "^1.8.0",

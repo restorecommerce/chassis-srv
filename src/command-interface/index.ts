@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import * as co from 'co';
 import { Server } from './../microservice/server';
 import * as errors from './../microservice/errors';
 import * as database from './../database';
@@ -202,7 +201,7 @@ export class CommandInterface implements ICommandInterface {
         const dbCfgName = dbCfgNames[i];
         const dbCfg = dbCfgs[dbCfgName];
         const collections = dbCfg.collections;
-        const db = await co(database.get(dbCfg, this.logger));
+        const db = await database.get(dbCfg, this.logger);
 
         if (_.isNil(collections)) {
           this.logger.warn('No collections found on DB config');
@@ -309,10 +308,10 @@ export class CommandInterface implements ICommandInterface {
       for (let i = 0; i < dbCfgNames.length; i += 1) {
         const dbCfgName = dbCfgNames[i];
         const dbCfg = dbCfgs[dbCfgName];
-        const db = await co(database.get(dbCfg, this.logger));
+        const db = await database.get(dbCfg, this.logger);
         switch (dbCfg.provider) {
           case 'arango':
-            await co(db.truncate());
+            await db.truncate();
             this.logger.info(`arangodb ${dbCfg.database} truncated`);
             break;
           default:
@@ -427,16 +426,16 @@ export class CommandInterface implements ICommandInterface {
     return {
       [`${resource}Created`]: async function restoreCreated(message: any, eventName: string): Promise<any> {
         that.decodeBufferField(message, resource);
-        await co(db.insert(`${resource}s`, message));
+        await db.insert(`${resource}s`, message);
         return {};
       },
       [`${resource}Modified`]: async function restoreModified(message: any, eventName: string): Promise<any> {
         that.decodeBufferField(message, resource);
-        await co(db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil)));
+        await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
         return {};
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any, eventName: string): Promise<any> {
-        await co(db.delete(`${resource}s`, { id: message.id }));
+        await db.delete(`${resource}s`, { id: message.id });
         return {};
       }
     };

@@ -235,7 +235,7 @@ export class Server {
     }
 
     let k = 0;
-    this.service = _.transform(this.config.services, (service, protobufServiceName, serviceName) => {
+    this.service = _.transform(this.config.services, (service: any, protobufServiceName: string, serviceName: string) => {
       const serviceDef = _.get(proto[k], protobufServiceName);
       if (_.isNil(serviceDef)) {
         throw new Error(`Could not find ${protobufServiceName} protobuf service`);

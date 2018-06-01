@@ -1,4 +1,3 @@
-import * as co from 'co';
 // microservice chassis
 import * as _ from 'lodash';
 import { config, CommandInterface, database, Server } from './../lib';
@@ -72,8 +71,8 @@ describe('CommandInterfaceService', () => {
     }
 
     server = new Server(cfg.get('server'), logger);
-    db = await co(database.get(cfg.get('database:arango'), server.logger));
-    await co(db.truncate());
+    db = await database.get(cfg.get('database:arango'), server.logger);
+    await db.truncate();
 
     const config = cfg.get();
     delete config.database.nedb;  // not supported in default implementation
@@ -165,10 +164,10 @@ describe('CommandInterfaceService', () => {
   describe('reset', () => {
     const docID = 'test/value';
     before(async function prepareDatabase() {
-      await co(db.insert('test', {
+      await db.insert('test', {
         id: docID,
         value: 101,
-      }));
+      });
     });
     it('should clean the database', async function reset() {
       validate = function (msg: any, eventName: string): void {
@@ -188,7 +187,7 @@ describe('CommandInterfaceService', () => {
       should.not.exist(resp.error);
       should.exist(resp.data);
 
-      const result = await co(db.findByID('test', docID));
+      const result = await db.findByID('test', docID);
       result.should.be.length(0);
     });
 
@@ -202,48 +201,8 @@ describe('CommandInterfaceService', () => {
       }
     });
     beforeEach(async function prepareDB() {
-      await co(db.truncate('test'));
+      await db.truncate('test');
     });
-    // it('should re-read all data from the topics the service listens to', async function restore() {
-    //   const cmdPayload = encodeMsg({
-    //     data: [
-    //       {
-    //         entity: 'test',
-    //         base_offset: 0,
-    //         ignore_offset: []
-    //       }
-    //     ]
-    //   });
-    //   validate = function (msg: any, eventName: string) {
-    //     eventName.should.equal('restoreResponse');
-    //     should.exist(msg.services);
-    //     msg.services.should.containEql('commandinterface');
-    //     should.exist(msg.payload);
-    //     const payload = decodeMsg(msg.payload);
-    //     should.not.exist(payload.error);
-    //     // restore conclusion is checked asynchronously, since it can take a variable
-    //     // and potentially large amount of time
-    //     co(db.find('test', {}, {
-    //       sort: {
-    //         count: 1
-    //       }
-    //     })).then((result) => {
-    //       result.should.be.length(10);
-    //       for (let i = 0; i < 10; i++) {
-    //         result[i].count.should.equal(i);
-    //       }
-    //     });
-    //   };
-
-    //   // waiting for restore conclusion
-    //   const offset = await commandTopic.$offset(-1);
-    //   const resp = await service.command({
-    //     name: 'restore',
-    //     payload: cmdPayload
-    //   });
-    //   should.not.exist(resp.error);
-    //   await commandTopic.$wait(offset);
-    // });
     it('should re-read all data from specified offset', async function restore() {
       this.timeout(3000);
       validate = function (msg: any, eventName: string) {

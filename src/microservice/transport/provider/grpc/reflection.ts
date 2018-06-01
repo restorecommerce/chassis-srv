@@ -475,7 +475,7 @@ export class ServerReflection {
   listServices(req: any): any {
     const transports = _.filter(this.config.transports, { provider: 'grpc' });
     let services = [];
-    _.forEach(transports, (transport) => {
+    _.forEach(transports, (transport: any) => {
       const srvs = _.values(transport.services);
       if (_.includes(srvs, 'grpc.reflection.v1alpha.ServerReflection')) {
         services = _.concat(services, srvs);
