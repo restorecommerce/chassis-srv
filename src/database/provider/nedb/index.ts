@@ -6,7 +6,7 @@ import * as _ from 'lodash';
  * @param {object} filter query filter
  * @return {object} the filter querys which are not supported by nedb converted to regexp.
  */
-function convertToRegexp(filter: Object): Object {
+function convertToRegexp(filter: any): any {
   const f = filter;
   _.forEach(f, (value, key) => {
     if (value.$startswith) {

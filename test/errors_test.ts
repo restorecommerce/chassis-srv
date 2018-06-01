@@ -8,7 +8,7 @@ describe('error', () => {
   _.forEach(errors, (Error, name) => {
     describe(name, () => {
       it('should be an Error', () => {
-        const error = new Error();
+        const error = new Error(name);
         should.exist(error);
         error.should.be.Error();
         error.name.should.equal(name);

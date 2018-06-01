@@ -97,11 +97,7 @@ function autoCastValue(value: any): any {
     return Boolean(value);
   }
   if (_.isNumber(value)) {
-    const i = parseInt(value, 10);
-    if (i.toFixed(0) === value) { // Integer
-      return parseInt(value);
-    }
-    return Number(value);
+    return _.toNumber(value);
   }
   if (_.isDate(value)) { // Date
     return new Date(value);
