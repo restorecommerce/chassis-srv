@@ -295,7 +295,7 @@ function testProvider(providerCfg) {
       ];
       await db.insert(collection, timeData);
       // should return first two documents
-      const result = await db.find(collection, {
+      let result = await db.find(collection, {
         $and: [
           {
             created: {
@@ -313,6 +313,7 @@ function testProvider(providerCfg) {
       result.should.be.Array();
       result.should.be.length(2);
       timeData.splice(2, 1);
+      result = _.sortBy(result, [function (o) { return o.id; }]);
       result.should.deepEqual(timeData);
       // truncate test DB
       await db.truncate();
