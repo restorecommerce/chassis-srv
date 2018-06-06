@@ -74,7 +74,7 @@ function testProvider(providerCfg) {
     });
     it('should create an edge collection and insert data into it', async function
       createEdges() {
-      let edges = [
+      let edges: any = [
         { info: 'Alice knows Bob', _from: result0._id, _to: result1._id, id: 'a' },
         { info: 'Bob knows Charlie', _from: result1._id, _to: result2._id, id: 'b'},
         { info: 'Bob knows Dave', _from: result1._id, _to: result3._id, id: 'c' },
@@ -86,7 +86,7 @@ function testProvider(providerCfg) {
       await db.createEdge(edgeCollectionName, edges[2]);
       await db.createEdge(edgeCollectionName, edges[3]);
       edgeResult = await db.createEdge(edgeCollectionName, edges[4]);
-      let insertedEdges = await db.find('knows');
+      let insertedEdges: any = await db.find('knows');
       edges = _.sortBy(edges, [function (o) { return o.info; }]);
       insertedEdges = _.sortBy(insertedEdges, [function (o) { return o.info; }]);
       should.exist(insertedEdges);
