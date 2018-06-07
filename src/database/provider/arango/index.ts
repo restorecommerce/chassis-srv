@@ -691,6 +691,13 @@ class Arango {
     if (_.isNil(startVertex)) {
       throw new Error('missing start vertex name');
     }
+    // grpc call automatically assigns empty strings for unused vars
+    // so deleting the empty keys
+    for (let key in opts) {
+      if (_.isEmpty(opts[key])) {
+        delete opts[key];
+      }
+    }
     const collection = this.graph.edgeCollection(collectionName);
     return collection.traversal(startVertex, opts);
   }
