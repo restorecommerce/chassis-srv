@@ -377,6 +377,10 @@ function buildReturn(options: any): any {
   return { q, bindVarsMap };
 }
 
+function encodeMessage(object: Object) {
+  return Buffer.from(JSON.stringify(object));
+}
+
 /**
  * ArangoDB database provider.
  */
@@ -403,7 +407,11 @@ class Arango {
       throw new Error('missing graph name');
     }
     this.graph = this.db.graph(graphName);
-    await this.graph.create();
+    try {
+      await this.graph.create();
+    } catch (err) {
+      return this.graph;
+    }
     return this.graph;
   }
 
@@ -670,6 +678,50 @@ class Arango {
     return collection.outEdges(verticeName);
   }
 
+  traversalFilter(filterObj: any): string {
+    let stringFilter;
+    // there could be multiple vertices
+    let condition = '';
+    for (let i = 0; i < filterObj.length; i++) {
+      // check if its last element in array
+      if (i === (filterObj.length - 1)) {
+        condition = condition + ` (vertex._id.indexOf("${filterObj[i].vertex}") > -1)`;
+      } else {
+        condition = condition + ` (vertex._id.indexOf("${filterObj[i].vertex}") > -1)  ||`;
+      }
+    }
+    stringFilter = `if (${condition}) { return \"exclude\";} return;`;
+    return stringFilter;
+  }
+
+  traversalExpander(expanderObj: any): string {
+    let expanderFilter;
+    // there could be multiple edges
+    let condition = '';
+    let directionVar;
+    for (let i = 0; i < expanderObj.length; i++) {
+      // check if its last element in array
+      if (i === (expanderObj.length - 1)) {
+        condition = condition + ` (e._id.indexOf("${expanderObj[i].edge}") > -1)`;
+      } else {
+        condition = condition + ` (e._id.indexOf("${expanderObj[i].edge}") > -1)  ||`;
+      }
+    }
+    if ((expanderObj[0].direction).toLowerCase() == 'inbound') {
+      directionVar = "getInEdges(vertex)";
+    } else {
+      directionVar = "getOutEdges(vertex)";
+    }
+    expanderFilter = `var connections = [];
+    config.datasource.${directionVar}.forEach(function (e) {
+      if( ${condition} ) {
+        connections.push({ vertex: require(\"internal\").db._document(e._to), edge: e});
+      }
+    });
+    return connections;`;
+    return expanderFilter;
+  }
+
   /**
   * collection traversal - Performs a traversal starting from the given
   * startVertex and following edges contained in this edge collection.
@@ -679,27 +731,55 @@ class Arango {
   * This can be either the _id of a document in the database,
   * the _key of an edge in the collection, or a document
   * (i.e. an object with an _id or _key property).
-  * @param  {Object} opts opts.direction opts.filter, opts.visitor,
+  * @param  {any} opts opts.direction opts.filter, opts.visitor,
   * opts.init, opts.expander, opts.sort
   * @return  {[Object]} edge traversal path
   */
-  async traversal(collectionName: string, startVertex: string, opts: Object):
+  async traversal(startVertex: string, opts: any, collectionName?: string):
     Promise<Object> {
-    if (_.isNil(collectionName)) {
-      throw new Error('missing collection name');
-    }
+    let collection;
+    let traversedData;
     if (_.isNil(startVertex)) {
       throw new Error('missing start vertex name');
     }
-    // grpc call automatically assigns empty strings for unused vars
-    // so deleting the empty keys
     for (let key in opts) {
       if (_.isEmpty(opts[key])) {
         delete opts[key];
       }
     }
-    const collection = this.graph.edgeCollection(collectionName);
-    return collection.traversal(startVertex, opts);
+
+    if (opts && opts.filter) {
+      opts.filter = this.traversalFilter(opts.filter);
+    } else if (opts && opts.expander) {
+      opts.expander = this.traversalExpander(opts.expander);
+    }
+
+    if (collectionName) {
+      collection = this.graph.edgeCollection(collectionName);
+      traversedData = await collection.traversal(startVertex, opts);
+    } else {
+      traversedData = await this.graph.traversal(startVertex, opts);
+    }
+    let response: any = {
+      vertex_fields: [],
+      data: {},
+      paths: {}
+    };
+    let encodedData = [];
+    if (traversedData.visited && traversedData.visited.vertices) {
+      for (let vertice of traversedData.visited.vertices) {
+        response.vertex_fields.push(_.pick(vertice, ['_id', '_key', '_rev', 'id']));
+        encodedData.push(_.omit(vertice, ['_key', '_rev']));
+      }
+      response.data.value = encodeMessage(encodedData);
+    }
+
+    if (traversedData.visited && traversedData.visited.paths) {
+      const encodedPaths = encodeMessage(traversedData.visited.paths);
+      response.paths.value = encodedPaths;
+    }
+
+    return response;
   }
 
   /**

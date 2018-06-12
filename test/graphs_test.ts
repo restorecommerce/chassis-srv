@@ -76,7 +76,7 @@ function testProvider(providerCfg) {
       createEdges() {
       let edges: any = [
         { info: 'Alice knows Bob', _from: result0._id, _to: result1._id, id: 'a' },
-        { info: 'Bob knows Charlie', _from: result1._id, _to: result2._id, id: 'b'},
+        { info: 'Bob knows Charlie', _from: result1._id, _to: result2._id, id: 'b' },
         { info: 'Bob knows Dave', _from: result1._id, _to: result3._id, id: 'c' },
         { info: 'Eve knows Alice', _from: result4._id, _to: result0._id, id: 'd' },
         { info: 'Eve knows Bob', _from: result4._id, _to: result1._id, id: 'e' }
@@ -105,14 +105,23 @@ function testProvider(providerCfg) {
     });
     it('should traverse the graph', async function traverseGraph() {
       // traverse graph
-      const result = await db.traversal(edgeCollectionName, result0._id,
+      let traversalResponse = await db.traversal(result0._id,
         { direction: 'outbound' });
-      should.exist(result);
-      should.exist(result.visited);
-      should.exist(result.visited.vertices);
-      should.exist(result.visited.paths);
-      result.visited.vertices.should.be.instanceof(Array).and.have.lengthOf(4);
-      result.visited.paths.should.be.instanceof(Array).and.have.lengthOf(4);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.vertex_fields);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(4);
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(4);
     });
     it('should update a vertice given the document handle', async function
     updateVertice() {
