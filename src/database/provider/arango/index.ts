@@ -377,11 +377,16 @@ function buildReturn(options: any): any {
   return { q, bindVarsMap };
 }
 
+function encodeMessage(object: Object) {
+  return Buffer.from(JSON.stringify(object));
+}
+
 /**
  * ArangoDB database provider.
  */
 class Arango {
   db: any;
+  graph: any;
   /**
    * ArangoDB provider
    *
@@ -389,6 +394,500 @@ class Arango {
    */
   constructor(conn: any) {
     this.db = conn;
+  }
+
+  /**
+   * create a Graph instance.
+   *
+   * @param  {String} graphName graph name
+   * @return  {Object} A Graph instance
+   */
+  async createGraphDB(graphName: string): Promise<Object> {
+    if (_.isNil(graphName)) {
+      throw new Error('missing graph name');
+    }
+    this.graph = this.db.graph(graphName);
+    try {
+      await this.graph.create();
+    } catch (err) {
+      return this.graph;
+    }
+    return this.graph;
+  }
+
+  /**
+   * create a new Vertex with given data.
+   *
+   * @param  {string} collectionName vertex collection name
+   * @param  {Object} data data for vertex
+   * @return  {Object} created vertex
+   */
+  async createVertex(collectionName: string, data: Object): Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing vertex collection name');
+    }
+    if (_.isNil(data)) {
+      throw new Error('missing data for vertex');
+    }
+    const collection = this.graph.vertexCollection(collectionName);
+    const doc = await collection.save(data);
+    return doc;
+  }
+
+  /**
+   * Retreives the vertex with the given documentHandle from the collection.
+   *
+   * @param  {string} collectionName vertex collection name
+   * @param  {string} documentHandle The handle of the vertex to retrieve.
+   * This can be either the _id or the _key of a vertex in the collection,
+   * or a vertex (i.e. an object with an _id or _key property).
+   * @return  {Object} created vertex
+   */
+  async getVertex(collectionName: string, documentHandle: string): Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing vertex collection name');
+    }
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing document handle');
+    }
+    const collection = this.graph.vertexCollection(collectionName);
+    const doc = await collection.vertex(documentHandle);
+    return doc;
+  }
+
+  /**
+   * Deletes the vertex with the given documentHandle from the collection.
+   *
+   * @param {string} collectionName vertex collection name
+   * @param  {string} documentHandle The handle of the vertex to retrieve.
+   * This can be either the _id or the _key of a vertex in the collection,
+   * or a vertex (i.e. an object with an _id or _key property).
+   * @return  {Object} created vertex
+   */
+  async removeVertex(collectionName: string, documentHandle: string): Promise<void> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing vertex collection name');
+    }
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing document handle');
+    }
+    const collection = this.graph.vertexCollection(collectionName);
+    return collection.remove(documentHandle);
+  }
+
+  /**
+   * gets a new GraphVertexCollection instance with the given name for this graph.
+   *
+   * @param  {string} collectionName The handle of the vertex to retrieve.
+   * This can be either the _id or the _key of a vertex in the collection,
+   * or a vertex (i.e. an object with an _id or _key property).
+   * @return  {Object} created vertex
+   */
+  async getVertexCollection(collectionName: string): Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing vertex collection name');
+    }
+
+    const collection = await this.graph.vertexCollection(collectionName);
+    return collection;
+  }
+
+  /**
+   * Fetches all vertex collections from the graph and returns
+   * an array of collection descriptions.
+   *
+   * @param  {boolean} excludeOrphans Whether orphan collections should be excluded.
+   * @return  {Array<Object>} vertex list
+   */
+  async listVertexCollections(excludeOrphans?: boolean): Promise<[Object]> {
+    if (!excludeOrphans) {
+      excludeOrphans = false;
+    }
+    const collections = await this.graph.listVertexCollections(excludeOrphans);
+    return collections;
+  }
+
+  /**
+   * Fetches all vertex collections from the database and returns an array
+   * of GraphVertexCollection instances for the collections.
+   *
+   * @param  {boolean} excludeOrphans Whether orphan collections should be excluded.
+   * @return  {Array<Object>} vertex list
+   */
+  async getAllVertexCollections(excludeOrphans?: boolean): Promise<[Object]> {
+    if (_.isNil(excludeOrphans)) {
+      excludeOrphans = false;
+    }
+    const collections = await this.graph.vertexCollections(excludeOrphans);
+    return collections;
+  }
+
+  /**
+   * Adds the collection with the given collectionName to the graph's
+   * vertex collections.
+   *
+   * @param  {string} collectionName Name of the vertex collection to add to the graph.
+   * @param  {boolean} excludeOrphans Whether orphan collections should be excluded.
+   * @return  {Array<Object>} vertex list
+   */
+  async addVertexCollection(collectionName: string, dropCollection?: boolean):
+    Promise<[Object]> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing vertex collection name');
+    }
+    const collections = await this.graph.addVertexCollection(collectionName);
+    return collections;
+  }
+
+  /**
+   * Removes the vertex collection with the given collectionName from the graph.
+   *
+   * @param  {string} collectionName Name of the vertex collection to remove from the graph.
+   * @param  {boolean} dropCollection If set to true, the collection will
+   * also be deleted from the database.
+   * @return  {Object } removed vertex
+   */
+  async removeVertexCollection(collectionName: string, dropCollection?: boolean):
+    Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing vertex collection name');
+    }
+    if (_.isNil(dropCollection)) {
+      dropCollection = false;
+    }
+    const collection = await this.graph.removeVertexCollection(collectionName,
+      dropCollection);
+    return collection;
+  }
+
+  /**
+   * get a Graph instance.
+   *
+   * @param  {String} dbName database name
+   * @return  {Object} A Graph instance
+   */
+  getGraphDB(dbName: string): Object {
+    if (_.isNil(dbName)) {
+      throw new Error('missing db name');
+    }
+    this.graph = this.db.graph(dbName);
+    return this.graph;
+  }
+
+  /**
+   * Creates a new edge between the vertices fromId and toId with the given data.
+   *
+   * @param  {string} collectionName name of the edge collection
+   * @param  {Object} data The data of the new edge. If fromId and toId are not
+   * specified, the data needs to contain the properties _from and _to.
+   * @param  {string} fromId The handle of the start vertex of this edge.
+   * This can be either the _id of a document in the database, the _key of an
+   * edge in the collection, or a document (i.e. an object with an _id or _key property).
+   * @param {string} toId The handle of the end vertex of this edge.
+   * This can be either the _id of a document in the database, the _key of an
+   * edge in the collection, or a document (i.e. an object with an _id or _key property).
+   * @return  {Object} edge object
+   */
+  async createEdge(collectionName: string, data: Object, fromId?: string,
+    toId?: string): Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(data)) {
+      throw new Error('missing data for the edge');
+    }
+    const collection = this.graph.edgeCollection(collectionName);
+    return collection.save(data, fromId, toId);
+  }
+
+  /**
+   * Retrieves the edge with the given documentHandle from the collection.
+   *
+   * @param  {String} collectionName collection name
+   * @param  {String} documentHandle edge key
+   * @return  {Object} edge object
+   */
+  async getEdge(collectionName: string, documentHandle: string): Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing docuemnt handle');
+    }
+    const collection = this.graph.edgeCollection(collectionName);
+    return collection.edge(documentHandle);
+  }
+
+  /**
+  * Retrieves a list of all edges of the document with the given documentHandle.
+  *
+  * @param  {String} collectionName edge collection name
+  * @param  {String} documentHandle The handle of the document to retrieve
+  * the edges of. This can be either the _id of a document in the database,
+  * the _key of an edge in the collection, or a document
+  * (i.e. an object with an _id or _key property).
+  * @return  {Object} edge object
+  */
+  async getAllEdgesForVertice(collectionName: string, documentHandle: string):
+    Promise<[Object]> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing document handle');
+    }
+    const collection = this.graph.edgeCollection(collectionName);
+    return collection.edges(documentHandle);
+  }
+
+  /**
+  * get all incoming edges.
+  *
+  * @param  {String} collectionName edge collection name
+  * @param  {String} documentHandle vertice name
+  * @return  {[Object]} list of edges
+  */
+  async getInEdges(collectionName: string, documentHandle: string):
+    Promise<[Object]> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge name');
+    }
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing document handle');
+    }
+    const collection = this.graph.edgeCollection(collectionName);
+    return collection.inEdges(documentHandle);
+  }
+
+  /**
+  * get all outgoing edges.
+  *
+  * @param  {String} collectionName edge collection name
+  * @param  {String} verticeName vertice name
+  * @return  {[Object]} list of edges
+  */
+  async getOutEdges(collectionName: string, verticeName: string):
+    Promise<[Object]> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(verticeName)) {
+      throw new Error('missing vertice name');
+    }
+    const collection = this.graph.edgeCollection(collectionName);
+    return collection.outEdges(verticeName);
+  }
+
+  traversalFilter(filterObj: any): string {
+    let stringFilter;
+    // there could be multiple vertices
+    let condition = '';
+    for (let i = 0; i < filterObj.length; i++) {
+      // check if its last element in array
+      if (i === (filterObj.length - 1)) {
+        condition = condition + ` (vertex._id.indexOf("${filterObj[i].vertex}") > -1)`;
+      } else {
+        condition = condition + ` (vertex._id.indexOf("${filterObj[i].vertex}") > -1)  ||`;
+      }
+    }
+    stringFilter = `if (${condition}) { return \"exclude\";} return;`;
+    return stringFilter;
+  }
+
+  traversalExpander(expanderObj: any): string {
+    let expanderFilter;
+    // there could be multiple edges
+    let condition = '';
+    let directionVar;
+    for (let i = 0; i < expanderObj.length; i++) {
+      // check if its last element in array
+      if (i === (expanderObj.length - 1)) {
+        condition = condition + ` (e._id.indexOf("${expanderObj[i].edge}") > -1)`;
+      } else {
+        condition = condition + ` (e._id.indexOf("${expanderObj[i].edge}") > -1)  ||`;
+      }
+    }
+    if ((expanderObj[0].direction).toLowerCase() == 'inbound') {
+      directionVar = "getInEdges(vertex)";
+    } else {
+      directionVar = "getOutEdges(vertex)";
+    }
+    expanderFilter = `var connections = [];
+    config.datasource.${directionVar}.forEach(function (e) {
+      if( ${condition} ) {
+        connections.push({ vertex: require(\"internal\").db._document(e._to), edge: e});
+      }
+    });
+    return connections;`;
+    return expanderFilter;
+  }
+
+  /**
+  * collection traversal - Performs a traversal starting from the given
+  * startVertex and following edges contained in this edge collection.
+  *
+  * @param {String} collectionName collection name
+  * @param  {String} startVertex The handle of the start vertex.
+  * This can be either the _id of a document in the database,
+  * the _key of an edge in the collection, or a document
+  * (i.e. an object with an _id or _key property).
+  * @param  {any} opts opts.direction opts.filter, opts.visitor,
+  * opts.init, opts.expander, opts.sort
+  * @return  {[Object]} edge traversal path
+  */
+  async traversal(startVertex: string, opts: any, collectionName?: string):
+    Promise<Object> {
+    let collection;
+    let traversedData;
+    if (_.isNil(startVertex)) {
+      throw new Error('missing start vertex name');
+    }
+    for (let key in opts) {
+      if (_.isEmpty(opts[key])) {
+        delete opts[key];
+      }
+    }
+
+    if (opts && opts.filter) {
+      opts.filter = this.traversalFilter(opts.filter);
+    } else if (opts && opts.expander) {
+      opts.expander = this.traversalExpander(opts.expander);
+    }
+
+    if (collectionName) {
+      collection = this.graph.edgeCollection(collectionName);
+      traversedData = await collection.traversal(startVertex, opts);
+    } else {
+      traversedData = await this.graph.traversal(startVertex, opts);
+    }
+    let response: any = {
+      vertex_fields: [],
+      data: {},
+      paths: {}
+    };
+    let encodedData = [];
+    if (traversedData.visited && traversedData.visited.vertices) {
+      for (let vertice of traversedData.visited.vertices) {
+        response.vertex_fields.push(_.pick(vertice, ['_id', '_key', '_rev', 'id']));
+        encodedData.push(_.omit(vertice, ['_key', '_rev']));
+      }
+      response.data.value = encodeMessage(encodedData);
+    }
+
+    if (traversedData.visited && traversedData.visited.paths) {
+      const encodedPaths = encodeMessage(traversedData.visited.paths);
+      response.paths.value = encodedPaths;
+    }
+
+    return response;
+  }
+
+  /**
+  * Adds the given edge definition to the graph.
+  *
+  * @param  {string} collectionName edge collection name
+  * @param  {Object} fromVertice from vertice
+  * @param  {Object} toVertice from vertice
+  * @return  {Object} The added edge definition
+  */
+  async addEdgeDefinition(collectionName: string, fromVertice: [Object],
+    toVertice: [Object]): Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(fromVertice)) {
+      throw new Error('missing from vertice');
+    }
+    if (_.isNil(toVertice)) {
+      throw new Error('missing to vertice');
+    }
+
+    if (!_.isArray(fromVertice)) {
+      fromVertice = [fromVertice];
+    }
+
+    if (!_.isArray(toVertice)) {
+      toVertice = [toVertice];
+    }
+
+    return this.graph.addEdgeDefinition(
+      {
+        collection: collectionName,
+        from: fromVertice,
+        to: toVertice
+      }
+    );
+  }
+
+  /**
+  *  Replaces the edge definition for the edge collection named
+  *  collectionName with the given definition.
+  *
+  * @param  {string} collectionName Name of the edge collection
+  * to replace the definition of.
+  * @param  {Object} definition
+  * @return  {Object} replaced edge definition
+  */
+  async replaceEdgeDefinition(collectionName: string, definition: Object):
+    Promise<Object> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(definition)) {
+      throw new Error('missing edge definition');
+    }
+
+    return this.graph.replaceEdgeDefinition(collectionName, definition);
+  }
+
+  /**
+  *  Removes the edge definition with the given definitionName form the graph.
+  *
+  * @param  {string} definitionName Name of the edge definition
+  * to remove from the graph.
+  * @param  {boolean} dropCollection If set to true, the edge collection
+  * associated with the definition will also be deleted from the database.
+  * @return  {Object} replaced edge definition
+  */
+  async removeEdgeDefinition(definitionName: string, dropCollection?: boolean):
+    Promise<Object> {
+    if (_.isNil(definitionName)) {
+      throw new Error('missing definition name');
+    }
+
+    if (!dropCollection) {
+      dropCollection = false;
+    }
+    return this.graph.removeEdgeDefinition(definitionName, dropCollection);
+  }
+
+  /**
+   * list graphs.
+   *
+   * @return  {Promise<any>} list all the graphs
+   */
+  async listGraphs(): Promise<any> {
+    return this.graph.listGraphs();
+  }
+
+  /**
+   * Deletes the edge with the given documentHandle from the collection.
+   *
+   * @param {string} collectionName edge collection name
+   * @param  {string} documentHandle The handle of the edge to retrieve.
+   * This can be either the _id or the _key of an edge in the collection,
+   * or an edge (i.e. an object with an _id or _key property).
+   * @return  {Object} removed Edge
+   */
+  async removeEdge(collectionName: string, documentHandle: string): Promise<any> {
+    if (_.isNil(collectionName)) {
+      throw new Error('missing edge collection name');
+    }
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing document handle');
+    }
+    const collection = this.graph.edgeCollection(collectionName);
+    return collection.remove(documentHandle);
   }
 
   /**
