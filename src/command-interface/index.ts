@@ -4,6 +4,7 @@ import * as errors from './../microservice/errors';
 import * as database from './../database';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
+import { EventEmitter } from 'events';
 
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -229,10 +230,20 @@ export class CommandInterface implements ICommandInterface {
         const that = this;
         // Start the restore process
         this.logger.warn('restoring data');
+
         for (let topicName in restoreEventSetup) {
           const topicSetup: any = restoreEventSetup[topicName];
           const restoreTopic: Topic = topicSetup.topic;
           const topicEvents: any = topicSetup.events;
+
+          // saving listeners for potentially subscribed events on this topic,
+          // so they don't get called during the restore process
+          const previousEvents: string[] = _.cloneDeep(restoreTopic.subscribed);
+          const listenersBackup = new Map<string, Function[]>();
+          for (let event of previousEvents) {
+            listenersBackup.set(event, (restoreTopic.emitter as EventEmitter).listeners(event));
+            await restoreTopic.removeAllListeners(event);
+          }
 
           // const eventNames = _.keys(restoreTopic.events);
           const baseOffset: number = topicSetup.baseOffset;
@@ -257,6 +268,13 @@ export class CommandInterface implements ICommandInterface {
             if (ctx.offset >= targetOffset) {
               for (let event of eventNames) {
                 await restoreTopic.removeAllListeners(eventName);
+              }
+
+              for (let event of previousEvents) {
+                const listeners = listenersBackup.get(event);
+                for (let listener of listeners) {
+                  await restoreTopic.on(event, listener);
+                }
               }
 
               const msg = {
