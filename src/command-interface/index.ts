@@ -267,7 +267,7 @@ export class CommandInterface implements ICommandInterface {
 
             if (ctx.offset >= targetOffset) {
               for (let event of eventNames) {
-                await restoreTopic.removeAllListeners(eventName);
+                await restoreTopic.removeAllListeners(event);
               }
 
               for (let event of previousEvents) {
