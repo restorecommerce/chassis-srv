@@ -88,7 +88,7 @@ function autoCastKey(key: any, value?: any): any {
  */
 function autoCastValue(value: any): any {
   if (_.isArray(value)) {
-    return value.map(value => `"${value.toString()}"`);
+    return value.map(value => value.toString());
   }
   if (_.isString(value)) { // String
     return value;
