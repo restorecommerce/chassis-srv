@@ -7,22 +7,6 @@ The generic command interface allows querying information from and triggering ac
 
 Technically, the command interface is described by the `Command` endpoint. This endpoint is available as [gRPC](https://grpc.io/docs/) interface and event-driven communication through Kafka. Request and response message structures are defined using [Protocol Buffers](https://developers.google.com/protocol-buffers/) in the [commandinterface.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/commandinterface.proto) file. Due to the high variability among all command possible parametes, the `payload` field is defined as a `google.protobuf.Any` message (see [google](https://github.com/restorecommerce/protos/tree/master/google/protobuf) protos), as well as all gRPC response messages. The `CommandResponse` message is mainly used on Kafka events, as it contains a `services` field, which identifies all services bound to a specific microservice. 
 
-The `CommandResource` resource can be used to build an introspectable catalog of available commands in a system made up by a set of microservices. Individual commands are then represented by entries in the collection of these resources. The data structure for such entries is defined in [command.proto](https://github.com/restorecommerce/protos/blob/master/io/restorecommerce/command.proto).
-A command can be concisely described so that although the command interface itself is generic, a UI for each command can be built dynamically from interpreting command resource instances. For example:
-
-```json
-{
-  "name": "health_check",
-  "parameters": [
-    {
-      "field": "service",
-      "description": "Name of the service to be checked (note that a microservice may have more than one 'service')"
-    }
-   ],
-   "description": "A microservice health check."
-}
-```
-
 The following common system commands are available (also see below):
 
 - check (microservice health check)
