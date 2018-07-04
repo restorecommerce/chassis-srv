@@ -262,7 +262,7 @@ export class CommandInterface implements ICommandInterface {
               const eventListener = topicEvents[eventName];
               await eventListener(message, eventName);
             } catch (e) {
-              that.logger.debug('Exception caught :', e.message);
+              that.logger.debug('Exception caught:', e.message);
             }
 
             if (ctx.offset >= targetOffset) {

@@ -20,10 +20,8 @@ export class OffsetStore {
       throw new Error('Missing logger config or object');
     }
     if (_.isNil(events)) {
-      if (logger.error) {
-        logger.error('No Kafka client was provided, offsets will not be stored to redis');
-        return;
-      }
+      logger.error('No Kafka client was provided, offsets will not be stored to redis');
+      return;
     }
 
     this.config = config;
@@ -94,8 +92,8 @@ export class OffsetStore {
         resolve(response);
       });
     });
-    this.logger.info('The offset value retreived from redis for topic is :',
-      topicName, offsetValue);
+    this.logger.info('The offset value retreived from redis for topic is:',
+      { topicName, offsetValue });
     return offsetValue;
   }
 

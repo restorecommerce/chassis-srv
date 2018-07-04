@@ -260,7 +260,7 @@ export class ServerReflection {
           await call.end();
           return;
         }
-        logger.error(error);
+        logger.error('Error reading stream on serverReflectionInfo', error);
         continue;
       }
       const methodName = req.message_request;

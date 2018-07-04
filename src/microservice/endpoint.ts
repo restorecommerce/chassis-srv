@@ -40,16 +40,19 @@ export function makeEndpoint(middleware: any[], service: any, transportName: str
         request);
       const result = await e(request, ctx);
       logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} result`,
-        request, result);
+        { request, result });
       return result;
     } catch (err) {
       if (err instanceof SyntaxError || err instanceof RangeError ||
         err instanceof ReferenceError || err instanceof TypeError) {
         logger.error(`request to method ${ctx.method} over transport ${ctx.transport} error`,
-          request, err.stack);
+          {
+            request,
+            err: err.stack
+          });
       } else {
         logger.info(`request to method ${ctx.method} over transport ${ctx.transport} error`,
-          request, err);
+          { request, err });
       }
       throw err;
     }

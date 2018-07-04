@@ -224,7 +224,7 @@ export class Server {
     if (_.isNil(protos) || _.size(protos) === 0) {
       throw new Error('config value protos is not set');
     }
-    this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, protos);
+    this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`,  { protos });
 
 
     const proto = [];

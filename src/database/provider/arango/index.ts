@@ -1222,7 +1222,8 @@ async function connect(conf: any, logger: any): Promise<any> {
   let i = 1;
   try {
     return await retry(async () => {
-      logger.info('Attempt to connect database', dbHost, dbPort, dbName, {
+      logger.info('Attempt to connect database', {
+        dbHost, dbPort, dbName,
         attempt: i
       });
       i += 1;
@@ -1255,9 +1256,8 @@ async function connect(conf: any, logger: any): Promise<any> {
   }
   catch (err) {
     logger.error(
-      'Database connection error',
-      err, dbHost, dbPort, dbName, {
-        attempt: i
+      'Database connection error', {
+        err, dbHost, dbPort, dbName, attempt: i
       });
     mainError = err;
   }
