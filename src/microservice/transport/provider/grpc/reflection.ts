@@ -478,20 +478,29 @@ export class ServerReflection {
     _.forEach(transports, (transport: any) => {
       const srvs = _.values(transport.services);
       if (_.includes(srvs, 'grpc.reflection.v1alpha.ServerReflection')) {
-        services = _.concat(services, srvs);
+        services = _.concat(services, transport.services);
       }
     });
     services = _.uniq(services);
+    let labelSrvMapping = [];
     services = _.map(services, (service) => {
-      return {
-        name: service,
-      };
+      // Map the service label to name of the serivce
+      for (let key in service) {
+        if (service.hasOwnProperty(key)) {
+          const obj = {
+            label: key,
+            name: service[key]
+          };
+          labelSrvMapping.push(obj);
+        }
+      }
+      return labelSrvMapping;
     });
     return {
       valid_host: req.host,
       original_request: req,
       list_services_response: {
-        service: services,
+        service: services[0],
       },
     };
   }

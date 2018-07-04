@@ -23,7 +23,7 @@
     "arangojs": "^6.3.0",
     "async-retry": "^1.2.1",
     "cache-manager": "^2.9.0",
-    "grpc": "^1.10.1",
+    "grpc": "1.10.1",
     "lodash": "^4.17.5",
     "nedb": "^1.8.0",
     "protobufjs": "^6.8.6",
