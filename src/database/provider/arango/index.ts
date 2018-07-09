@@ -465,20 +465,30 @@ class Arango {
    * Deletes the vertex with the given documentHandle from the collection.
    *
    * @param {string} collectionName vertex collection name
-   * @param  {string} documentHandle The handle of the vertex to retrieve.
+   * @param  {string[]} documentHandles An array of the documentHandles to be removed.
    * This can be either the _id or the _key of a vertex in the collection,
    * or a vertex (i.e. an object with an _id or _key property).
-   * @return  {Object} created vertex
+   * @return  {Object} removed vertex
    */
-  async removeVertex(collectionName: string, documentHandle: string): Promise<void> {
+  async removeVertex(collectionName: string, documentHandles: string[]): Promise<any> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
-    if (_.isNil(documentHandle)) {
-      throw new Error('missing document handle');
+    if (_.isNil(documentHandles)) {
+      throw new Error('missing document handle property');
+    }
+    if (!_.isArray(documentHandles)) {
+      documentHandles = [documentHandles];
     }
     const collection = this.graph.vertexCollection(collectionName);
-    return collection.remove(documentHandle);
+    let removedVertexList = [];
+    for (let documentHandle of documentHandles) {
+      removedVertexList.push(await collection.remove(documentHandle));
+    }
+    if (removedVertexList.length === 1) {
+      return removedVertexList[0];
+    }
+    return removedVertexList;
   }
 
   /**
