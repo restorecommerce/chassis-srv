@@ -410,7 +410,10 @@ class Arango {
     try {
       await this.graph.create();
     } catch (err) {
-      return this.graph;
+      if (err.message === 'graph already exists') {
+        return this.graph;
+      }
+      throw err;
     }
     return this.graph;
   }
@@ -430,6 +433,9 @@ class Arango {
       throw new Error('missing data for vertex');
     }
     const collection = this.graph.vertexCollection(collectionName);
+    _.forEach(data, (document, i) => {
+      data[i] = ensureKey(document);
+    });
     const doc = await collection.save(data);
     return doc;
   }
@@ -535,7 +541,15 @@ class Arango {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
-    const collections = await this.graph.addVertexCollection(collectionName);
+    let collections;
+    try {
+      collections = await this.graph.addVertexCollection(collectionName);
+    } catch (err) {
+      if (err.message === 'collection already used in edge def') {
+        return collections;
+      }
+      throw err;
+    }
     return collections;
   }
 
@@ -594,7 +608,7 @@ class Arango {
       throw new Error('missing edge collection name');
     }
     if (_.isNil(data)) {
-      throw new Error('missing data for the edge');
+      data = {};
     }
     const collection = this.graph.edgeCollection(collectionName);
     return collection.save(data, fromId, toId);
@@ -810,13 +824,22 @@ class Arango {
       toVertice = [toVertice];
     }
 
-    return this.graph.addEdgeDefinition(
-      {
-        collection: collectionName,
-        from: fromVertice,
-        to: toVertice
+    let edgeDef;
+    try {
+      edgeDef = await this.graph.addEdgeDefinition(
+        {
+          collection: collectionName,
+          from: fromVertice,
+          to: toVertice
+        }
+      );
+    } catch (err) {
+      // if edge def already exists return
+      if (err.message === 'multi use of edge collection in edge def') {
+        return edgeDef;
       }
-    );
+      throw err;
+    }
   }
 
   /**
