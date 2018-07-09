@@ -479,7 +479,7 @@ class Arango {
       throw new Error('missing document handle property');
     }
     if (!_.isArray(documentHandles)) {
-      documentHandles = [documentHandles];
+      documentHandles = [documentHandles as string];
     }
     const collection = this.graph.vertexCollection(collectionName);
     let removedVertexList = [];
@@ -1038,10 +1038,10 @@ class Arango {
       throw new Error('invalid or missing ids argument');
     }
     if (!_.isArray(ids)) {
-      ids = [ids];
+      ids = [ids as string];
     }
     const idVals = new Array(ids.length);
-    const filter = ids.map((id) => {
+    const filter = (ids as string[]).map((id) => {
       return { id };
     });
 
