@@ -107,13 +107,14 @@ function autoCastValue(value: any): any {
 
 /**
  * Links children of filter together via a comparision operator.
- * @param {Object} filter
+ * @param {any} filter
  * @param {string} op comparision operator
  * @param {number} index to keep track of bind variables
  * @param {any} bindVarsMap mapping of keys to values for bind variables
  * @return {any} query template string and bind variables
  */
-function buildComparison(filter, op, index, bindVarsMap): any {
+function buildComparison(filter: any, op: String, index: number,
+  bindVarsMap: any): any {
   const ele = _.map(filter, (e) => {
     if (!_.isArray(e)) {
       e = [e];
@@ -470,7 +471,7 @@ class Arango {
    * or a vertex (i.e. an object with an _id or _key property).
    * @return  {Object} removed vertex
    */
-  async removeVertex(collectionName: string, documentHandles: string[]): Promise<any> {
+  async removeVertex(collectionName: string, documentHandles: string | string[]): Promise<any> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
@@ -814,8 +815,8 @@ class Arango {
   * @param  {Object} toVertice from vertice
   * @return  {Object} The added edge definition
   */
-  async addEdgeDefinition(collectionName: string, fromVertice: [Object],
-    toVertice: [Object]): Promise<Object> {
+  async addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
+    toVertice: Object | [Object]): Promise<Object> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
@@ -1027,7 +1028,7 @@ class Arango {
    * @param  {String|array.String} ids  A single ID or multiple IDs.
    * @return {Promise<any>} A list of found documents.
    */
-  async findByID(collectionName: string, ids: any): Promise<any> {
+  async findByID(collectionName: string, ids: string | string[]): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
