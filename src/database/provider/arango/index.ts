@@ -434,11 +434,15 @@ class Arango {
       throw new Error('missing data for vertex');
     }
     const collection = this.graph.vertexCollection(collectionName);
-    _.forEach(data, (document, i) => {
-      data[i] = ensureKey(document);
+    let docs = _.cloneDeep(data);
+    if (!_.isArray(docs)) {
+      docs = [docs];
+    }
+    _.forEach(docs, (document, i) => {
+      docs[i] = ensureKey(document);
     });
-    const doc = await collection.save(data);
-    return doc;
+    await collection.save(docs);
+    return _.map(docs, sanitizeFields);
   }
 
   /**
@@ -1085,7 +1089,6 @@ class Arango {
     let queryString = aql`FOR node in ${collection}
       FILTER node.id == ${doc.id}
       UPDATE node WITH ${doc} in ${collection} return NEW`;
-
     const res = await query(this.db, collectionName, queryString);
     const upDocs = await res.all();
     return _.map(upDocs, (d) => {

@@ -45,11 +45,7 @@ function testProvider(providerCfg) {
     should.exist(db);
   });
   describe('Graphs Collection API', () => {
-    let result0;
-    let result1;
-    let result2;
-    let result3;
-    let result4;
+    let result;
     let edgeResult;
     it('should create a vertex collection and insert data into it', async function
     createVertices() {
@@ -60,12 +56,7 @@ function testProvider(providerCfg) {
         { name: 'Dave', id: 'd' },
         { name: 'Eve', id: 'e' }
       ];
-      result0 = await db.createVertex(vertexCollectionName, vertices[0]);
-      result1 = await db.createVertex(vertexCollectionName, vertices[1]);
-      result2 = await db.createVertex(vertexCollectionName, vertices[2]);
-      result3 = await db.createVertex(vertexCollectionName, vertices[3]);
-      result4 = await db.createVertex(vertexCollectionName, vertices[4]);
-
+      result = await db.createVertex(vertexCollectionName, vertices);
       // verify the data from DB
       let insertedVertices = await db.find('person');
       insertedVertices = _.sortBy(insertedVertices, [function (o) { return o.name; }]);
@@ -75,11 +66,11 @@ function testProvider(providerCfg) {
     it('should create an edge collection and insert data into it', async function
       createEdges() {
       let edges: any = [
-        { info: 'Alice knows Bob', _from: result0._id, _to: result1._id, id: 'a' },
-        { info: 'Bob knows Charlie', _from: result1._id, _to: result2._id, id: 'b' },
-        { info: 'Bob knows Dave', _from: result1._id, _to: result3._id, id: 'c' },
-        { info: 'Eve knows Alice', _from: result4._id, _to: result0._id, id: 'd' },
-        { info: 'Eve knows Bob', _from: result4._id, _to: result1._id, id: 'e' }
+        { info: 'Alice knows Bob', _from: `person/${result[0].id}`, _to: `person/${result[1].id}`, id: 'e1' },
+        { info: 'Bob knows Charlie', _from: `person/${result[1].id}`, _to: `person/${result[2].id}`, id: 'e2' },
+        { info: 'Bob knows Dave', _from: `person/${result[1].id}`, _to: `person/${result[3].id}`, id: 'e3' },
+        { info: 'Eve knows Alice', _from: `person/${result[4].id}`, _to: `person/${result[0].id}`, id: 'e4' },
+        { info: 'Eve knows Bob', _from: `person/${result[4].id}`, _to: `person/${result[1].id}`, id: 'e5'}
       ];
       await db.createEdge(edgeCollectionName, edges[0]);
       await db.createEdge(edgeCollectionName, edges[1]);
@@ -94,18 +85,18 @@ function testProvider(providerCfg) {
     });
     it('should verify incoming and outgoing edges', async function verfiyEdges() {
       // get incoming edges for Vertice Alice
-      const incomingEdges = await db.getInEdges(edgeCollectionName, result0._id);
+      const incomingEdges = await db.getInEdges(edgeCollectionName, `person/${result[0].id}`);
       should.exist(incomingEdges);
       incomingEdges[0].info.should.equal('Eve knows Alice');
 
       // get outgoing edges for Vertice Alice
-      let outgoingEdges = await db.getOutEdges(edgeCollectionName, result0._id);
+      let outgoingEdges = await db.getOutEdges(edgeCollectionName, `person/${result[0].id}`);
       should.exist(outgoingEdges);
       outgoingEdges[0].info.should.equal('Alice knows Bob');
     });
     it('should traverse the graph', async function traverseGraph() {
       // traverse graph
-      let traversalResponse = await db.traversal(result0._id,
+      let traversalResponse = await db.traversal(`person/${result[0].id}`,
         { direction: 'outbound' });
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
@@ -125,11 +116,11 @@ function testProvider(providerCfg) {
     });
     it('should update a vertice given the document handle', async function
     updateVertice() {
-      const doc = await db.getVertex(vertexCollectionName, result4._id);
+      const doc = await db.getVertex(vertexCollectionName, `person/${result[4].id}`);
       // doc with updated name
       doc.name = 'test';
       await db.update(vertexCollectionName, { id: 'e' }, doc);
-      const newdoc = await db.getEdge(vertexCollectionName, result4._id);
+      const newdoc = await db.getEdge(vertexCollectionName, `person/${result[4].id}`);
       doc.name.should.equal('test');
     });
     it('should update a edge given the document handle', async function
@@ -143,7 +134,7 @@ function testProvider(providerCfg) {
     });
     it('should remove a vertice given the document handle', async function
     removeVertice() {
-      const removedDoc = await db.removeVertex(vertexCollectionName, result2._id);
+      const removedDoc = await db.removeVertex(vertexCollectionName, `person/${result[2].id}`);
       should.exist(removedDoc);
       removedDoc.should.equal(true);
     });
