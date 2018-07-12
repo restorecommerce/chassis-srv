@@ -673,7 +673,7 @@ class Arango {
   * get all incoming edges.
   *
   * @param  {String} collectionName edge collection name
-  * @param  {String} documentHandle vertice name
+  * @param  {String} documentHandle The handle of the document
   * @return  {[Object]} list of edges
   */
   async getInEdges(collectionName: string, documentHandle: string):
@@ -692,19 +692,19 @@ class Arango {
   * get all outgoing edges.
   *
   * @param  {String} collectionName edge collection name
-  * @param  {String} verticeName vertice name
+  * @param  {String} documentHandle The handle of the document
   * @return  {[Object]} list of edges
   */
-  async getOutEdges(collectionName: string, verticeName: string):
+  async getOutEdges(collectionName: string, documentHandle: string):
     Promise<[Object]> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
-    if (_.isNil(verticeName)) {
-      throw new Error('missing vertice name');
+    if (_.isNil(documentHandle)) {
+      throw new Error('missing document handle');
     }
     const collection = this.graph.edgeCollection(collectionName);
-    return collection.outEdges(verticeName);
+    return collection.outEdges(documentHandle);
   }
 
   traversalFilter(filterObj: any): string {
