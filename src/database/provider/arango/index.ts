@@ -15,7 +15,7 @@ const DB_SYSTEM = '_system';
 async function query(db: any, collectionName: string, query: any,
   args?: Object): Promise<any> {
   try {
-    return await db.query(query, args);
+    return db.query(query, args);
   } catch (err) {
     if (err.message && err.message.indexOf('collection not found') == -1) {
       throw err;
@@ -24,7 +24,7 @@ async function query(db: any, collectionName: string, query: any,
   const collection = db.collection(collectionName);
   await collection.create();
   await collection.load(false);
-  return await db.query(query, args);
+  return db.query(query, args);
 }
 
 /**
@@ -426,7 +426,7 @@ class Arango {
    * @param  {Object} data data for vertex
    * @return  {Object} created vertex
    */
-  async createVertex(collectionName: string, data: Object): Promise<Object> {
+  async createVertex(collectionName: string, data: any): Promise<any> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
