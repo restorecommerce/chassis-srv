@@ -290,7 +290,7 @@ export class CommandInterface implements ICommandInterface {
             }
           };
           for (let eventName of eventNames) {
-            await restoreTopic.on(eventName, listener, baseOffset);
+            await restoreTopic.on(eventName, listener, { startingOffset: baseOffset });
           }
         }
 
