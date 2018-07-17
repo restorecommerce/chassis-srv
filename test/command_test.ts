@@ -53,7 +53,7 @@ describe('CommandInterfaceService', () => {
   let validate;
   const eventListener = async function (msg: any,
     context: any, config: any, eventName: string): Promise<any> {
-    validate(msg, eventName);
+    await validate(msg, eventName);
   };
   before(async function setup() {
     cfg = sconfig(process.cwd() + '/test');
@@ -164,7 +164,7 @@ describe('CommandInterfaceService', () => {
   describe('reset', () => {
     const docID = 'test/value';
     before(async function prepareDatabase() {
-      await db.insert('test', {
+      await db.insert('tests', {
         id: docID,
         value: 101,
       });
@@ -187,7 +187,7 @@ describe('CommandInterfaceService', () => {
       should.not.exist(resp.error);
       should.exist(resp.data);
 
-      const result = await db.findByID('test', docID);
+      const result = await db.findByID('tests', docID);
       result.should.be.length(0);
     });
 
@@ -201,11 +201,11 @@ describe('CommandInterfaceService', () => {
       }
     });
     beforeEach(async function prepareDB() {
-      await db.truncate('test');
+      await db.truncate('tests');
     });
     it('should re-read all data from specified offset', async function restore() {
-      this.timeout(3000);
-      validate = function (msg: any, eventName: string) {
+      this.timeout(5000);
+      validate = async function (msg: any, eventName: string) {
         eventName.should.equal('restoreResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -214,26 +214,25 @@ describe('CommandInterfaceService', () => {
         should.not.exist(payload.error);
         // restore conclusion is checked asynchronously, since it can take a variable
         // and potentially large amount of time
-        db.find('test', {}, {
+        const result = await db.find('tests', {}, {
           sort: {
             count: 1
           }
-        }).then((result) => {
-          result.should.be.length(5);
-          for (let i = 5; i < 10; i++) {
-            result[i].count.should.equal(i);
-          }
         });
+        for (let i = 0; i < 10; i++) {
+          result[i].count.should.equal(i);
+        }
       };
 
       // waiting for restore conclusion
       const offset = await commandTopic.$offset(-1);
+      const resourceOffset = await testTopic.$offset(-1);
 
       const cmdPayload = encodeMsg({
         data: [
           {
             entity: 'test',
-            base_offset: offset - 5,
+            base_offset: resourceOffset - 10,
             ignore_offset: []
           }
         ]

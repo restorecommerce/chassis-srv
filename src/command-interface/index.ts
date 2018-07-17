@@ -253,14 +253,14 @@ export class CommandInterface implements ICommandInterface {
 
           this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
           const listener = async function listener(message: any, ctx: any,
-            config: any, eventName: string): Promise<any> {
+            config: any, eventName: string, done: any): Promise<any> {
             that.logger.debug(`received message ${ctx.offset}/${targetOffset}`);
             if (_.includes(ignoreOffsets, ctx.offset)) {
               return;
             }
             try {
               const eventListener = topicEvents[eventName];
-              await eventListener(message, eventName);
+              await eventListener(message, ctx, config, eventName, done);
             } catch (e) {
               that.logger.debug('Exception caught:', e.message);
             }
@@ -290,7 +290,7 @@ export class CommandInterface implements ICommandInterface {
             }
           };
           for (let eventName of eventNames) {
-            await restoreTopic.on(eventName, listener, { startingOffset: baseOffset });
+            await restoreTopic.on(eventName, listener, { startingOffset: baseOffset, queue: true });
           }
         }
 
@@ -442,18 +442,30 @@ export class CommandInterface implements ICommandInterface {
   makeResourcesRestoreSetup(db: any, resource: string): any {
     const that = this;
     return {
-      [`${resource}Created`]: async function restoreCreated(message: any, eventName: string): Promise<any> {
+      [`${resource}Created`]: async function restoreCreated(message: any,
+        ctx: any, config: any, eventName: string, done: any): Promise<any> {
         that.decodeBufferField(message, resource);
         await db.insert(`${resource}s`, message);
+        if (done) {
+          done();
+        }
         return {};
       },
-      [`${resource}Modified`]: async function restoreModified(message: any, eventName: string): Promise<any> {
+      [`${resource}Modified`]: async function restoreModified(message: any,
+        ctx: any, config: any, eventName: string, done: any): Promise<any> {
         that.decodeBufferField(message, resource);
         await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
+        if (done) {
+          done();
+        }
         return {};
       },
-      [`${resource}Deleted`]: async function restoreDeleted(message: any, eventName: string): Promise<any> {
+      [`${resource}Deleted`]: async function restoreDeleted(message: any,
+        ctx: any, config: any, eventName: string, done: any): Promise<any> {
         await db.delete(`${resource}s`, { id: message.id });
+        if (done) {
+          done();
+        }
         return {};
       }
     };
