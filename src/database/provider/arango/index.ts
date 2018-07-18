@@ -15,7 +15,7 @@ const DB_SYSTEM = '_system';
 async function query(db: any, collectionName: string, query: any,
   args?: Object): Promise<any> {
   try {
-    return db.query(query, args);
+    return await db.query(query, args);
   } catch (err) {
     if (err.message && err.message.indexOf('collection not found') == -1) {
       throw err;

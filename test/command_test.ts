@@ -145,7 +145,7 @@ describe('CommandInterfaceService', () => {
         name: 'health_check',
         payload: cmdPayload
       });
-      await commandTopic.$wait(offset) + 1; // wait for response on both Kafka & gRPC
+      await commandTopic.$wait(offset); // wait for response on both Kafka & gRPC
       should.not.exist(resp.error);
       should.exist(resp.data);
       data = decodeMsg(resp.data);
