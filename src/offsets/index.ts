@@ -82,9 +82,9 @@ export class OffsetStore {
    * @param  {string} topic Topic name
    * @return {object}
    */
-  async getOffset(topicName: string): Promise<any> {
+  async getOffset(topicName: string): Promise<number> {
     const redisKey = this.config.get('events:kafka:clientId') + ':' + topicName;
-    const offsetValue = await new Promise((resolve, reject) => {
+    const offsetValue = await new Promise<number>((resolve, reject) => {
       this.redisClient.get(redisKey, (err, response) => {
         if (err) {
           reject(err);
