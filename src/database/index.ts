@@ -25,10 +25,10 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export async function get(config: any, logger: any): Promise<any> {
+export async function get(config: any, logger: any, graphName?: string): Promise<any> {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
   }
-  return await db(config, logger);
+  return await db(config, logger, graphName);
 }

@@ -393,8 +393,9 @@ class Arango {
    *
    * @param {Object} conn Arangojs database connection.
    */
-  constructor(conn: any) {
+  constructor(conn: any, graph?: any) {
     this.db = conn;
+    this.graph = graph;
   }
 
   /**
@@ -1308,7 +1309,7 @@ async function connect(conf: any, logger: any): Promise<any> {
  * @param  {Object} [logger] Logger
  * @return {Arango}        ArangoDB provider
  */
-export async function create(conf: any, logger: any): Promise<any> {
+export async function create(conf: any, logger: any, graphName?: string): Promise<any> {
   let log = logger;
   if (_.isNil(logger)) {
     log = {
@@ -1317,6 +1318,19 @@ export async function create(conf: any, logger: any): Promise<any> {
       error: () => { },
     };
   }
+  let graph;
   const conn = await connect(conf, log);
-  return new Arango(conn);
+  // conn is nothing but this.db
+  if (graphName) {
+    graph = conn.graph(graphName);
+    try {
+      await graph.create();
+    } catch (err) {
+      if (err.message === 'graph already exists') {
+        return new Arango(conn, graph);
+      }
+      throw err;
+    }
+  }
+  return new Arango(conn, graph);
 }

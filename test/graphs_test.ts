@@ -19,7 +19,7 @@ const providers = [
       const dbName: string = cfg.get('database:arango:database');
       const db = new Database('http://' + dbHost + ':' + dbPort);
       await db.dropDatabase(dbName);
-      return database.get(cfg.get('database:arango'), logger);
+      return database.get(cfg.get('database:arango'), logger, 'test-graph');
     }
   }
 ];
@@ -35,8 +35,6 @@ function testProvider(providerCfg) {
   let edgeCollectionName = 'knows';
   before(async function initDB() {
     db = await providerCfg.init();
-    // create graph with a graph name
-    const graph = await db.createGraphDB('test-graph');
     // create person vertex collection
     await db.addVertexCollection(vertexCollectionName);
     // create edge definition edgeCollectionName, fromVerticeCollection,
@@ -70,7 +68,7 @@ function testProvider(providerCfg) {
         { info: 'Bob knows Charlie', _from: `person/${result[1].id}`, _to: `person/${result[2].id}`, id: 'e2' },
         { info: 'Bob knows Dave', _from: `person/${result[1].id}`, _to: `person/${result[3].id}`, id: 'e3' },
         { info: 'Eve knows Alice', _from: `person/${result[4].id}`, _to: `person/${result[0].id}`, id: 'e4' },
-        { info: 'Eve knows Bob', _from: `person/${result[4].id}`, _to: `person/${result[1].id}`, id: 'e5'}
+        { info: 'Eve knows Bob', _from: `person/${result[4].id}`, _to: `person/${result[1].id}`, id: 'e5' }
       ];
       await db.createEdge(edgeCollectionName, edges[0]);
       await db.createEdge(edgeCollectionName, edges[1]);

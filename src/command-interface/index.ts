@@ -209,7 +209,11 @@ export class CommandInterface implements ICommandInterface {
         const dbCfgName = dbCfgNames[i];
         const dbCfg = dbCfgs[dbCfgName];
         const collections = dbCfg.collections;
-        const db = await database.get(dbCfg, this.logger);
+        let graphName;
+        if (this.config.graph) {
+          graphName = this.config.graph.graphName;
+        }
+        const db = await database.get(dbCfg, this.logger, graphName);
 
         if (_.isNil(collections)) {
           this.logger.warn('No collections found on DB config');

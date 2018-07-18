@@ -470,15 +470,9 @@ describe('microservice.Client', () => {
             });
           should.exist(result);
           should.exist(result.error);
-          if (_.isArray(result.error)) {
-            _.forEach(result.error, (value, key) => {
-              value.should.be.Error();
-              value.message.should.equal('unavailable');
-            });
-          } else {
-            result.error.should.be.Error();
-            result.error.details.should.containEql('GOAWAY');
-          }
+          let err = result.error;
+          err.should.be.Error();
+          err.message.should.equal('unavailable');
           should.not.exist(result.data);
         });
     });
