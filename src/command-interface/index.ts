@@ -187,9 +187,16 @@ export class CommandInterface implements ICommandInterface {
     const restoreEventSetup = {};
 
     restoreData.forEach((data) => {
+      const ignoreOffset = (data.ignore_offset || []).filter((offset) => {
+        const isNumber = Number(offset) != NaN;
+        if (!isNumber) {
+          this.logger.warn(`Invalid value for "ignore_offset" parameter in restore: ${offset}`);
+        }
+        return isNumber;
+      });
       restoreSetup[data.entity] = {
-        baseOffset: data.base_offset || 0,
-        ignoreOffset: data.ignore_offset || []
+        baseOffset: Number(data.base_offset) || 0,
+        ignoreOffset
       };
     });
 
