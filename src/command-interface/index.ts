@@ -275,8 +275,14 @@ export class CommandInterface implements ICommandInterface {
             } catch (e) {
               that.logger.debug('Exception caught:', e.message);
             }
-
-            if (ctx.offset >= targetOffset) {
+          };
+          for (let eventName of eventNames) {
+            await restoreTopic.on(eventName, listener, { startingOffset: baseOffset, queue: true, forceOffset: true });
+          }
+          // Fix - to handle case in case target offset is not reached
+          // by consuming all the emitted messages
+          restoreTopic.consumer.on('message', async (message) => {
+            if (message.offset >= targetOffset) {
               for (let event of eventNames) {
                 await restoreTopic.removeAllListeners(event);
               }
@@ -290,7 +296,7 @@ export class CommandInterface implements ICommandInterface {
 
               const msg = {
                 topic: topicName,
-                offset: ctx.offset
+                offset: message.offset
               };
               await that.commandTopic.emit('restoreResponse', {
                 services: _.keys(that.service),
@@ -299,10 +305,7 @@ export class CommandInterface implements ICommandInterface {
 
               that.logger.info('restore process done');
             }
-          };
-          for (let eventName of eventNames) {
-            await restoreTopic.on(eventName, listener, { startingOffset: baseOffset, queue: true, forceOffset: true });
-          }
+          });
         }
 
         this.logger.debug('waiting until all messages are processed');
