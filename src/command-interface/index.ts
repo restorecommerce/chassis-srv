@@ -455,27 +455,51 @@ export class CommandInterface implements ICommandInterface {
     return {
       [`${resource}Created`]: async function restoreCreated(message: any,
         ctx: any, config: any, eventName: string, done: any): Promise<any> {
-        that.decodeBufferField(message, resource);
-        await db.insert(`${resource}s`, message);
-        if (done) {
-          done();
+        try {
+          that.decodeBufferField(message, resource);
+          await db.insert(`${resource}s`, message);
+          if (done) {
+            done();
+          }
+        } catch (err) {
+          that.logger.error(`Exception caught when restoring ${resource}Created
+            message`, message);
+          if (done) {
+            done(err);
+          }
         }
         return {};
       },
       [`${resource}Modified`]: async function restoreModified(message: any,
         ctx: any, config: any, eventName: string, done: any): Promise<any> {
-        that.decodeBufferField(message, resource);
-        await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
-        if (done) {
-          done();
+        try {
+          that.decodeBufferField(message, resource);
+          await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
+          if (done) {
+            done();
+          }
+        } catch (err) {
+          that.logger.error(`Exception caught when restoring ${resource}Modified
+            message`, message);
+          if (done) {
+            done(err);
+          }
         }
         return {};
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any,
         ctx: any, config: any, eventName: string, done: any): Promise<any> {
-        await db.delete(`${resource}s`, { id: message.id });
-        if (done) {
-          done();
+        try {
+          await db.delete(`${resource}s`, { id: message.id });
+          if (done) {
+            done();
+          }
+        } catch (err) {
+          that.logger.error(`Exception caught when restoring ${resource}Deleted
+            message`, message);
+          if (done) {
+            done(err);
+          }
         }
         return {};
       }
