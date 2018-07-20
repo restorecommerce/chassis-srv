@@ -69,7 +69,7 @@ describe('offsetStore', () => {
 
       // get the current offsetValue for 'test' topic before emitting message
       let startingOffset = await offsetStore.getOffset(topicName);
-      await topic.on(eventName, listener, startingOffset);
+      await topic.on(eventName, listener, { startingOffset });
 
       // wait for 2sec so that message is consumed and
       // test is not ended immediately

@@ -5,6 +5,8 @@ import * as database from './../database';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
+import * as async from 'async';
+import * as kafka from 'kafka-node';
 
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -263,46 +265,70 @@ export class CommandInterface implements ICommandInterface {
           const eventNames = _.keys(topicEvents);
 
           this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
-          const listener = async function listener(message: any, ctx: any,
-            config: any, eventName: string, done: any): Promise<any> {
-            that.logger.debug(`received message ${ctx.offset}/${targetOffset}`);
-            if (_.includes(ignoreOffsets, ctx.offset)) {
-              return;
-            }
-            try {
-              const eventListener = topicEvents[eventName];
-              await eventListener(message, ctx, config, eventName, done);
-            } catch (e) {
-              that.logger.debug('Exception caught:', e.message);
-            }
 
-            if (ctx.offset >= targetOffset) {
+          const consumerClient = new kafka.Client(kafkaEventsCfg.connectionString,
+            kafkaEventsCfg.clientId);
+          const consumer = new kafka.Consumer(
+            consumerClient,
+            [
+              { topic: restoreTopic.name, offset: baseOffset }
+            ],
+            {
+              autoCommit: true,
+              encoding: 'buffer',
+              fromOffset: true
+            }
+          );
+
+          const drainEvent = (message, done) => {
+            const msg = message.value;
+            const eventName = message.key.toString();
+            const context = _.pick(message, ['offset', 'partition', 'topic']);
+            const eventListener = topicEvents[message.key];
+            // decode protobuf
+            const decodedMsg = that.kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
+            eventListener(message, context, that.config, eventName).then(() => {
+            }).catch((err) => {
+              that.logger.error('Exception caught invoking listener:', err);
+            });
+
+            if (message.offset >= targetOffset) {
               for (let event of eventNames) {
-                await restoreTopic.removeAllListeners(event);
+                restoreTopic.removeAllListeners(event).then(() => { }).catch((err) => {
+                  that.logger.error('Error removing listeners', err);
+                });
               }
-
               for (let event of previousEvents) {
                 const listeners = listenersBackup.get(event);
                 for (let listener of listeners) {
-                  await restoreTopic.on(event, listener);
+                  restoreTopic.on(event, listener).then(() => { }).catch((err) => {
+                    that.logger.error('Error subscribing to listeners', err);
+                  });
                 }
               }
-
               const msg = {
                 topic: topicName,
-                offset: ctx.offset
+                offset: message.offset
               };
-              await that.commandTopic.emit('restoreResponse', {
+              that.commandTopic.emit('restoreResponse', {
                 services: _.keys(that.service),
                 payload: that.encodeMsg(msg)
+              }).then(() => {
+                that.logger.info('Restore response emitted');
+              }).catch((err) => {
+                that.logger.error('Error emitting command response', err);
               });
-
               that.logger.info('restore process done');
             }
           };
-          for (let eventName of eventNames) {
-            await restoreTopic.on(eventName, listener, { startingOffset: baseOffset, queue: true, forceOffset: true });
-          }
+
+          const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
+          consumer.on('message', async function (message) {
+            if (message.key in topicEvents && !_.includes(ignoreOffsets, message.offset)) {
+              asyncQueue.push(message);
+              that.logger.debug(`received message ${message.offset}/${targetOffset}`);
+            }
+          });
         }
 
         this.logger.debug('waiting until all messages are processed');
@@ -318,6 +344,35 @@ export class CommandInterface implements ICommandInterface {
     }
 
     return {};
+  }
+
+  private startToReceiveRestoreMessages(restoreTopic: Topic,
+    drainEvent: Function): any {
+    const asyncQueue = async.queue((msg, done) => {
+      setImmediate(() => drainEvent(msg, err => {
+        if (err) {
+          done(err);
+        }
+      }));
+      done();
+    }, 1);
+
+    asyncQueue.drain = () => {
+      // commit state first, before resuming
+      this.logger.verbose('Committing offsets upon async queue drain');
+      new Promise((resolve, reject) => {
+        restoreTopic.consumer.commit((err, data) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(data);
+        });
+      }).then(() => {
+        this.logger.info('Offset committed successfully');
+      }).catch((err) => { });
+    };
+    this.logger.info('Async queue draining started.');
+    return asyncQueue;
   }
 
   /**
@@ -454,52 +509,34 @@ export class CommandInterface implements ICommandInterface {
     const that = this;
     return {
       [`${resource}Created`]: async function restoreCreated(message: any,
-        ctx: any, config: any, eventName: string, done: any): Promise<any> {
+        ctx: any, config: any, eventName: string): Promise<any> {
         try {
           that.decodeBufferField(message, resource);
           await db.insert(`${resource}s`, message);
-          if (done) {
-            done();
-          }
         } catch (err) {
           that.logger.error(`Exception caught when restoring ${resource}Created
             message`, message);
-          if (done) {
-            done(err);
-          }
         }
         return {};
       },
       [`${resource}Modified`]: async function restoreModified(message: any,
-        ctx: any, config: any, eventName: string, done: any): Promise<any> {
+        ctx: any, config: any, eventName: string): Promise<any> {
         try {
           that.decodeBufferField(message, resource);
           await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
-          if (done) {
-            done();
-          }
         } catch (err) {
           that.logger.error(`Exception caught when restoring ${resource}Modified
             message`, message);
-          if (done) {
-            done(err);
-          }
         }
         return {};
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any,
-        ctx: any, config: any, eventName: string, done: any): Promise<any> {
+        ctx: any, config: any, eventName: string): Promise<any> {
         try {
           await db.delete(`${resource}s`, { id: message.id });
-          if (done) {
-            done();
-          }
         } catch (err) {
           that.logger.error(`Exception caught when restoring ${resource}Deleted
             message`, message);
-          if (done) {
-            done(err);
-          }
         }
         return {};
       }
