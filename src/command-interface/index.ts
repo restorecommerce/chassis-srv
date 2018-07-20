@@ -286,8 +286,9 @@ export class CommandInterface implements ICommandInterface {
             const context = _.pick(message, ['offset', 'partition', 'topic']);
             const eventListener = topicEvents[message.key];
             // decode protobuf
-            const decodedMsg = that.kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
-            eventListener(message, context, that.config, eventName).then(() => {
+            let decodedMsg = that.kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
+            decodedMsg = _.pick(decodedMsg, _.keys(decodedMsg)); // preventing protobuf.js special fields
+            eventListener(decodedMsg, context, that.config, eventName).then(() => {
             }).catch((err) => {
               that.logger.error('Exception caught invoking listener:', err);
             });
