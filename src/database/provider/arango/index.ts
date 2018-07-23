@@ -247,7 +247,12 @@ function buildFilter(filter: any, index?: number, bindVarsMap?: any): any {
         switch (key) {
           case '$or':
             if (!multipleFilters) {
-              q = buildComparison(value, '||', index, bindVarsMap).q;
+              if (_.isEmpty(value)) {
+                q = true;
+              } else {
+                q = buildComparison(value, '||', index, bindVarsMap).q;
+              }
+
               multipleFilters = true;
               // since there is a possiblility for recursive call from buildComparision to buildFilter again.
               index += 1;
@@ -258,7 +263,11 @@ function buildFilter(filter: any, index?: number, bindVarsMap?: any): any {
             break;
           case '$and':
             if (!multipleFilters) {
-              q = buildComparison(value, '&&', index, bindVarsMap).q;
+              if (_.isEmpty(value)) {
+                q = false;
+              } else {
+                q = buildComparison(value, '&&', index, bindVarsMap).q;
+              }
               multipleFilters = true;
               index += 1;
             } else {
