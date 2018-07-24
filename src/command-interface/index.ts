@@ -289,21 +289,23 @@ export class CommandInterface implements ICommandInterface {
             let decodedMsg = that.kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
             decodedMsg = _.pick(decodedMsg, _.keys(decodedMsg)); // preventing protobuf.js special fields
             eventListener(decodedMsg, context, that.config, eventName).then(() => {
+              done();
             }).catch((err) => {
-              that.logger.error('Exception caught invoking listener:', err);
+              that.logger.error(`Exception caught invoking restore listener for event ${eventName}:`, err);
+              done(err);
             });
 
             if (message.offset >= targetOffset) {
               for (let event of eventNames) {
                 restoreTopic.removeAllListeners(event).then(() => { }).catch((err) => {
-                  that.logger.error('Error removing listeners', err);
+                  that.logger.error('Error removing listeners after restore', err);
                 });
               }
               for (let event of previousEvents) {
                 const listeners = listenersBackup.get(event);
                 for (let listener of listeners) {
                   restoreTopic.on(event, listener).then(() => { }).catch((err) => {
-                    that.logger.error('Error subscribing to listeners', err);
+                    that.logger.error('Error subscribing to listeners after restore', err);
                   });
                 }
               }
@@ -353,9 +355,10 @@ export class CommandInterface implements ICommandInterface {
       setImmediate(() => drainEvent(msg, err => {
         if (err) {
           done(err);
+        } else {
+          done();
         }
       }));
-      done();
     }, 1);
 
     asyncQueue.drain = () => {
@@ -511,34 +514,20 @@ export class CommandInterface implements ICommandInterface {
     return {
       [`${resource}Created`]: async function restoreCreated(message: any,
         ctx: any, config: any, eventName: string): Promise<any> {
-        try {
-          that.decodeBufferField(message, resource);
-          await db.insert(`${resource}s`, message);
-        } catch (err) {
-          that.logger.error(`Exception caught when restoring ${resource}Created
-            message`, message);
-        }
+        that.decodeBufferField(message, resource);
+        await db.insert(`${resource}s`, message);
         return {};
       },
       [`${resource}Modified`]: async function restoreModified(message: any,
         ctx: any, config: any, eventName: string): Promise<any> {
-        try {
-          that.decodeBufferField(message, resource);
-          await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
-        } catch (err) {
-          that.logger.error(`Exception caught when restoring ${resource}Modified
-            message`, message);
-        }
+        that.decodeBufferField(message, resource);
+        await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
+
         return {};
       },
       [`${resource}Deleted`]: async function restoreDeleted(message: any,
         ctx: any, config: any, eventName: string): Promise<any> {
-        try {
-          await db.delete(`${resource}s`, { id: message.id });
-        } catch (err) {
-          that.logger.error(`Exception caught when restoring ${resource}Deleted
-            message`, message);
-        }
+        await db.delete(`${resource}s`, { id: message.id });
         return {};
       }
     };
