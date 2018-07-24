@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import * as logger from './logger_test';
+import { Logger } from '../lib/logger';
 import * as chassis from '../lib';
 import { grpc } from '../lib';
 import { Server } from '../lib/microservice/server';
@@ -13,9 +13,10 @@ import * as sleep from 'sleep';
 describe('binding the grpc.ServerReflection service', () => {
   let server: Server;
   before(async function start() {
-    await chassis.config.load(process.cwd() + '/test', logger);
+    await chassis.config.load(process.cwd() + '/test');
     const cfg = await chassis.config.get();
-    server = new Server(cfg.get('server'));
+    const logger = new Logger(cfg.get('logger'));
+    server = new Server(cfg.get('server'), logger);
     const transportName: string = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
     const transport = server.transport[transportName];
     let root;
@@ -34,7 +35,8 @@ describe('binding the grpc.ServerReflection service', () => {
   it('should provide an endpoint ServerReflectionInfo',
     async function checkEndpoint() {
       const cfg = await chassis.config.get();
-      const client: Client = new Client(cfg.get('client:reflection'));
+      const logger = new Logger(cfg.get('logger'));
+      const client: Client = new Client(cfg.get('client:reflection'), logger);
       const reflectionClient: chassis.ServerReflection = await client.connect();
       const reflection = await reflectionClient.serverReflectionInfo();
       await reflection.end();
@@ -45,7 +47,8 @@ describe('binding the grpc.ServerReflection service', () => {
     let serverReflectionInfo;
     beforeEach(async function connect() {
       const cfg = await chassis.config.get();
-      client = new Client(cfg.get('client:reflection'));
+      const logger = new Logger(cfg.get('logger'));
+      client = new Client(cfg.get('client:reflection'), logger);
       const reflection: chassis.ServerReflection = await client.connect();
       serverReflectionInfo = await reflection.serverReflectionInfo();
     });

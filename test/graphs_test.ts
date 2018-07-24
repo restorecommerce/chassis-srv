@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import logger from './logger_test.js';
+import { Logger } from '../lib/logger';
 import { Database } from 'arangojs';
 import * as chassis from '../lib';
 const config = chassis.config;
@@ -12,8 +12,9 @@ const providers = [
   {
     name: 'arango',
     init: async function init(): Promise<any> {
-      await config.load(process.cwd() + '/test', logger);
+      await config.load(process.cwd() + '/test');
       const cfg = await config.get();
+      const logger = new Logger(cfg.get('logger'));
       const dbHost: string = cfg.get('database:arango:host');
       const dbPort: string = cfg.get('database:arango:port');
       const dbName: string = cfg.get('database:arango:database');
@@ -46,7 +47,7 @@ function testProvider(providerCfg) {
     let result;
     let edgeResult;
     it('should create a vertex collection and insert data into it', async function
-    createVertices() {
+      createVertices() {
       const vertices = [
         { name: 'Alice', id: 'a' },
         { name: 'Bob', id: 'b' },
@@ -113,7 +114,7 @@ function testProvider(providerCfg) {
       traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(4);
     });
     it('should update a vertice given the document handle', async function
-    updateVertice() {
+      updateVertice() {
       const doc = await db.getVertex(vertexCollectionName, `person/${result[4].id}`);
       // doc with updated name
       doc.name = 'test';
@@ -122,7 +123,7 @@ function testProvider(providerCfg) {
       doc.name.should.equal('test');
     });
     it('should update a edge given the document handle', async function
-    updateEdge() {
+      updateEdge() {
       const doc = await db.getEdge(edgeCollectionName, edgeResult._id);
       // doc with updated name
       doc.info = 'test knows Bob';
@@ -131,13 +132,13 @@ function testProvider(providerCfg) {
       doc.info.should.equal('test knows Bob');
     });
     it('should remove a vertice given the document handle', async function
-    removeVertice() {
+      removeVertice() {
       const removedDoc = await db.removeVertex(vertexCollectionName, `person/${result[2].id}`);
       should.exist(removedDoc);
       removedDoc.should.equal(true);
     });
     it('should remove edge given the document handle', async function
-    removeEdge() {
+      removeEdge() {
       const removedDoc = await db.removeEdge(edgeCollectionName, edgeResult._id);
       should.exist(removedDoc);
       removedDoc.should.equal(true);

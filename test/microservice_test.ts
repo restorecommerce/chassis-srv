@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import logger from './logger_test';
+import { Logger } from '../lib/logger';
 import * as sleep from 'sleep';
 import * as chassis from '../lib';
 import * as sconfig from '@restorecommerce/service-config';
@@ -89,7 +89,8 @@ describe('microservice.Server', () => {
   describe('constructing the sever', () => {
     it('should throw an error when services config is missing',
       async function throwErrorOnMissingConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
+        const logger = new Logger(cfg.get('logger'));
         cfg = sconfig(process.cwd() + '/test', logger);
         cfg.set('server:services', undefined);
         (() => {
@@ -98,8 +99,9 @@ describe('microservice.Server', () => {
       });
     it('should throw an error when transports config is missing',
       async function throwErrorOnMissingTransportConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         const cfg = await config.get();
+        const logger = new Logger(cfg.get('logger'));
         cfg.set('server:transports', undefined);
         (() => {
           server = new Server(cfg.get('server'));
@@ -107,8 +109,9 @@ describe('microservice.Server', () => {
       });
     it('should throw an error when configuration does not exist',
       async function throwNoConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         const cfg = await config.get();
+        const logger = new Logger(cfg.get('logger'));
         cfg.set('server:services', undefined);
         cfg.set('server:transports', undefined);
         (() => {
@@ -117,18 +120,19 @@ describe('microservice.Server', () => {
       });
     it('should return a server when provided with correct config',
       async function correctConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         const cfg = await config.get();
-        server = new Server(cfg.get('server'));
+        const logger = new Logger(cfg.get('logger'));
+        server = new Server(cfg.get('server'), logger);
         should.exist(server);
         should.exist(server.logger);
         should.exist(server.logger.log);
         const levels = [
-          'silly',
-          'verbose',
-          'debug',
-          'info',
-          'warn',
+          // 'silly',
+          // 'verbose',
+          // 'debug',
+          // 'info',
+          // 'warn',
           'error'
         ];
         _.forEach(levels, (level) => {
@@ -166,6 +170,7 @@ describe('microservice.Server', () => {
         should.exist(grpcConfig);
         should.exist(grpcConfig.service);
 
+        const logger = new Logger(cfg.get('logger'));
         let client: gRPCClient.grpcClient = new grpcClient(grpcConfig, logger);
         let instance: string;
         let result;
@@ -357,9 +362,10 @@ describe('microservice.Client', () => {
   describe('constructing the client', () => {
     it('should create a client when providing correct configuration',
       async function correctConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
-        client = new Client(cfg.get('client:test'));
+        const logger = new Logger(cfg.get('logger'));
+        client = new Client(cfg.get('client:test'), logger);
         should.exist(client);
         should.exist(client.logger);
         should.exist(client.middleware);
@@ -367,7 +373,7 @@ describe('microservice.Client', () => {
       });
     it('should throw an error when providing no configuration',
       async function errorOnNoConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
         cfg.set('client:test', null);
         (() => {
@@ -376,14 +382,14 @@ describe('microservice.Client', () => {
       });
     it('should throw an error when providing with invalid configuration',
       async function errorInvalidConfig() {
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         let cfg = await config.get();
         cfg.set('client:test:endpoints', null);
         (() => {
           client = new Client(cfg.get('client:test'));
         }).should.throw('no endpoints configured');
 
-        await config.load(process.cwd() + '/test', logger);
+        await config.load(process.cwd() + '/test');
         cfg = await config.get();
         cfg.set('client:test:transports', null);
         (() => {
@@ -393,9 +399,10 @@ describe('microservice.Client', () => {
   });
   context('with running server', () => {
     before(async function initServer() {
-      await config.load(process.cwd() + '/test', logger);
+      await config.load(process.cwd() + '/test');
       const cfg = await config.get();
-      server = new Server(cfg.get('server'));
+      const logger = new Logger(cfg.get('logger'));
+      server = new Server(cfg.get('server'), logger);
       await server.bind('test', service);
       await server.start();
       sleep.sleep(1);

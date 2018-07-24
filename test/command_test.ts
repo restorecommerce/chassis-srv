@@ -2,7 +2,6 @@
 import * as _ from 'lodash';
 import { config, CommandInterface, database, Server } from './../lib';
 import * as chassis from './../lib';
-import * as Logger from '@restorecommerce/logger';
 import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
@@ -71,17 +70,17 @@ describe('CommandInterfaceService', () => {
     }
 
     server = new Server(cfg.get('server'), logger);
-    db = await database.get(cfg.get('database:arango'), server.logger);
+    db = await database.get(cfg.get('database:arango'), logger);
     await db.truncate();
 
     const config = cfg.get();
     delete config.database.nedb;  // not supported in default implementation
 
-    const cis = new CommandInterface(server, config, server.logger, events);
+    const cis = new CommandInterface(server, config, logger, events);
     await server.bind('commandinterface', cis);
     await server.start();
 
-    const client = new Client(cfg.get('client:commandinterface'));
+    const client = new Client(cfg.get('client:commandinterface'), logger);
     service = await client.connect();
   });
   after(async function teardown() {
@@ -219,7 +218,7 @@ describe('CommandInterfaceService', () => {
             count: 1
           }
         });
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 4; i++) {
           result[i].count.should.equal(i);
         }
       };

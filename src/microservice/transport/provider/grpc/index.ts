@@ -209,7 +209,7 @@ export class Server {
     this.config = config;
     this.logger = logger;
 
-    console['error'] = logger.debug;
+    // console['error'] = logger.debug;
     // gRPC logger
     grpc.setLogger(console);
 

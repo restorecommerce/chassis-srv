@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import logger from './logger_test.js';
+import { Logger } from '../lib/logger';
 import { Database } from 'arangojs';
 import * as chassis from '../lib';
 const config = chassis.config;
@@ -12,8 +12,9 @@ const providers = [
   {
     name: 'arango',
     init: async function init(): Promise<any> {
-      await config.load(process.cwd() + '/test', logger);
+      await config.load(process.cwd() + '/test');
       const cfg = await config.get();
+      const logger = new Logger(cfg.get('logger'));
       const dbHost: string = cfg.get('database:arango:host');
       const dbPort: string = cfg.get('database:arango:port');
       const dbName: string = cfg.get('database:arango:database');
@@ -25,8 +26,9 @@ const providers = [
   {
     name: 'nedb',
     init: async function init(): Promise<any> {
-      await config.load(process.cwd() + '/test', logger);
+      await config.load(process.cwd() + '/test');
       const cfg = await config.get();
+      const logger = new Logger(cfg.get('logger'));
       return database.get(cfg.get('database:nedb'), logger);
     }
   }
@@ -283,7 +285,7 @@ function testProvider(providerCfg) {
   });
   describe('query by date', () => {
     it('should be able to query document by its time stamp', async function
-    queryDocByTimeStamp() {
+      queryDocByTimeStamp() {
       const currentDate = new Date();
       const timeStamp1 = currentDate.setFullYear(currentDate.getFullYear());
       const timeStamp2 = currentDate.setFullYear(currentDate.getFullYear() + 1);
