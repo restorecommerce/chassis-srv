@@ -451,7 +451,12 @@ class Arango {
     _.forEach(docs, (document, i) => {
       docs[i] = ensureKey(document);
     });
-    await collection.save(docs);
+    const results = await collection.save(docs);
+    _.forEach(results, (result) => {
+      if (result.error === true) {
+        throw new Error(result.errorMessage);
+      }
+    });
     return _.map(docs, sanitizeFields);
   }
 
