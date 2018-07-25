@@ -63,6 +63,8 @@ The following database providers are implemented:
 * [NeDB](https://github.com/louischatriot/nedb)
 
 Providers include generic database handling operations (find, insert, upsert delete, truncate, etc). Query parameter structure for all exposed operations is similar with the structure used in [MongoDB](https://docs.mongodb.com/manual/tutorial/getting-started/) queries.
+The ArangoDB provider supports graph database creation and exposes a simple API to manage vertices and edges.
+It also provides a flexible traversal method. For more details, see [graph tests](test/graphs_test.ts) and the [ArangoDB graphs documentation](https://docs.arangodb.com/3.3/HTTP/Traversal/index.html).
 Database providers can be used as a database abstration by any service that owns a set of resources. Furthermore, services can later expose their database operations via gRPC. Exposure of these operations is easily achieved using the [resource-base-interface](https://github.com/restorecommerce/resource-base-interface).
 
 ### Command interface
