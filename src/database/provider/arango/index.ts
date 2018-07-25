@@ -798,6 +798,12 @@ class Arango {
       opts.expander = this.traversalExpander(opts.expander);
     }
 
+    if (!opts) {
+      // make outbound traversal by default if not provided
+      opts = {};
+      opts.direction = 'outbound';
+    }
+
     if (collectionName) {
       collection = this.graph.edgeCollection(collectionName);
       traversedData = await collection.traversal(startVertex, opts);
