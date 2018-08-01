@@ -15,11 +15,6 @@ const providers = [
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = new Logger(cfg.get('logger'));
-      const dbHost: string = cfg.get('database:arango:host');
-      const dbPort: string = cfg.get('database:arango:port');
-      const dbName: string = cfg.get('database:arango:database');
-      const db = new Database('http://' + dbHost + ':' + dbPort);
-      await db.dropDatabase(dbName);
       return database.get(cfg.get('database:arango'), logger, 'test-graph');
     }
   }
@@ -43,6 +38,18 @@ function testProvider(providerCfg) {
     await db.addEdgeDefinition(edgeCollectionName, vertexCollectionName, vertexCollectionName);
     should.exist(db);
   });
+  after(async function drop() {
+    await config.load(process.cwd() + '/test');
+    const cfg = await config.get();
+
+    const dbName: string = cfg.get('database:arango:database');
+    const dbHost: string = cfg.get('database:arango:host');
+    const dbPort: string = cfg.get('database:arango:port');
+
+    const db = new Database('http://' + dbHost + ':' + dbPort);
+    await db.dropDatabase(dbName);
+  });
+
   describe('Graphs Collection API', () => {
     let result;
     let edgeResult;
@@ -142,6 +149,44 @@ function testProvider(providerCfg) {
       const removedDoc = await db.removeEdge(edgeCollectionName, edgeResult._id);
       should.exist(removedDoc);
       removedDoc.should.equal(true);
+    });
+  });
+  describe('testing special functions', async function () {
+    let vertices: any[];
+    before(async function () {
+      await db.addVertexCollection('organizations');
+      await db.addEdgeDefinition('org_has_parent_org', 'organizations', 'organizations');
+
+      vertices = [
+        { name: 'OrgA', id: 'A' },
+        { name: 'OrgB', id: 'B' },
+        { name: 'OrgC', id: 'C' },
+        { name: 'OrgD', id: 'D' }
+      ];
+      const result = await db.createVertex('organizations', vertices);
+
+      const edges = [
+        { info: 'OrgB has parent OrgA', _from: `organizations/${result[1].id}`, _to: `organizations/${result[0].id}`, id: 'OrgE1' },
+        { info: 'OrgC has parent OrgA', _from: `organizations/${result[2].id}`, _to: `organizations/${result[0].id}`, id: 'OrgE2' },
+      ];
+      await db.createEdge('org_has_parent_org', edges[0]);
+      await db.createEdge('org_has_parent_org', edges[1]);
+    });
+    it('should test lowest common ancestor', async function () {
+      const result = await db.traversal([`organizations/${vertices[1].id}`, `organizations/${vertices[2].id}`, `organizations/${vertices[3].id}`], { lowestCommonAncestor: true }, 'organizations');
+      should.exist(result);
+      should.exist(result.paths);
+      should.exist(result.paths.value);
+      const paths = JSON.parse(result.paths.value.toString());
+      paths.should.not.have.length(0);
+
+      const roots = [`organizations/${vertices[0].id}`, `organizations/${vertices[3].id}`];
+      for (let path of paths) {
+        if (_.isEmpty(path.edges)) {
+          const vertex = path.vertices[0];
+          roots.should.containEql(vertex._id);
+        }
+      }
     });
   });
 }

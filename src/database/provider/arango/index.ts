@@ -1,4 +1,4 @@
-import { Database, aql } from 'arangojs';
+import { Database, aql, Graph } from 'arangojs';
 import * as _ from 'lodash';
 import * as retry from 'async-retry';
 
@@ -145,8 +145,7 @@ function buildComparison(filter: any, op: String, index: number,
  * @param {any} bindVarsMap mapping of keys to values for bind variables
  * @return {String} query template string
  */
-function buildField(key: any, value: any, index: number, bindVarsMap: any):
-  string {
+function buildField(key: any, value: any, index: number, bindVarsMap: any): string {
   let bindValueVar = `@value${index}`;
   let bindValueVarWithOutPrefix = `value${index}`;
   if (_.isString(value) || _.isBoolean(value) || _.isNumber(value || _.isDate(value))) {
@@ -394,15 +393,14 @@ function encodeMessage(object: Object) {
 /**
  * ArangoDB database provider.
  */
-class Arango {
-  db: any;
-  graph: any;
+export class Arango {
+  db: Database;
+  graph: Graph;
   /**
-   * ArangoDB provider
    *
    * @param {Object} conn Arangojs database connection.
    */
-  constructor(conn: any, graph?: any) {
+  constructor(conn: any, graph?: Graph) {
     this.db = conn;
     this.graph = graph;
   }
@@ -413,7 +411,7 @@ class Arango {
    * @param  {String} graphName graph name
    * @return  {Object} A Graph instance
    */
-  async createGraphDB(graphName: string): Promise<Object> {
+  async createGraphDB(graphName: string): Promise<Graph> {
     if (_.isNil(graphName)) {
       throw new Error('missing graph name');
     }
@@ -535,11 +533,11 @@ class Arango {
    * @param  {boolean} excludeOrphans Whether orphan collections should be excluded.
    * @return  {Array<Object>} vertex list
    */
-  async listVertexCollections(excludeOrphans?: boolean): Promise<[Object]> {
+  async listVertexCollections(excludeOrphans?: boolean): Promise<any> {
     if (!excludeOrphans) {
       excludeOrphans = false;
     }
-    const collections = await this.graph.listVertexCollections(excludeOrphans);
+    const collections = await this.graph.listVertexCollections({ excludeOrphans });
     return collections;
   }
 
@@ -550,11 +548,11 @@ class Arango {
    * @param  {boolean} excludeOrphans Whether orphan collections should be excluded.
    * @return  {Array<Object>} vertex list
    */
-  async getAllVertexCollections(excludeOrphans?: boolean): Promise<[Object]> {
+  async getAllVertexCollections(excludeOrphans?: boolean): Promise<any> {
     if (_.isNil(excludeOrphans)) {
       excludeOrphans = false;
     }
-    const collections = await this.graph.vertexCollections(excludeOrphans);
+    const collections = await this.graph.vertexCollections({ excludeOrphans });
     return collections;
   }
 
@@ -566,8 +564,7 @@ class Arango {
    * @param  {boolean} excludeOrphans Whether orphan collections should be excluded.
    * @return  {Array<Object>} vertex list
    */
-  async addVertexCollection(collectionName: string, dropCollection?: boolean):
-    Promise<[Object]> {
+  async addVertexCollection(collectionName: string): Promise<any> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
@@ -592,7 +589,7 @@ class Arango {
    * @return  {Object } removed vertex
    */
   async removeVertexCollection(collectionName: string, dropCollection?: boolean):
-    Promise<Object> {
+    Promise<any> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
@@ -605,16 +602,9 @@ class Arango {
   }
 
   /**
-   * get a Graph instance.
-   *
-   * @param  {String} dbName database name
-   * @return  {Object} A Graph instance
+   * @return  {Graph} A Graph instance
    */
-  getGraphDB(dbName: string): Object {
-    if (_.isNil(dbName)) {
-      throw new Error('missing db name');
-    }
-    this.graph = this.db.graph(dbName);
+  getGraphDB(): Graph {
     return this.graph;
   }
 
@@ -640,6 +630,7 @@ class Arango {
     if (_.isNil(data)) {
       data = {};
     }
+
     const collection = this.graph.edgeCollection(collectionName);
     return collection.save(data, fromId, toId);
   }
@@ -771,7 +762,7 @@ class Arango {
   * startVertex and following edges contained in this edge collection.
   *
   * @param {String} collectionName collection name
-  * @param  {String} startVertex The handle of the start vertex.
+  * @param  {String | String[]} startVertex Start vertex or vertices.
   * This can be either the _id of a document in the database,
   * the _key of an edge in the collection, or a document
   * (i.e. an object with an _id or _key property).
@@ -779,12 +770,20 @@ class Arango {
   * opts.init, opts.expander, opts.sort
   * @return  {[Object]} edge traversal path
   */
-  async traversal(startVertex: string, opts: any, collectionName?: string):
+  async traversal(startVertex: string | string[], opts: any, collectionName?: string):
     Promise<Object> {
     let collection;
     let traversedData;
     if (_.isNil(startVertex)) {
       throw new Error('missing start vertex name');
+    }
+    if (opts.lowestCommonAncestor) {
+      return this.findTreesCommonAncestor(startVertex as string[]);
+    }
+
+    const vertex = startVertex as string;
+    if (_.isArray(vertex)) {
+      throw new Error('Invalid number of starting vertices for traversal: ' + vertex.length);
     }
     for (let key in opts) {
       if (_.isEmpty(opts[key])) {
@@ -806,9 +805,9 @@ class Arango {
 
     if (collectionName) {
       collection = this.graph.edgeCollection(collectionName);
-      traversedData = await collection.traversal(startVertex, opts);
+      traversedData = await collection.traversal(vertex, opts);
     } else {
-      traversedData = await this.graph.traversal(startVertex, opts);
+      traversedData = await this.graph.traversal(vertex, opts);
     }
     let response: any = {
       vertex_fields: [],
@@ -832,6 +831,89 @@ class Arango {
     return response;
   }
 
+  /**
+   * Finds the lowest common ancestor between two nodes of a tree-shaped graph and returns the subtree in that node.
+   */
+  async findTreesCommonAncestor(nodes: string[]): Promise<any> {
+    // preprocessing to get all the roots
+    const roots = {};
+    for (let node of nodes) {
+      const result = await this.db.query(`FOR v IN 1..10000 OUTBOUND @vertex GRAPH @graph RETURN v`, { graph: this.graph.name, vertex: node });
+      const items = await result.next();
+      if (_.isEmpty(items)) {
+        if (!roots[node]) {
+          roots[node] = [node];
+        }
+
+        continue;
+      }
+
+      const root = _.isArray(items) ? items[items.length - 1] : items;
+      if (!roots[root._id]) {
+        roots[root._id] = [node];
+      } else {
+        roots[root._id].push(node);
+      }
+    }
+
+    const lca = async function LCA(nodeA, nodeList: string[]) {
+      if (nodeList.length > 1) {
+        const slices = nodeList.slice(1, nodeList.length);
+        return lca(nodeA, lca(nodes[0], slices));
+      } else {
+        const result = [await findCommonAncestor(nodeA, nodeList[0])];
+        return result;
+      }
+    };
+
+    const that = this;
+    const findCommonAncestor = async function findCommonAncestor(nodeA, nodeB) {
+      const queryTpl = `LET firstPath = (FOR v IN 1..10000 OUTBOUND @vertex1 GRAPH @graph RETURN v)
+        FOR v,e,p IN 1..10000 OUTBOUND @vertex2 GRAPH @graph
+          LET pos = POSITION(firstPath, v, true)
+          FILTER pos != -1
+          LIMIT 1
+          let endPath = REVERSE(p.vertices)
+          return endPath`;
+      const result = await that.db.query(queryTpl, {
+        vertex1: nodeA,
+        vertex2: nodeB,
+        graph: that.graph.name
+      });
+      if (result.count == 0) {
+        throw new Error('Unimplemented: hierarchical resourcs do not share the same root');
+      }
+      const item = await result.next();
+      return item[0];
+    };
+
+    // console.log(await lca(nodes[0], nodes.slice(1, nodes.length)));
+    let paths = []; // the edges allow us to build the tree
+    for (let root in roots) {
+      let ancestor: string;
+      if (roots[root].length == 1) {
+        ancestor = root;
+      } else {
+        const list = roots[root];
+        let vertex = await lca(list[0], nodes.slice(1, list.length));
+        if (_.isArray(vertex)) {
+          vertex = vertex[0];
+        }
+        ancestor = vertex._id;
+      }
+      const traversal = await this.graph.traversal(ancestor, {
+        direction: 'inbound'
+      });
+      const visited = traversal.visited;
+      paths = paths.concat(visited.paths);
+    }
+
+    return {
+      paths: {
+        value: encodeMessage(paths)
+      }
+    };
+  }
   /**
   * Adds the given edge definition to the graph.
   *
@@ -913,10 +995,6 @@ class Arango {
     if (_.isNil(definitionName)) {
       throw new Error('missing definition name');
     }
-
-    if (!dropCollection) {
-      dropCollection = false;
-    }
     return this.graph.removeEdgeDefinition(definitionName, dropCollection);
   }
 
@@ -926,7 +1004,7 @@ class Arango {
    * @return  {Promise<any>} list all the graphs
    */
   async listGraphs(): Promise<any> {
-    return this.graph.listGraphs();
+    return this.db.listGraphs();
   }
 
   /**
@@ -1329,7 +1407,7 @@ async function connect(conf: any, logger: any): Promise<any> {
  * @param  {Object} [logger] Logger
  * @return {Arango}        ArangoDB provider
  */
-export async function create(conf: any, logger: any, graphName?: string): Promise<any> {
+export async function create(conf: any, logger: any, graphName?: string): Promise<Arango> {
   let log = logger;
   if (_.isNil(logger)) {
     log = {
