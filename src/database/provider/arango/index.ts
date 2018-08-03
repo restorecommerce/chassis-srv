@@ -778,7 +778,7 @@ export class Arango {
       throw new Error('missing start vertex name');
     }
     if (opts.lowestCommonAncestor) {
-      return this.findTreesCommonAncestor(startVertex as string[]);
+      return this.findTreesCommonAncestor(startVertex as string[], collection);
     }
 
     const vertex = startVertex as string;
@@ -834,10 +834,11 @@ export class Arango {
   /**
    * Finds the lowest common ancestor between two nodes of a tree-shaped graph and returns the subtree in that node.
    */
-  async findTreesCommonAncestor(nodes: string[]): Promise<any> {
+  async findTreesCommonAncestor(nodes: string[], collectionName: string): Promise<any> {
     // preprocessing to get all the roots
     const roots = {};
     for (let node of nodes) {
+      node = `${collectionName}/${node}`;
       const result = await this.db.query(`FOR v IN 1..10000 OUTBOUND @vertex GRAPH @graph RETURN v`, { graph: this.graph.name, vertex: node });
       const items = await result.next();
       if (_.isEmpty(items)) {
