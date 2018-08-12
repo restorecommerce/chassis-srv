@@ -1,6 +1,7 @@
-import { Database, aql, Graph } from 'arangojs';
+import { Database, aql, Graph, EdgeCollection } from 'arangojs';
 import * as _ from 'lodash';
 import * as retry from 'async-retry';
+import { config } from '@restorecommerce/chassis-srv/src';
 
 const DB_SYSTEM = '_system';
 
@@ -770,15 +771,17 @@ export class Arango {
   * opts.init, opts.expander, opts.sort
   * @return  {[Object]} edge traversal path
   */
-  async traversal(startVertex: string | string[], opts: any, collectionName?: string):
+  async traversal(startVertex: string | string[], opts: any, collectionName?: string,
+    edgeName?: string):
     Promise<Object> {
     let collection;
     let traversedData;
     if (_.isNil(startVertex)) {
       throw new Error('missing start vertex name');
     }
-    if (opts.lowestCommonAncestor) {
-      return this.findTreesCommonAncestor(startVertex as string[], collection);
+    if (opts.lowest_common_ancestor) {
+      return this.findTreesCommonAncestor(startVertex as string[],
+        collectionName, edgeName);
     }
 
     const vertex = startVertex as string;
@@ -834,21 +837,26 @@ export class Arango {
   /**
    * Finds the lowest common ancestor between two nodes of a tree-shaped graph and returns the subtree in that node.
    */
-  async findTreesCommonAncestor(nodes: string[], collectionName: string): Promise<any> {
+  async findTreesCommonAncestor(nodes: string[], collectionName: string,
+    edgeName: string): Promise<any> {
     // preprocessing to get all the roots
+    const collection = this.graph.edgeCollection(edgeName);
     const roots = {};
     for (let node of nodes) {
       node = `${collectionName}/${node}`;
-      const result = await this.db.query(`FOR v IN 1..10000 OUTBOUND @vertex GRAPH @graph RETURN v`, { graph: this.graph.name, vertex: node });
-      const items = await result.next();
-      if (_.isEmpty(items)) {
+      const result = await collection.traversal(node, {
+        direction: 'outbound'
+      });
+      // const result = await this.db.query(`FOR v IN 1..10000 OUTBOUND @vertex GRAPH @graph FILTER "${rawFilter}" RETURN v`, { graph: this.graph.name, vertex: node });
+
+      if (_.isEmpty(result.visited) || _.isEmpty(result.visited.vertices)) {
         if (!roots[node]) {
           roots[node] = [node];
         }
 
         continue;
       }
-
+      const items = result.visited.vertices;
       const root = _.isArray(items) ? items[items.length - 1] : items;
       if (!roots[root._id]) {
         roots[root._id] = [node];
@@ -869,7 +877,8 @@ export class Arango {
 
     const that = this;
     const findCommonAncestor = async function findCommonAncestor(nodeA, nodeB) {
-      const queryTpl = `LET firstPath = (FOR v IN 1..10000 OUTBOUND @vertex1 GRAPH @graph RETURN v)
+      const queryTpl = `LET firstPath = (FOR v IN 1..10000
+      OUTBOUND @vertex1 GRAPH @graph RETURN v)
         FOR v,e,p IN 1..10000 OUTBOUND @vertex2 GRAPH @graph
           LET pos = POSITION(firstPath, v, true)
           FILTER pos != -1
@@ -882,13 +891,12 @@ export class Arango {
         graph: that.graph.name
       });
       if (result.count == 0) {
-        throw new Error('Unimplemented: hierarchical resourcs do not share the same root');
+        throw new Error('Unimplemented: hierarchical resources do not share the same root');
       }
       const item = await result.next();
       return item[0];
     };
 
-    // console.log(await lca(nodes[0], nodes.slice(1, nodes.length)));
     let paths = []; // the edges allow us to build the tree
     for (let root in roots) {
       let ancestor: string;
@@ -896,14 +904,14 @@ export class Arango {
         ancestor = root;
       } else {
         const list = roots[root];
-        let vertex = await lca(list[0], nodes.slice(1, list.length));
+        let vertex = await lca(list[0], list.slice(1, list.length));
         if (_.isArray(vertex)) {
           vertex = vertex[0];
         }
         ancestor = vertex._id;
       }
-      const traversal = await this.graph.traversal(ancestor, {
-        direction: 'inbound'
+      const traversal = await collection.traversal(ancestor, {
+        direction: 'inbound',
       });
       const visited = traversal.visited;
       paths = paths.concat(visited.paths);
