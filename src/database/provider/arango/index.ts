@@ -1327,7 +1327,7 @@ export class Arango {
     if (_.isNil(collection)) {
       const collections = await this.db.collections();
       for (let i = 0; i < collections.length; i += 1) {
-        const c = this.db.collection(collections[i].name)
+        const c = this.db.collection(collections[i].name);
         await c.truncate();
       }
     } else {
