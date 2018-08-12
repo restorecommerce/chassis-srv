@@ -1,7 +1,6 @@
 import { Database, aql, Graph, EdgeCollection } from 'arangojs';
 import * as _ from 'lodash';
 import * as retry from 'async-retry';
-import { config } from '@restorecommerce/chassis-srv/src';
 
 const DB_SYSTEM = '_system';
 
