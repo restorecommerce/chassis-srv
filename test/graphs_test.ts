@@ -173,7 +173,9 @@ function testProvider(providerCfg) {
       await db.createEdge('org_has_parent_org', edges[1]);
     });
     it('should test lowest common ancestor', async function () {
-      const result = await db.traversal([`organizations/${vertices[1].id}`, `organizations/${vertices[2].id}`, `organizations/${vertices[3].id}`], { lowestCommonAncestor: true }, 'organizations');
+      const result = await db.traversal([`${vertices[1].id}`,
+        `${vertices[2].id}`, `${vertices[3].id}`],
+        { lowest_common_ancestor: true }, 'organizations', 'org_has_parent_org');
       should.exist(result);
       should.exist(result.paths);
       should.exist(result.paths.value);

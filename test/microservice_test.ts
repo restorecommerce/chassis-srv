@@ -90,6 +90,7 @@ describe('microservice.Server', () => {
     it('should throw an error when services config is missing',
       async function throwErrorOnMissingConfig() {
         await config.load(process.cwd() + '/test');
+        cfg = await config.get();
         const logger = new Logger(cfg.get('logger'));
         cfg = sconfig(process.cwd() + '/test', logger);
         cfg.set('server:services', undefined);
