@@ -422,7 +422,7 @@ export class Arango {
       if (err.message === 'graph already exists') {
         return this.graph;
       }
-      throw err;
+      throw { code: err.code, message: err.message };
     }
     return this.graph;
   }
@@ -964,7 +964,7 @@ export class Arango {
       if (err.message === 'multi use of edge collection in edge def') {
         return edgeDef;
       }
-      throw err;
+      throw { code: err.code, message: err.message };
     }
   }
 
