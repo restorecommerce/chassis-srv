@@ -572,10 +572,10 @@ export class Arango {
     try {
       collection = await this.graph.addVertexCollection(collectionName);
     } catch (err) {
-      if (err.code === 1929 || err.code === 1938) {
+      if (err.message.indexOf('collection already used in edge def') > -1 || err.message.indexOf('collection used in orphans') > -1) {
         return collection;
       }
-      throw { code: err.code, message: err.message };
+      throw new Error(err.message);
     }
     return collection;
   }
