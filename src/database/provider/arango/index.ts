@@ -568,16 +568,16 @@ export class Arango {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
-    let collections;
+    let collection;
     try {
-      collections = await this.graph.addVertexCollection(collectionName);
+      collection = await this.graph.addVertexCollection(collectionName);
     } catch (err) {
-      if (err.message === 'collection already used in edge def') {
-        return collections;
+      if (err.code === 1929 || err.code === 1938) {
+        return collection;
       }
-      throw err;
+      throw { code: err.code, message: err.message };
     }
-    return collections;
+    return collection;
   }
 
   /**
