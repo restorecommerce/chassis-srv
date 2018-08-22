@@ -805,11 +805,15 @@ export class Arango {
       opts.direction = 'outbound';
     }
 
-    if (collectionName) {
-      collection = this.graph.edgeCollection(collectionName);
-      traversedData = await collection.traversal(vertex, opts);
-    } else {
-      traversedData = await this.graph.traversal(vertex, opts);
+    try {
+      if (collectionName) {
+        collection = this.graph.edgeCollection(collectionName);
+        traversedData = await collection.traversal(vertex, opts);
+      } else {
+        traversedData = await this.graph.traversal(vertex, opts);
+      }
+    } catch (err) {
+      throw { code: err.code, message: err.message };
     }
     let response: any = {
       vertex_fields: [],
