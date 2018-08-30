@@ -25,10 +25,48 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export async function get(config: any, logger: any, graphName?: string): Promise<any> {
+export async function get(config: any, logger: any, graphName?: string): Promise<DatabaseProvider> {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
   }
   return await db(config, logger, graphName);
+}
+
+export interface DatabaseProvider {
+  insert(collectionName: string, documents: any): Promise<void>;
+  find(collectionName: string, filter: any, options: any): Promise<Array<any>>;
+  findByID(collectionName: string, ids: string | string[], options: any): Promise<Array<any>>;
+  update(collectionName: string, filter: any, document: any): Promise<Array<any>>;
+  upsert(collectionName: string, documents: any): Promise<Array<any>>;
+  delete(collectionName: string, filter: any): Promise<void>;
+  count(collectionName: string, filter: any): Promise<number>;
+  truncate(collectionName: string): Promise<void>;
+}
+
+export interface GraphDatabaseProvider {
+  createGraphDB(graphName: string): any;
+  createVertex(collectionName: string, data: any): any;
+  getVertex(collectionName: string, documentHandle: string): any;
+  removeVertex(collectionName: string, documentHandles: string | string[]): any;
+  getVertexCollection(collectionName: string): any;
+  listVertexCollections(excludeOrphans?: boolean): any;
+  getAllVertexCollections(excludeOrphans?: boolean): any;
+  addVertexCollection(collectionName: string): any;
+  removeVertexCollection(collectionName: string, dropCollection?: boolean): any;
+  getGraphDB(): any;
+  createEdge(collectionName: string, data: Object, fromId?: string, toId?: string): any;
+  getEdge(collectionName: string, documentHandle: string): any;
+  getAllEdgesForVertice(collectionName: string, documentHandle: string): any;
+  getInEdges(collectionName: string, documentHandle: string): any;
+  getOutEdges(collectionName: string, documentHandle: string): any;
+  traversalFilter(filterObj: any): string;
+  traversalExpander(expanderObj: any): string;
+  traversal(startVertex: string | string[], opts: any, collectionName?: string, edgeName?: string): any;
+  findTreesCommonAncestor(nodes: string[], collectionName: string, edgeName: string): any;
+  addEdgeDefinition(collectionName: string, fromVertice: Object | [Object], toVertice: Object | [Object]): any;
+  replaceEdgeDefinition(collectionName: string, definition: Object): any;
+  removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;
+  listGraphs(): any;
+  removeEdge(collectionName: string, documentHandle: string): any;
 }
