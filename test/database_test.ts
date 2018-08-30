@@ -15,12 +15,18 @@ const providers = [
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = new Logger(cfg.get('logger'));
+      return database.get(cfg.get('database:arango'), logger);
+    },
+    drop: async function drop(): Promise<any> {
+      await config.load(process.cwd() + '/test');
+      const cfg = await config.get();
+
       const dbHost: string = cfg.get('database:arango:host');
       const dbPort: string = cfg.get('database:arango:port');
       const dbName: string = cfg.get('database:arango:database');
+
       const db = new Database('http://' + dbHost + ':' + dbPort);
       await db.dropDatabase(dbName);
-      return database.get(cfg.get('database:arango'), logger);
     }
   },
   {
@@ -30,7 +36,8 @@ const providers = [
       const cfg = await config.get();
       const logger = new Logger(cfg.get('logger'));
       return database.get(cfg.get('database:nedb'), logger);
-    }
+    },
+    drop: async function drop(): Promise<any> { }
   }
 ];
 providers.forEach((providerCfg) => {
@@ -51,11 +58,16 @@ function testProvider(providerCfg) {
     { id: '/test/sort5', include: false },
   ];
   const document = testData[4];
+
   beforeEach(async function initDB() {
     db = await providerCfg.init();
     await db.insert(collection, testData);
     should.exist(db);
     const result = await db.count(collection, {});
+  });
+
+  afterEach(async function dropDB() {
+    await providerCfg.drop();
   });
   describe('upsert', () => {
     it('should insert a new document if it does not exist', async function checkUpsert() {
