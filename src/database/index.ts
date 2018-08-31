@@ -50,7 +50,7 @@ export interface DatabaseProvider {
 }
 
 
-export interface GraphDatabaseProvider {
+export interface GraphDatabaseProvider extends DatabaseProvider {
   createGraphDB(graphName: string): any;
   createVertex(collectionName: string, data: any): any;
   getVertex(collectionName: string, documentHandle: string): any;
