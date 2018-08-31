@@ -129,11 +129,6 @@ describe('microservice.Server', () => {
         should.exist(server.logger);
         should.exist(server.logger.log);
         const levels = [
-          // 'silly',
-          // 'verbose',
-          // 'debug',
-          // 'info',
-          // 'warn',
           'error'
         ];
         _.forEach(levels, (level) => {

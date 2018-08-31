@@ -23,7 +23,7 @@
     "arangojs": "^6.3.0",
     "async-retry": "^1.2.1",
     "cache-manager": "^2.9.0",
-    "grpc": "1.10.1",
+    "grpc": "^1.14.1",
     "lodash": "^4.17.5",
     "nedb": "^1.8.0",
     "protobufjs": "^6.8.6",
@@ -46,16 +46,15 @@
     "should": "^13.2.1",
     "sleep": "^5.1.1",
     "tslint": "^5.9.1",
-    "typescript": "^2.9.2"
+    "typescript": "^3.0.3"
   },
   "scripts": {
     "lint": "tslint './src/**/*.ts' ",
     "test": "npm run lint && npm run mocha",
-    "test-debug": "npm run mochadebug",
-    "mochadebug": "mocha -R spec test/*.js --full-trace --inspect-brk",
-    "mocha": "mocha -R spec test/*.js --full-trace --exit --trace-warnings",
+    "mochadebug": "export NODE_ENV=test; mocha -R spec test/*.js --full-trace --inspect-brk",
+    "mocha": "export NODE_ENV=test; mocha -R spec test/*.js --full-trace --exit --trace-warnings",
     "tsctests": "tsc test/*.ts --module commonjs -target ES6",
-    "coveralls": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/*.js --exit",
+    "coveralls": "export NODE_ENV=test; istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/*.js --exit",
     "pretest": "npm run tsctests",
     "postinstall": "tsc -d"
   },
