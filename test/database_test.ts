@@ -93,7 +93,7 @@ const providers = [
           result.should.have.length(6);
         });
         it('should apply a custom filter within a `find` query', async () => {
-          const script = `node.id == @param`;
+          const script = `filter node.id == @param`;
           await db.registerCustomQuery('script', script, 'filter');
           const result = await db.find('test', {}, {
             custom_query: 'script',
@@ -113,7 +113,7 @@ const providers = [
           result[0].value.should.equal('c');
         });
         it('should combine a custom filter with normal filters', async () => {
-          const script = `node.value != @param`;
+          const script = `filter node.value != @param`;
           await db.registerCustomQuery('script', script, 'filter');
           const result = await db.find('test', {
             include: {
@@ -452,5 +452,5 @@ function testProvider(providerCfg) {
       await db.truncate();
     });
   });
-  describe.only('custom tests', () => providerCfg.custom());
+  describe('custom tests', () => providerCfg.custom());
 }

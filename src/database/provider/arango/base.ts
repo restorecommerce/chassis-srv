@@ -80,7 +80,7 @@ export class Arango implements DatabaseProvider {
     }
     let queryString = `FOR node in @@collection FILTER ${filterQuery}`;
     if (customQuery && customQuery.type == 'filter') {
-      queryString += ` FILTER ${customQuery.code} `;
+      queryString += ` ${customQuery.code} `;
     }
     queryString   += ` ${sortQuery}
       ${limitQuery} ${returnQuery}`;
