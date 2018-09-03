@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
-import { Graph, Database, aql } from "arangojs";
+import { Graph, Database } from "arangojs";
 
 import { Arango } from "./base";
-import { ensureKey, sanitizeFields, encodeMessage, query } from "./common";
+import { ensureKey, sanitizeFields, encodeMessage } from "./common";
 import { GraphDatabaseProvider } from '../..';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {

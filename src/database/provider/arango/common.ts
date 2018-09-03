@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import { AqlQuery } from 'arangojs/lib/cjs/aql-query';
 
 /**
  * Ensure that the collection exists and process the query
@@ -8,7 +9,7 @@ import * as _ from 'lodash';
  * @param {Object} args list of arguments, optional
  * @return {Promise} arangojs query result
  */
-export async function query(db: any, collectionName: string, query: any,
+export async function query(db: any, collectionName: string, query: string | AqlQuery,
   args?: Object): Promise<any> {
   try {
     return await db.query(query, args);

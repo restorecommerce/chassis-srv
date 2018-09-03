@@ -3,15 +3,18 @@ import * as _ from 'lodash';
 import { Logger } from '../lib/logger';
 import { Database } from 'arangojs';
 import * as chassis from '../lib';
+import { DatabaseProvider } from '../lib/database';
 const config = chassis.config;
 const database = chassis.database;
+
+let db: DatabaseProvider;
 
 /* global describe context it beforeEach */
 
 const providers = [
   {
     name: 'arango',
-    init: async function init(): Promise<any> {
+    init: async function init(): Promise<DatabaseProvider> {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = new Logger(cfg.get('logger'));
@@ -27,17 +30,101 @@ const providers = [
 
       const db = new Database('http://' + dbHost + ':' + dbPort);
       await db.dropDatabase(dbName);
+    },
+    custom: function customTests() {
+      describe('testing custom queries', () => {
+        it('should register a custom query', () => {
+          const script = 'return "Hello World"';
+          db.registerCustomQuery('helloWorld', script, 'query');
+          const queries = db.listCustomQueries();
+          should.exist(queries);
+          queries.should.have.length(1);
+          should.exist(queries[0][0]);
+          queries[0][0].should.equal('helloWorld');
+
+          should.exist(queries[0][1]);
+          should.exist(queries[0][1].code);
+          queries[0][1].code.should.equal(script);
+          should.exist(queries[0][1].type);
+          queries[0][1].type.should.equal('query');
+        });
+        it('should unregister a custom query', async () => {
+          const script = 'return "Hello World";';
+          db.registerCustomQuery('helloWorld', script, 'query');
+          let functions = db.listCustomQueries();
+          should.exist(functions);
+          functions.should.have.length(1);
+
+          db.unregisterCustomQuery('helloWorld');
+          functions = db.listCustomQueries();
+          should.exist(functions);
+          functions.should.have.length(0);
+        });
+        it('should execute a custom query', async () => {
+          const script = `return "Hello World"`;
+          await db.registerCustomQuery('helloWorld', script, 'query');
+          const result = await db.find('test', {}, {
+            custom_query: 'helloWorld'
+          });
+          should.exist(result);
+          result.should.have.length(1);
+          result[0].should.equal('Hello World');
+        });
+        it('should execute a custom query with custom parameters', async () => {
+          const script = `return @param`;
+          await db.registerCustomQuery('helloWorld', script, 'query');
+          const result = await db.find('test', {}, {
+            custom_query: 'helloWorld',
+            custom_arguments: {
+              param: 'Hello World'
+            }
+          });
+          should.exist(result);
+          result.should.have.length(1);
+          result[0].should.equal('Hello World');
+        });
+        it('should execute a custom query which accesses the database', async () => {
+          const script = `for t in test return t`;
+          await db.registerCustomQuery('script', script, 'query');
+          const result = await db.find('test', {}, {
+            custom_query: 'script'
+          });
+          should.exist(result);
+          result.should.have.length(6);
+        });
+        it('should execute a custom filter within a `find` query', async () => {
+          const script = `node.id == @param`;
+          await db.registerCustomQuery('script', script, 'filter');
+          const result = await db.find('test', {}, {
+            custom_query: 'script',
+            custom_arguments: {
+              param: '/test/sort0'
+            }
+          });
+
+          should.exist(result);
+          result.should.have.length(1);
+
+          should.exist(result[0].id);
+          result[0].id.should.equal('/test/sort0');
+          should.exist(result[0].include);
+          result[0].include.should.equal(true);
+          should.exist(result[0].value);
+          result[0].value.should.equal('c');
+        });
+      });
     }
   },
   {
     name: 'nedb',
-    init: async function init(): Promise<any> {
+    init: async function init(): Promise<DatabaseProvider> {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = new Logger(cfg.get('logger'));
       return database.get(cfg.get('database:nedb'), logger);
     },
-    drop: async function drop(): Promise<any> { }
+    drop: async function drop(): Promise<any> { },
+    custom: () => { return () => { }; }
   }
 ];
 providers.forEach((providerCfg) => {
@@ -47,7 +134,6 @@ providers.forEach((providerCfg) => {
 });
 
 function testProvider(providerCfg) {
-  let db;
   const collection = 'test';
   const testData = [
     { id: '/test/sort0', value: 'c', include: true },
@@ -259,7 +345,7 @@ function testProvider(providerCfg) {
         },
       });
       // 3 fields with value as an empty field
-      should.not.exist(result.error);
+      should.exist(result);
     });
   });
   describe('inserting a document', () => {
@@ -333,4 +419,5 @@ function testProvider(providerCfg) {
       await db.truncate();
     });
   });
+  describe.only('custom tests', () => providerCfg.custom());
 }

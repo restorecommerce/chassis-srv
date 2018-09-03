@@ -30,7 +30,7 @@ export async function get(config: any, logger: any, graphName?: string): Promise
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
   }
-  return await db(config, logger, graphName);
+  return db(config, logger, graphName);
 }
 
 export interface DatabaseProvider {
@@ -45,8 +45,7 @@ export interface DatabaseProvider {
 
   registerCustomQuery?: (name: string, script: string, type?: string) => any;
   unregisterCustomQuery?: (name: string) => any;
-  executeCustomQuery?: (scriptName: string, collection: string, args: any) => any;
-  listCustomQueries?: () => any;
+  listCustomQueries?: () => Array<any>;
 }
 
 

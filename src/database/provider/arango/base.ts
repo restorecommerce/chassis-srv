@@ -2,19 +2,27 @@ import { Database, aql } from 'arangojs';
 import * as _ from 'lodash';
 import { buildFilter, buildSorter, buildLimiter, buildReturn, sanitizeFields, query, ensureKey } from './common';
 import { DatabaseProvider } from '../..';
+import { ArrayCursor } from 'arangojs/lib/cjs/cursor';
 
+export interface CustomQuery {
+  code: string; // AQL code
+  // filter - combinable with the generic `find` query
+  // query - standalone
+  type: 'filter' | 'query';
+}
 /**
  * ArangoDB database provider.
  */
 export class Arango implements DatabaseProvider {
   db: Database;
-
+  customQueries: Map<string, CustomQuery>;
   /**
    *
    * @param {Object} conn Arangojs database connection.
    */
   constructor(conn: any) {
     this.db = conn;
+    this.customQueries = new Map<string, CustomQuery>();
   }
 
   /**
@@ -29,6 +37,20 @@ export class Arango implements DatabaseProvider {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
+    }
+
+    let customQuery: CustomQuery;
+    // checking if a custom query should be used
+    if (!_.isEmpty(options.custom_query)) {
+      if (!this.customQueries.has(options.custom_query)) {
+        throw new Error('custom query not found');
+      }
+      customQuery = this.customQueries.get(options.custom_query);
+      if (customQuery.type == 'query') {
+        // standalone query
+        const result: ArrayCursor = await query(this.db, collectionName, customQuery.code, options.custom_arguments || {}); // Cursor object
+        return result.all(); // TODO: paginate
+      }
     }
 
     let filterQuery: any = filter || {};
@@ -55,8 +77,13 @@ export class Arango implements DatabaseProvider {
     if (_.isEmpty(returnQuery)) {
       returnQuery = 'RETURN node';
     }
-    let queryString = `FOR node in @@collection FILTER ${filterQuery} ${sortQuery}
+    let queryString = `FOR node in @@collection FILTER ${filterQuery}`;
+    if (customQuery && customQuery.type == 'filter') {
+      queryString += ` FILTER ${customQuery.code} `;
+    }
+    queryString   += `${sortQuery}
       ${limitQuery} ${returnQuery}`;
+
     let varArgs = {};
     if (filterResult && filterResult.bindVarsMap) {
       varArgs = filterResult.bindVarsMap;
@@ -76,11 +103,15 @@ export class Arango implements DatabaseProvider {
         }
       }
     }
-    varArgs = Object.assign(varArgs, limitArgs);
-    varArgs = Object.assign(varArgs, returnArgs);
-    bindVars = Object.assign({
+    varArgs = _.assign(varArgs, limitArgs);
+    varArgs = _.assign(varArgs, returnArgs);
+    bindVars = _.assign({
       '@collection': collectionName
     }, varArgs);
+    if (customQuery && options.custom_arguments) {
+      bindVars = _.assign(bindVars, options.custom_arguments);
+    }
+
     const res = await query(this.db, collectionName, queryString, bindVars);
     const docs = await res.all();
     _.forEach(docs, (doc, i) => {
@@ -108,7 +139,6 @@ export class Arango implements DatabaseProvider {
     if (!_.isArray(ids)) {
       ids = [ids as string];
     }
-    const idVals = new Array(ids.length);
     const filter = (ids as string[]).map((id) => {
       return { id };
     });
@@ -317,5 +347,33 @@ export class Arango implements DatabaseProvider {
     const collection = this.db.collection(collectionName);
     const queryTemplate = aql`FOR document in ${docs} INSERT document INTO ${collection}`;
     await query(this.db, collectionName, queryTemplate);
+  }
+
+  /**
+   * Registers a custom AQL query.
+   *
+   * @param script
+   * @param name
+   */
+  registerCustomQuery(name: string, script: string, type: 'filter' | 'query'): void {
+    this.customQueries.set(name, {
+      code: script,
+      type
+    });
+  }
+
+  /**
+   * Unregisters a custom query.
+   * @param name
+   */
+  unregisterCustomQuery(name: string): void {
+    if (!this.customQueries.has(name)) {
+      throw new Error('custom function not found');
+    }
+    this.customQueries.delete(name);
+  }
+
+  listCustomQueries(): Array<any> {
+    return [...this.customQueries];
   }
 }
