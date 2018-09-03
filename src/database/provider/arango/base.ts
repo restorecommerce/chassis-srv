@@ -109,8 +109,8 @@ export class Arango implements DatabaseProvider {
     bindVars = _.assign({
       '@collection': collectionName
     }, varArgs);
-    if (customQuery && options.customArguments) {
-      bindVars = _.assign(bindVars, options.customArguments);
+    if (customQuery && opts.customArguments) {
+      bindVars = _.assign(bindVars, opts.customArguments);
     }
 
     const res = await query(this.db, collectionName, queryString, bindVars);

@@ -35,12 +35,12 @@ export async function get(config: any, logger: any, graphName?: string): Promise
 
 export interface DatabaseProvider {
   insert(collectionName: string, documents: any): Promise<void>;
-  find(collectionName: string, filter: any, options?: any): Promise<Array<any>>;
+  find(collectionName: string, filter?: any, options?: any): Promise<Array<any>>;
   findByID(collectionName: string, ids: string | string[], options?: any): Promise<Array<any>>;
   update(collectionName: string, filter: any, document: any): Promise<Array<any>>;
   upsert(collectionName: string, documents: any): Promise<Array<any>>;
-  delete(collectionName: string, filter: any): Promise<void>;
-  count(collectionName: string, filter: any): Promise<number>;
+  delete(collectionName: string, filter?: any): Promise<void>;
+  count(collectionName: string, filter?: any): Promise<number>;
   truncate(collectionName?: string): Promise<void>;
 
   registerCustomQuery?: (name: string, script: string, type?: string) => any;
