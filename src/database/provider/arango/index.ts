@@ -2,6 +2,7 @@ import { Arango } from './base';
 import { ArangoGraph } from './graph';
 
 import * as retry from 'async-retry';
+import * as fs from 'fs';
 import { Database } from 'arangojs';
 
 const DB_SYSTEM = '_system';
@@ -24,6 +25,7 @@ export async function create(conf: any, logger: any, graphName?: string): Promis
   }
   let graph;
   const conn = await connect(conf, log);
+  let db: Arango;
   // conn is nothing but this.db
   if (graphName) {
     graph = conn.graph(graphName);
@@ -35,10 +37,20 @@ export async function create(conf: any, logger: any, graphName?: string): Promis
       }
     }
 
-    return new ArangoGraph(conn, graph);
+    db = new ArangoGraph(conn, graph);
   }
 
-  return new Arango(conn);
+  db = new Arango(conn);
+
+  if (conf.customQueries) {
+    conf.customQueries.forEach((obj) => {
+      const { path, name, type } = obj;
+      const script = fs.readFileSync(path, 'utf8');
+      console.log('Registering...', name, script);
+      db.registerCustomQuery(name, script, type);
+    });
+  }
+  return db;
 }
 
 
