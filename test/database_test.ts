@@ -92,7 +92,7 @@ const providers = [
           should.exist(result);
           result.should.have.length(6);
         });
-        it('should execute a custom filter within a `find` query', async () => {
+        it('should apply a custom filter within a `find` query', async () => {
           const script = `node.id == @param`;
           await db.registerCustomQuery('script', script, 'filter');
           const result = await db.find('test', {}, {
@@ -111,6 +111,39 @@ const providers = [
           result[0].include.should.equal(true);
           should.exist(result[0].value);
           result[0].value.should.equal('c');
+        });
+        it('should combine a custom filter with normal filters', async () => {
+          const script = `node.value != @param`;
+          await db.registerCustomQuery('script', script, 'filter');
+          const result = await db.find('test', {
+            include: {
+              $eq: true
+            }
+          }, {
+              custom_query: 'script',
+              custom_arguments: {
+                param: 'a'
+              }
+            });
+
+          should.exist(result);
+          result.should.have.length(2);
+
+          const sorted = _.sortBy(result, ['id']);
+
+          should.exist(sorted[0].id);
+          sorted[0].id.should.equal('/test/sort0');
+          should.exist(sorted[0].include);
+          sorted[0].include.should.equal(true);
+          should.exist(sorted[0].value);
+          sorted[0].value.should.equal('c');
+
+          should.exist(sorted[1].id);
+          sorted[1].id.should.equal('/test/sort4');
+          should.exist(sorted[1].include);
+          sorted[1].include.should.equal(true);
+          should.exist(sorted[1].value);
+          sorted[1].value.should.equal('b');
         });
       });
     }
