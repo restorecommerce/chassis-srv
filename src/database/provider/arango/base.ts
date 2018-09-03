@@ -40,23 +40,24 @@ export class Arango implements DatabaseProvider {
     }
 
     let customQuery: CustomQuery;
-    // checking if a custom query should be used
-    if (!_.isEmpty(options.custom_query)) {
-      if (!this.customQueries.has(options.custom_query)) {
-        throw new Error('custom query not found');
-      }
-      customQuery = this.customQueries.get(options.custom_query);
-      if (customQuery.type == 'query') {
-        // standalone query
-        const result: ArrayCursor = await query(this.db, collectionName, customQuery.code, options.custom_arguments || {}); // Cursor object
-        return result.all(); // TODO: paginate
-      }
-    }
 
     let filterQuery: any = filter || {};
     const opts = options || {};
     let filterResult: any;
     let bindVars: any;
+
+    // checking if a custom query should be used
+    if (!_.isEmpty(opts.customQuery)) {
+      if (!this.customQueries.has(opts.customQuery)) {
+        throw new Error('custom query not found');
+      }
+      customQuery = this.customQueries.get(opts.customQuery);
+      if (customQuery.type == 'query') {
+        // standalone query
+        const result: ArrayCursor = await query(this.db, collectionName, customQuery.code, opts.customArguments || {}); // Cursor object
+        return result.all(); // TODO: paginate
+      }
+    }
 
     if (!_.isArray(filterQuery)) {
       filterQuery = [filterQuery];
@@ -81,7 +82,7 @@ export class Arango implements DatabaseProvider {
     if (customQuery && customQuery.type == 'filter') {
       queryString += ` FILTER ${customQuery.code} `;
     }
-    queryString   += `${sortQuery}
+    queryString   += ` ${sortQuery}
       ${limitQuery} ${returnQuery}`;
 
     let varArgs = {};
@@ -108,8 +109,8 @@ export class Arango implements DatabaseProvider {
     bindVars = _.assign({
       '@collection': collectionName
     }, varArgs);
-    if (customQuery && options.custom_arguments) {
-      bindVars = _.assign(bindVars, options.custom_arguments);
+    if (customQuery && options.customArguments) {
+      bindVars = _.assign(bindVars, options.customArguments);
     }
 
     const res = await query(this.db, collectionName, queryString, bindVars);
