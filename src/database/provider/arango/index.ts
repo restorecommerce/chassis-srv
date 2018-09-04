@@ -45,7 +45,6 @@ export async function create(conf: any, logger: any, graphName?: string): Promis
       conf.customQueries.forEach((obj) => {
         const { path, name, type } = obj;
         const script = fs.readFileSync(path, 'utf8');
-        console.log('Registering...', name, script);
         db.registerCustomQuery(name, script, type);
       });
     }
