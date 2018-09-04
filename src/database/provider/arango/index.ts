@@ -40,14 +40,14 @@ export async function create(conf: any, logger: any, graphName?: string): Promis
     db = new ArangoGraph(conn, graph);
   } else {
     db = new Arango(conn);
+  }
 
-    if (conf.customQueries) {
-      conf.customQueries.forEach((obj) => {
-        const { path, name, type } = obj;
-        const script = fs.readFileSync(path, 'utf8');
-        db.registerCustomQuery(name, script, type);
-      });
-    }
+  if (conf.customQueries) {
+    conf.customQueries.forEach((obj) => {
+      const { path, name, type } = obj;
+      const script = fs.readFileSync(path, 'utf8');
+      db.registerCustomQuery(name, script, type);
+    });
   }
 
   return db;
