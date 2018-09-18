@@ -64,7 +64,7 @@ const providers = [
           const script = `return "Hello World"`;
           await db.registerCustomQuery('helloWorld', script, 'query');
           const result = await db.find('test', {}, {
-            custom_query: 'helloWorld'
+            customQueries: ['helloWorld']
           });
           should.exist(result);
           result.should.have.length(1);
@@ -74,8 +74,8 @@ const providers = [
           const script = `return @param`;
           await db.registerCustomQuery('helloWorld', script, 'query');
           const result = await db.find('test', {}, {
-            custom_query: 'helloWorld',
-            custom_arguments: {
+            customQueries: ['helloWorld'],
+            customArguments: {
               param: 'Hello World'
             }
           });
@@ -87,7 +87,7 @@ const providers = [
           const script = `for t in test return t`;
           await db.registerCustomQuery('script', script, 'query');
           const result = await db.find('test', {}, {
-            custom_query: 'script'
+            customQueries: ['script']
           });
           should.exist(result);
           result.should.have.length(6);
@@ -96,8 +96,8 @@ const providers = [
           const script = `filter node.id == @param`;
           await db.registerCustomQuery('script', script, 'filter');
           const result = await db.find('test', {}, {
-            custom_query: 'script',
-            custom_arguments: {
+            customQueries: ['script'],
+            customArguments: {
               param: '/test/sort0'
             }
           });
@@ -120,8 +120,8 @@ const providers = [
               $eq: true
             }
           }, {
-              custom_query: 'script',
-              custom_arguments: {
+              customQueries: ['script'],
+              customArguments: {
                 param: 'a'
               }
             });

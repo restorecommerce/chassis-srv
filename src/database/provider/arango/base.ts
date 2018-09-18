@@ -39,23 +39,27 @@ export class Arango implements DatabaseProvider {
       throw new Error('invalid or missing collection argument');
     }
 
-    let customQuery: CustomQuery;
-
     let filterQuery: any = filter || {};
     const opts = options || {};
     let filterResult: any;
     let bindVars: any;
 
+    let customFilter = '';
     // checking if a custom query should be used
-    if (!_.isEmpty(opts.customQuery)) {
-      if (!this.customQueries.has(opts.customQuery)) {
-        throw new Error('custom query not found');
-      }
-      customQuery = this.customQueries.get(opts.customQuery);
-      if (customQuery.type == 'query') {
-        // standalone query
-        const result: ArrayCursor = await query(this.db, collectionName, customQuery.code, opts.customArguments || {}); // Cursor object
-        return result.all(); // TODO: paginate
+    if (!_.isEmpty(opts.customQueries)) {
+      for (let queryName of opts.customQueries) {
+        if (!this.customQueries.has(queryName)) {
+          throw new Error(`custom query ${query} not found`);
+        }
+        const customQuery = this.customQueries.get(queryName);
+        if (customQuery.type == 'query') {
+          // standalone query
+          const result: ArrayCursor = await query(this.db, collectionName, customQuery.code, opts.customArguments || {}); // Cursor object
+          return result.all(); // TODO: paginate
+        } else {
+          // filter
+          customFilter += ` ${customQuery.code} `;
+        }
       }
     }
 
@@ -79,9 +83,10 @@ export class Arango implements DatabaseProvider {
       returnQuery = 'RETURN node';
     }
     let queryString = `FOR node in @@collection FILTER ${filterQuery}`;
-    if (customQuery && customQuery.type == 'filter') {
-      queryString += ` ${customQuery.code} `;
+    if (!_.isEmpty(customFilter)) {
+      queryString += customFilter;
     }
+
     queryString   += ` ${sortQuery}
       ${limitQuery} ${returnQuery}`;
 
@@ -109,12 +114,13 @@ export class Arango implements DatabaseProvider {
     bindVars = _.assign({
       '@collection': collectionName
     }, varArgs);
-    if (customQuery && opts.customArguments) {
+    if (!_.isEmpty(customFilter) && opts.customArguments) {
       bindVars = _.assign(bindVars, opts.customArguments);
     }
 
     const res = await query(this.db, collectionName, queryString, bindVars);
-    const docs = await res.all();
+    const docs = await res.all(); // TODO: paginate
+
     _.forEach(docs, (doc, i) => {
       docs[i] = sanitizeFields(doc);
     });

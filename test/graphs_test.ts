@@ -172,7 +172,7 @@ function testProvider(providerCfg) {
       await db.createEdge('org_has_parent_org', edges[0]);
       await db.createEdge('org_has_parent_org', edges[1]);
     });
-    it('should test lowest common ancestor', async function () {
+    it('should return a tree with the lowest common ancestor as root', async function () {
       const result = await db.traversal([`${vertices[1].id}`,
         `${vertices[2].id}`, `${vertices[3].id}`],
         { lowest_common_ancestor: true }, 'organizations', 'org_has_parent_org');
