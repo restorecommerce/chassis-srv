@@ -1,4 +1,3 @@
-'use strict';
 import * as _ from 'lodash';
 import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';

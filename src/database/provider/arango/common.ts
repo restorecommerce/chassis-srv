@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { AqlQuery } from 'arangojs/lib/cjs/aql-query';
+import * as Long from 'long';
 
 /**
  * Ensure that the collection exists and process the query
@@ -54,8 +55,8 @@ function ensureDatatypes(document: any): any {
   const doc = _.clone(document);
   const keys = _.keys(doc);
   for (let key of keys) {
-    if (_.isNumber(doc[key])) {
-      doc[key] = _.toNumber(doc[key]);
+    if (Long.isLong(doc[key])) {
+      doc[key] = (doc[key] as Long).toNumber();
     }
   }
   return doc;
@@ -111,6 +112,9 @@ export function autoCastValue(value: any): any {
   }
   if (_.isNumber(value)) {
     return _.toNumber(value);
+  }
+  if (Long.isLong(value)) {
+    return (value as Long).toNumber();
   }
   if (_.isDate(value)) { // Date
     return new Date(value);

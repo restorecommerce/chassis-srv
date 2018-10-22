@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as path from 'path';
-import * as co from 'co';
 
 function findType(t: any, root: any): any {
   const pkgName = t.parent.name;

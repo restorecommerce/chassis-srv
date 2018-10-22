@@ -1,9 +1,5 @@
 import * as path from 'path';
-import * as url from 'url';
-import * as ProtoBuf from 'protobufjs';
 import * as grpc from 'grpc';
-import * as co from 'co';
-import * as fs from 'fs';
 import * as _ from 'lodash';
 import * as errors from '../../../errors';
 
