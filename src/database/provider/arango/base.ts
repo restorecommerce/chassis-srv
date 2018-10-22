@@ -1,6 +1,9 @@
 import { Database, aql } from 'arangojs';
 import * as _ from 'lodash';
-import { buildFilter, buildSorter, buildLimiter, buildReturn, sanitizeFields, query, ensureKey } from './common';
+import {
+  buildFilter, buildSorter, buildLimiter, buildReturn,
+  sanitizeInputFields, query, sanitizeOutputFields
+} from './common';
 import { DatabaseProvider } from '../..';
 import { ArrayCursor } from 'arangojs/lib/cjs/cursor';
 
@@ -87,7 +90,7 @@ export class Arango implements DatabaseProvider {
       queryString += customFilter;
     }
 
-    queryString   += ` ${sortQuery}
+    queryString += ` ${sortQuery}
       ${limitQuery} ${returnQuery}`;
 
     let varArgs = {};
@@ -121,9 +124,7 @@ export class Arango implements DatabaseProvider {
     const res = await query(this.db, collectionName, queryString, bindVars);
     const docs = await res.all(); // TODO: paginate
 
-    _.forEach(docs, (doc, i) => {
-      docs[i] = sanitizeFields(doc);
-    });
+    _.forEach(docs, sanitizeOutputFields);
     return docs;
   }
 
@@ -165,7 +166,7 @@ export class Arango implements DatabaseProvider {
     const res = await query(this.db, collectionName, queryString, bindVars);
     const docs = await res.all();
     _.forEach(docs, (doc, i) => {
-      docs[i] = sanitizeFields(doc);
+      docs[i] = sanitizeOutputFields(doc);
     });
     return docs;
   }
@@ -185,16 +186,14 @@ export class Arango implements DatabaseProvider {
     if (_.isNil(document)) {
       throw new Error('invalid or missing document argument');
     }
-    const doc = ensureKey(_.clone(document));
+    const doc = sanitizeInputFields(_.clone(document));
     const collection = this.db.collection(collectionName);
     let queryString = aql`FOR node in ${collection}
       FILTER node.id == ${doc.id}
       UPDATE node WITH ${doc} in ${collection} return NEW`;
     const res = await query(this.db, collectionName, queryString);
     const upDocs = await res.all();
-    return _.map(upDocs, (d) => {
-      return sanitizeFields(d);
-    });
+    return _.map(upDocs, sanitizeOutputFields);
   }
 
   /**
@@ -217,7 +216,7 @@ export class Arango implements DatabaseProvider {
       docs = [documents];
     }
     _.forEach(docs, (document, i) => {
-      docs[i] = ensureKey(document);
+      docs[i] = sanitizeInputFields(document);
     });
     const collection = this.db.collection(collectionName);
     const queryTemplate = aql`FOR document in ${docs} UPSERT { _key: document._key }
@@ -225,9 +224,7 @@ export class Arango implements DatabaseProvider {
 
     const res = await query(this.db, collectionName, queryTemplate);
     const newDocs = await res.all();
-    _.forEach(newDocs, (doc, i) => {
-      newDocs[i] = sanitizeFields(doc);
-    });
+    _.forEach(newDocs, sanitizeOutputFields);
     return newDocs;
   }
 
@@ -349,7 +346,7 @@ export class Arango implements DatabaseProvider {
       docs = [documents];
     }
     _.forEach(docs, (document, i) => {
-      docs[i] = ensureKey(document);
+      docs[i] = sanitizeInputFields(document);
     });
     const collection = this.db.collection(collectionName);
     const queryTemplate = aql`FOR document in ${docs} INSERT document INTO ${collection}`;

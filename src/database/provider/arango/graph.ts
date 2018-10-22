@@ -2,7 +2,7 @@ import * as _ from 'lodash';
 import { Graph, Database } from "arangojs";
 
 import { Arango } from "./base";
-import { ensureKey, sanitizeFields, encodeMessage } from "./common";
+import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from "./common";
 import { GraphDatabaseProvider } from '../..';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
@@ -56,7 +56,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       docs = [docs];
     }
     _.forEach(docs, (document, i) => {
-      docs[i] = ensureKey(document);
+      docs[i] = sanitizeInputFields(document);
     });
     const results = await collection.save(docs);
     _.forEach(results, (result) => {
@@ -64,7 +64,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
         throw new Error(result.errorMessage);
       }
     });
-    return _.map(docs, sanitizeFields);
+    return _.map(docs, sanitizeOutputFields);
   }
 
   /**

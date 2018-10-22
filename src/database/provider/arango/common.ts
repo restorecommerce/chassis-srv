@@ -38,7 +38,7 @@ export function idToKey(id: string): any {
  * @param {Object} document Document template.
  * @return {any} Clone of the document with the _key field set.
  */
-export function ensureKey(document: any): any {
+function ensureKey(document: any): any {
   const doc = _.clone(document);
   if (_.has(doc, '_key')) {
     return doc;
@@ -50,17 +50,33 @@ export function ensureKey(document: any): any {
   return doc;
 }
 
+function ensureDatatypes(document: any): any {
+  const doc = _.clone(document);
+  const keys = _.keys(doc);
+  for (let key of keys) {
+    if (_.isNumber(doc[key])) {
+      doc[key] = _.toNumber(doc[key]);
+    }
+  }
+  return doc;
+}
+
 /**
  * Remove arangodb specific fields.
  * @param {Object} document A document returned from arangodb.
  * @return {Object} A clone of the document without arangodb specific fields.
  */
-export function sanitizeFields(document: Object): Object {
+export function sanitizeOutputFields(document: Object): Object {
   const doc = _.clone(document);
   _.unset(doc, '_id');
   _.unset(doc, '_key');
   _.unset(doc, '_rev');
   return doc;
+}
+
+export function sanitizeInputFields(document: any): any {
+  const doc = ensureDatatypes(document);
+  return ensureKey(doc);
 }
 
 /**
