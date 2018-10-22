@@ -124,8 +124,7 @@ export class Arango implements DatabaseProvider {
     const res = await query(this.db, collectionName, queryString, bindVars);
     const docs = await res.all(); // TODO: paginate
 
-    _.forEach(docs, sanitizeOutputFields);
-    return docs;
+    return _.map(docs, sanitizeOutputFields);
   }
 
   /**
@@ -165,10 +164,7 @@ export class Arango implements DatabaseProvider {
     }, varArgs);
     const res = await query(this.db, collectionName, queryString, bindVars);
     const docs = await res.all();
-    _.forEach(docs, (doc, i) => {
-      docs[i] = sanitizeOutputFields(doc);
-    });
-    return docs;
+    return _.map(docs, sanitizeOutputFields);
   }
 
   /**
@@ -224,8 +220,7 @@ export class Arango implements DatabaseProvider {
 
     const res = await query(this.db, collectionName, queryTemplate);
     const newDocs = await res.all();
-    _.forEach(newDocs, sanitizeOutputFields);
-    return newDocs;
+    return _.map(newDocs, sanitizeOutputFields);
   }
 
   /**
