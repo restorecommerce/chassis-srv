@@ -152,6 +152,7 @@ export function buildComparison(filter: any, op: String, index: number,
   return { q, bindVarsMap };
 }
 
+
 /**
  * Creates a filter key, value.
  * When the value is a string, boolean, number or date a equal comparision is created.
@@ -169,7 +170,7 @@ export function buildField(key: any, value: any, index: number, bindVarsMap: any
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value);
     return autoCastKey(key, value) + ' == ' + bindValueVar;
   }
-  if (value.$eq) {
+  if (!_.isNil(value.$eq)) {
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$eq);
     return autoCastKey(key, value) + ' == ' + bindValueVar;
   }
@@ -189,7 +190,7 @@ export function buildField(key: any, value: any, index: number, bindVarsMap: any
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$lte);
     return autoCastKey(key, value) + ' <= ' + bindValueVar;
   }
-  if (value.$ne) {
+  if (!_.isNil(value.$ne)) {
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$ne);
     return autoCastKey(key, value) + ' != ' + bindValueVar;
   }
@@ -211,7 +212,7 @@ export function buildField(key: any, value: any, index: number, bindVarsMap: any
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$nin);
     return autoCastKey(key, value) + ' NOT IN ' + bindValueVar;
   }
-  if (value.$not) {
+  if (!_.isNil(value.$not)) {
     const temp = buildField(key, value.$not, index, bindVarsMap);
     return `!(${temp})`;
   }
@@ -220,7 +221,7 @@ export function buildField(key: any, value: any, index: number, bindVarsMap: any
     // will always search for an empty string
     return autoCastKey(key, '') + ' == ' + bindValueVar;
   }
-  if (value.$startswith) {
+  if (!_.isNil(value.$startswith)) {
     let bindValueVar1 = `@value${index + 1}`;
     let bindValueVarWithOutPrefix1 = `value${index + 1}`;
     const k = autoCastKey(key);
@@ -229,7 +230,7 @@ export function buildField(key: any, value: any, index: number, bindVarsMap: any
     bindVarsMap[bindValueVarWithOutPrefix1] = v;
     return `LEFT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;
   }
-  if (value.$endswith) {
+  if (!_.isNil(value.$endswith)) {
     let bindValueVar1 = `@value${index + 1}`;
     let bindValueVarWithOutPrefix1 = `value${index + 1}`;
     const k = autoCastKey(key);
