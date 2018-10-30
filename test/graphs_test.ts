@@ -103,7 +103,7 @@ function testProvider(providerCfg) {
     it('should traverse the graph', async function traverseGraph() {
       // traverse graph
       let traversalResponse = await db.traversal(`person/${result[0].id}`,
-        { direction: 'outbound' });
+        { direction: 'outbound' }, null, null, true, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -174,7 +174,7 @@ function testProvider(providerCfg) {
     });
     it('should return a tree with the lowest common ancestor as root', async function () {
       const result = await db.traversal([`${vertices[1].id}`,
-        `${vertices[2].id}`, `${vertices[3].id}`],
+      `${vertices[2].id}`, `${vertices[3].id}`],
         { lowest_common_ancestor: true }, 'organizations', 'org_has_parent_org');
       should.exist(result);
       should.exist(result.paths);

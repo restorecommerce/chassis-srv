@@ -67,7 +67,7 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   getOutEdges(collectionName: string, documentHandle: string): any;
   traversalFilter(filterObj: any): string;
   traversalExpander(expanderObj: any): string;
-  traversal(startVertex: string | string[], opts: any, collectionName?: string, edgeName?: string): any;
+  traversal(startVertex: string | string[], opts: any, collectionName?: string, edgeName?: string, data?: boolean, path?: boolean): any;
   findTreesCommonAncestor(nodes: string[], collectionName: string, edgeName: string): any;
   addEdgeDefinition(collectionName: string, fromVertice: Object | [Object], toVertice: Object | [Object]): any;
   replaceEdgeDefinition(collectionName: string, definition: Object): any;

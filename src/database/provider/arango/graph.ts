@@ -380,8 +380,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @return  {[Object]} edge traversal path
   */
   async traversal(startVertex: string | string[], opts: any, collectionName?: string,
-    edgeName?: string):
-    Promise<Object> {
+    edgeName?: string, data_flag?: boolean, path_flag?: boolean): Promise<Object> {
     let collection;
     let traversedData;
     if (_.isNil(startVertex)) {
@@ -429,18 +428,22 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       data: {},
       paths: {}
     };
-    let encodedData = [];
-    if (traversedData.visited && traversedData.visited.vertices) {
-      for (let vertice of traversedData.visited.vertices) {
-        response.vertex_fields.push(_.pick(vertice, ['_id', '_key', '_rev', 'id']));
-        encodedData.push(_.omit(vertice, ['_key', '_rev']));
+    let encodedData = new Set<Object>();
+    if (data_flag) {
+      if (traversedData.visited && traversedData.visited.vertices) {
+        for (let vertice of traversedData.visited.vertices) {
+          response.vertex_fields.push(_.pick(vertice, ['_id', '_key', '_rev', 'id']));
+          encodedData.add(_.omit(vertice, ['_key', '_rev']));
+        }
+        response.data.value = encodeMessage(Array.from(encodedData));
       }
-      response.data.value = encodeMessage(encodedData);
     }
 
-    if (traversedData.visited && traversedData.visited.paths) {
-      const encodedPaths = encodeMessage(traversedData.visited.paths);
-      response.paths.value = encodedPaths;
+    if (path_flag) {
+      if (traversedData.visited && traversedData.visited.paths) {
+        const encodedPaths = encodeMessage(traversedData.visited.paths);
+        response.paths.value = encodedPaths;
+      }
     }
 
     return response;
