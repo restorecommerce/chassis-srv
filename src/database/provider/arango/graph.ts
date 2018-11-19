@@ -380,7 +380,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @return  {[Object]} edge traversal path
   */
   async traversal(startVertex: string | string[], opts: any, collectionName?: string,
-    edgeName?: string, data_flag?: boolean, path_flag?: boolean): Promise<Object> {
+    edgeName?: string, data_flag?: boolean, path_flag?: boolean,
+    aql?: boolean): Promise<Object> {
     let collection;
     let traversedData;
     if (_.isNil(startVertex)) {
@@ -389,6 +390,23 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     if (opts.lowest_common_ancestor) {
       return this.findTreesCommonAncestor(startVertex as string[],
         collectionName, edgeName);
+    }
+
+    let response: any = {
+      vertex_fields: [],
+      data: {},
+      paths: {}
+    };
+    if (aql && aql == true) {
+      // get all the first level childrens for the start vertex
+      let result = await this.getAllChildrenNodes(startVertex as string, edgeName);
+      console.log('The result for traversal is...', Object.keys(result));
+      let finalResponse = [];
+      for (let item of result._result) {
+        finalResponse.push(_.omit(item, ['_key', '_id', '_rev']));
+      }
+      response.data.value = Buffer.from(JSON.stringify(finalResponse));
+      return response;
     }
 
     const vertex = startVertex as string;
@@ -423,14 +441,10 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     } catch (err) {
       throw { code: err.code, message: err.message };
     }
-    let response: any = {
-      vertex_fields: [],
-      data: {},
-      paths: {}
-    };
     let encodedData = new Set<Object>();
     if (data_flag) {
       if (traversedData.visited && traversedData.visited.vertices) {
+        traversedData.visited.vertices = this.arrUnique(traversedData.visited.vertices);
         for (let vertice of traversedData.visited.vertices) {
           response.vertex_fields.push(_.pick(vertice, ['_id', '_key', '_rev', 'id']));
           encodedData.add(_.omit(vertice, ['_key', '_rev']));
@@ -441,12 +455,35 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     if (path_flag) {
       if (traversedData.visited && traversedData.visited.paths) {
+        traversedData.visited.paths = this.arrUnique(traversedData.visited.paths);
         const encodedPaths = encodeMessage(traversedData.visited.paths);
         response.paths.value = encodedPaths;
       }
     }
 
     return response;
+  }
+
+  async getAllChildrenNodes(startVertex: string,
+    edgeName: string): Promise<any> {
+    const queryTpl = `FOR v IN 1..1 OUTBOUND @start_vertex @@edge_name RETURN v`;
+    const result = await this.db.query(queryTpl, {
+      start_vertex: startVertex,
+      '@edge_name': edgeName
+    });
+    return result;
+  }
+
+  arrUnique(arr) {
+    let cleaned = [];
+    arr.forEach(function (itm) {
+      let unique = true;
+      cleaned.forEach(function (itm2) {
+        if (_.isEqual(itm, itm2)) unique = false;
+      });
+      if (unique) cleaned.push(itm);
+    });
+    return cleaned;
   }
 
   /**
