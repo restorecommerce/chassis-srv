@@ -400,7 +400,6 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     if (aql && aql == true) {
       // get all the first level childrens for the start vertex
       let result = await this.getAllChildrenNodes(startVertex as string, edgeName);
-      console.log('The result for traversal is...', Object.keys(result));
       let finalResponse = [];
       for (let item of result._result) {
         finalResponse.push(_.omit(item, ['_key', '_id', '_rev']));
