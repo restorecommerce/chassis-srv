@@ -52,8 +52,8 @@
   "scripts": {
     "lint": "tslint './src/**/*.ts' ",
     "test": "npm run lint && npm run mocha",
-    "mochadebug": "export NODE_ENV=test; mocha -R spec test/*.js --full-trace --inspect-brk",
-    "mocha": "export NODE_ENV=test; mocha -R spec test/*.js --full-trace --exit --trace-warnings",
+    "mochadebug": "export NODE_ENV=test; mocha -R spec test/index.js --full-trace --inspect-brk",
+    "mocha": "export NODE_ENV=test; mocha -R spec test/index.js --full-trace --exit --trace-warnings",
     "tsctests": "tsc test/*.ts --module commonjs -target ES6",
     "coveralls": "export NODE_ENV=test; istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec test/*.js --exit",
     "pretest": "npm run tsctests",

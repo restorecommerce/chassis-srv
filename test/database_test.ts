@@ -288,7 +288,10 @@ function testProvider(providerCfg) {
           { include: true },
           { fields: { id: 1, value: 1 } }); // include only id and value fields
         resultKeep.should.deepEqual(result);
-        const compareData = _.map([testData[3], testData[4], testData[0]], (e) => {
+        // Not to modify the original data which is used in next test case
+        // to add and delete in beforeEach and afterEach
+        const clonedData = _.cloneDeep([testData[3], testData[4], testData[0]]);
+        const compareData = _.map(clonedData, (e) => {
           _.unset(e, 'include');
           return e;
         });
