@@ -80,6 +80,22 @@ The offset values are stored with key `{kafka:clientId}:{topicName}`.
 In case of a service failure, a microservice can then read the last offset it stored before crashing and thus consume all pending messages since that moment.
 This feature can be disabled if the `latestOffset` configuration value is set to `true` - in this case, the service subscribes to the latest topic offset value upon system restart.
 
+## Development
+
+### Tests
+See [tests](test/).
+
 ## Usage
 
-See [tests](test/).
+- Install dependencies
+
+```sh
+npm install
+```
+
+- Build
+
+```sh
+# compile the code
+npm run build
+```
