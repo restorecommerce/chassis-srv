@@ -7,4 +7,3 @@ require('./microservice_test');
 require('./middleware_test');
 require('./reflection_test');
 require('./transport_test');
-require('./kafka_offsetstore_test');
