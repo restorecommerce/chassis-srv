@@ -266,8 +266,7 @@ export class CommandInterface implements ICommandInterface {
 
           this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
 
-          const consumerClient = new kafka.Client(kafkaEventsCfg.connectionString,
-            kafkaEventsCfg.clientId);
+          const consumerClient = new kafka.KafkaClient(kafkaEventsCfg.kafkaHost);
           const consumer = new kafka.Consumer(
             consumerClient,
             [
