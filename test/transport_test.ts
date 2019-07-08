@@ -125,7 +125,7 @@ providers.forEach((provider) => {
             endpoint = client.makeEndpoint(methodName, instance);
             const result = await endpoint();
             result.error.should.be.Error();
-            result.error.details.should.containEql('Connect Failed');
+            result.error.details.should.containEql('14 UNAVAILABLE: failed to connect to all addresses');
           });
         });
         describe('with running server', () => {

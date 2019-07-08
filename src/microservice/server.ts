@@ -69,7 +69,7 @@ export class Server extends EventEmitter {
    * @param {object} config Server config.
    * @param {Logger} logger
    */
-  constructor(config?: any, logger?: any) {
+  constructor(config?: any, logger?: any, middleware?: any) {
     super();
     if (_.isNil(config)) {
       throw new Error('mising argument config');
@@ -123,7 +123,11 @@ export class Server extends EventEmitter {
      *
      * @type {Array.<generator>}
      */
-    this.middleware = [];
+    if (!middleware) {
+      this.middleware = [];
+    } else {
+      this.middleware = middleware;
+    }
   }
 
   /**

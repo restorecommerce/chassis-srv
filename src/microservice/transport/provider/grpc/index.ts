@@ -37,7 +37,14 @@ function makeNormalServerEndpoint(endpoint: any, logger: any): any {
       });
     }
     try {
-      const result = await endpoint({ request: req });
+      let rid;
+      if (call && call.metadata) {
+        rid = call.metadata.get('rid');
+      }
+      if (rid && rid.length > 0) {
+        Object.assign(call.request, { headers: { 'x-request-id': rid[0] } });
+      }
+      const result = await endpoint(call);
       callback(null, result);
     } catch (err) {
       err.code = grpc.status.INTERNAL;
@@ -220,7 +227,7 @@ export class Server {
     if (_.isNil(protos) || _.size(protos) === 0) {
       throw new Error('config value protos is not set');
     }
-    this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`,  { protos });
+    this.logger.verbose(`gRPC Server loading protobuf files from root ${protoRoot}`, { protos });
 
 
     const proto = [];
