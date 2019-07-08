@@ -16,7 +16,7 @@ export function chainMiddleware(middleware: any): any {
     if (next) {
       for (let i = middleware.length - 1; i >= 0; i -= 1) {
         const reqClone = _.clone(request);
-        Object.assign(request, { req: reqClone }, {res: reqClone});
+        Object.assign(request, { req: reqClone }, { res: reqClone });
         const result = await middleware[i](request, async () => {
           const grpcRequest = { request: request.request };
           delete grpcRequest.request.headers;
@@ -83,15 +83,18 @@ export function makeEndpoint(middleware: any[], service: any, transportName: str
       if (request.request) {
         request = request.request;
       }
+      if (rid) {
+        rid = `[rid: ${rid}]`;
+      }
       if (err instanceof SyntaxError || err instanceof RangeError ||
         err instanceof ReferenceError || err instanceof TypeError) {
-        logger.error(`request to method ${ctx.method} over transport ${ctx.transport} error`,
+        logger.error(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
           {
             request,
             err: err.stack
           });
       } else {
-        logger.info(`request to method ${ctx.method} over transport ${ctx.transport} error`,
+        logger.info(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
           { request, err });
       }
       throw err;
