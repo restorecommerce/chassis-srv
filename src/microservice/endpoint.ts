@@ -80,6 +80,9 @@ export function makeEndpoint(middleware: any[], service: any, transportName: str
         { request, result });
       return result;
     } catch (err) {
+      if (request.request) {
+        request = request.request;
+      }
       if (err instanceof SyntaxError || err instanceof RangeError ||
         err instanceof ReferenceError || err instanceof TypeError) {
         logger.error(`request to method ${ctx.method} over transport ${ctx.transport} error`,
