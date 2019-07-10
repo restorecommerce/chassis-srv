@@ -53,18 +53,22 @@ export function makeEndpoint(middleware: any[], service: any, transportName: str
     ctx.logger = logger;
     let e;
     let rid = '';
+    let middlewareChain = [];
+    if (middleware && middleware.length > 0) {
+      middlewareChain.push(middleware);
+    }
     try {
       if (request && request.request && request.request.headers
         && request.request.headers['x-request-id']) {
         rid = request.request.headers['x-request-id'];
       }
       if (rid) {
-        middleware.push(middlewareClsTracer);
+        middlewareChain.push(middlewareClsTracer);
       }
 
-      if (middleware.length > 0) {
+      if (middlewareChain.length > 0) {
         logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, request.request);
-        const chain = chainMiddleware(middleware);
+        const chain = chainMiddleware(middlewareChain);
         const result = await chain(request, service[methodName].bind(service));
         const req = request.request;
         logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { req, result });
