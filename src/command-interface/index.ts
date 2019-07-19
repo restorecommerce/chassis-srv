@@ -2,7 +2,6 @@ import * as _ from 'lodash';
 import { Server } from './../microservice/server';
 import * as errors from './../microservice/errors';
 import * as database from './../database';
-import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
 import * as async from 'async';
@@ -41,7 +40,7 @@ interface RestoreData {
  * a certain method, such method should be extended or overriden.
  */
 export class CommandInterface implements ICommandInterface {
-  logger: Logger;
+  logger: any;
   config: any;
   health: any;
   service: any;
@@ -49,7 +48,7 @@ export class CommandInterface implements ICommandInterface {
   commands: any;
   commandTopic: Topic;
   bufferedCollection: Map<string, string>;
-  constructor(server: Server, config: any, logger: Logger, events: Events) {
+  constructor(server: Server, config: any, logger: any, events: Events) {
     if (_.isNil(events)) {
       if (logger.error) {
         logger.error('No Kafka client was provided. Disabling all commands.');

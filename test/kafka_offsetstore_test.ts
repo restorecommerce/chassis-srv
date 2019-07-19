@@ -1,6 +1,6 @@
 import * as should from 'should';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import * as Logger from '@restorecommerce/logger';
+import { Logger } from '@restorecommerce/logger';
 import { OffsetStore } from './../lib/offsets';
 import * as sconfig from '@restorecommerce/service-config';
 import * as sleep from 'sleep';

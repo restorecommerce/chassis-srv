@@ -1,5 +1,4 @@
 import * as _ from 'lodash';
-import * as Logger from '@restorecommerce/logger';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as redis from 'redis';
 
@@ -7,7 +6,7 @@ import * as redis from 'redis';
  * Stores the offsets of the provided topics to redis periodically
  */
 export class OffsetStore {
-  logger: Logger;
+  logger: any;
   config: any;
   kafkaEvents: Events;
   redisClient: any;

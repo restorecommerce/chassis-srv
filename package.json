@@ -18,7 +18,7 @@
   "typings": "lib/index.d.ts",
   "dependencies": {
     "@restorecommerce/kafka-client": "git+https://github.com/restorecommerce/kafka-client.git",
-    "@restorecommerce/logger": "github:restorecommerce/logger",
+    "@restorecommerce/logger": "^0.1.7",
     "@restorecommerce/service-config": "^0.1.1",
     "arangojs": "^6.10.0",
     "async-retry": "^1.2.3",
@@ -60,7 +60,7 @@
     "mochadebug": "cross-env NODE_ENV=test; mocha -R spec test/index.js --full-trace --inspect-brk",
     "mocha": "cross-env NODE_ENV=test; mocha -R spec test/index.js --full-trace --exit --trace-warnings;",
     "mochaoffset": "cross-env NODE_ENV=test; mocha -R spec test/kafka_offsetstore_test.js --full-trace --exit --trace-warnings;",
-    "tsctests": "tsc test/*.ts --module commonjs -target ES6",
+    "tsctests": "tsc -d -p tsconfig.test.json",
     "coveralls": "cross-env NODE_ENV=test; nyc --reporter text --reporter lcov npm test",
     "pretest": "npm run tsctests",
     "postinstall": "tsc -d",
