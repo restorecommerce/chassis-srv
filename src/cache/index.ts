@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as cacheManager from 'cache-manager';
+import { Logger } from '..';
 
 /**
  * A key, value map containing cache providers.
@@ -39,7 +40,7 @@ register('memory', (config, logger) => {
  * @param [Logger] logger
  * @return Cache instance
  */
-export function get(config: any, logger: any): any {
+export function get(config: any, logger: Logger): any {
   if (_.isNil(config)) {
     throw new Error('missing argument config');
   }

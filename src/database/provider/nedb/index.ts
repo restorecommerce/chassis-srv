@@ -1,5 +1,6 @@
 import * as Datastore from 'nedb';
 import * as _ from 'lodash';
+import { Logger } from '../../..';
 
 /**
  * Converts unsupported functions to regexp.
@@ -281,7 +282,7 @@ class NedbProvider {
  * @return {Object} key, value map containing collection names
  * as keys and the corresponding NeDB datastores as values.
  */
-async function loadDatastores(config: any, logger: any): Promise<Object> {
+async function loadDatastores(config: any, logger: Logger): Promise<Object> {
   if (_.isNil(config.collections)) {
     throw new Error('missing collection config value');
   }

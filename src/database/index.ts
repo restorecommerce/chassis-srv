@@ -1,3 +1,5 @@
+import { Logger } from "..";
+
 /**
  * A key, value map containing database providers.
  * Database providers are registered with the register function.
@@ -25,7 +27,7 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export async function get(config: any, logger: any, graphName?: string): Promise<DatabaseProvider> {
+export async function get(config: any, logger: Logger, graphName?: string): Promise<DatabaseProvider> {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);

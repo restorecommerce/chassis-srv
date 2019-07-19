@@ -1,19 +1,20 @@
 import * as _ from 'lodash';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as redis from 'redis';
+import { Logger } from '..';
 
 /**
  * Stores the offsets of the provided topics to redis periodically
  */
 export class OffsetStore {
-  logger: any;
+  logger: Logger;
   config: any;
   kafkaEvents: Events;
   redisClient: any;
   topics: any;
   timerID: any;
 
-  constructor(events: Events, config: any, logger) {
+  constructor(events: Events, config: any, logger: Logger) {
     if (!logger) {
       throw new Error('Missing logger config or object');
     }

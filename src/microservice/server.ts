@@ -25,7 +25,7 @@ registerTransport('grpc', grpc.Server);
  * @param  {object} logger
  * @return {object} Transport
  */
-function setupTransport(config: any, logger: any): any {
+function setupTransport(config: any, logger: Logger): any {
   const transport = {};
   logger.debug('available transport providers',
     Object.keys(transports).join(','));
@@ -60,7 +60,7 @@ function setupTransport(config: any, logger: any): any {
 export class Server extends EventEmitter {
 
   config: any;
-  logger: any;
+  logger: Logger;
   middleware: any;
   transport: any;
 
@@ -69,7 +69,7 @@ export class Server extends EventEmitter {
    * @param {object} config Server config.
    * @param {Logger} logger
    */
-  constructor(config?: any, logger?: any, middleware?: any) {
+  constructor(config?: any, logger?: Logger, middleware?: any) {
     super();
     if (_.isNil(config)) {
       throw new Error('mising argument config');

@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as rTracer from 'cls-rtracer';
+import { Logger } from '..';
 
 const middlewareClsTracer = rTracer.koaMiddleware({
   useHeader: true,
@@ -45,7 +46,7 @@ export function chainMiddleware(middleware: any): any {
  * @param logger
  */
 export function makeEndpoint(middleware: any[], service: any, transportName: string,
-  methodName: string, logger: any): any {
+  methodName: string, logger: Logger): any {
   return async function callEndpoint(request: any, context: any): Promise<any> {
     const ctx = context || {};
     ctx.transport = transportName;

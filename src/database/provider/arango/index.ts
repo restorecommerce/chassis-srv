@@ -4,6 +4,7 @@ import { ArangoGraph } from './graph';
 import * as retry from 'async-retry';
 import * as fs from 'fs';
 import { Database } from 'arangojs';
+import { Logger } from '../../..';
 
 const DB_SYSTEM = '_system';
 
@@ -60,7 +61,7 @@ export async function create(conf: any, logger: any, graphName?: string): Promis
  * @param {Logger} logger
  * @return active ArangoDB connection
  */
-async function connect(conf: any, logger: any): Promise<any> {
+async function connect(conf: any, logger: Logger): Promise<any> {
   const dbHost = conf.host || '127.0.0.1';
   const dbPort = conf.port || 8529;
   const dbName = conf.database || 'arango';

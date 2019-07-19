@@ -28,7 +28,7 @@ const errorMap = new Map([
   [grpc.status.DATA_LOSS, errors.DataLoss],
 ]);
 
-function makeNormalServerEndpoint(endpoint: any, logger: any): any {
+function makeNormalServerEndpoint(endpoint: any, logger: Logger): any {
   return async function normalServerEndpoint(call: any, callback: any): Promise<any> {
     const req = call.request;
     if (!endpoint) {
@@ -60,7 +60,7 @@ function makeNormalServerEndpoint(endpoint: any, logger: any): any {
 }
 
 function makeResponseStreamServerEndpoint(endpoint: any,
-  logger: any): any {
+  logger: Logger): any {
   return async function responseStreamServerEndpoint(call: any): Promise<any> {
     await endpoint({
       request: call.request,
@@ -74,7 +74,7 @@ function makeResponseStreamServerEndpoint(endpoint: any,
   };
 }
 
-function makeRequestStreamServerEndpoint(endpoint: any, logger: any): any {
+function makeRequestStreamServerEndpoint(endpoint: any, logger: Logger): any {
   return async function requestStreamServerEndpoint(call: any, callback: any): Promise<any> {
     const requests = [];
     const fns = [];
@@ -112,7 +112,7 @@ function makeRequestStreamServerEndpoint(endpoint: any, logger: any): any {
   };
 }
 
-function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: any): any {
+function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: Logger): any {
   return async function biDirectionalStreamServerEndpoint(call: any): Promise<any> {
     const requests = [];
     const fns = [];
@@ -159,7 +159,7 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: any): any 
  * @param  {object} stream Settings for request,response or bi directional stream.
  * @return {function}          The function can be used as a gRPC service method.
  */
-function wrapServerEndpoint(endpoint: any, logger: any, stream: any): any {
+function wrapServerEndpoint(endpoint: any, logger: Logger, stream: any): any {
   if (_.isNil(endpoint)) {
     throw new Error('missing argument endpoint');
   }
@@ -185,7 +185,7 @@ function wrapServerEndpoint(endpoint: any, logger: any, stream: any): any {
 export class Server {
 
   config: any;
-  logger: any;
+  logger: Logger;
   server: grpc.Server;
   builder: any;
   proto: any;
@@ -199,7 +199,7 @@ export class Server {
    * Requires properties:addr,package,proto,service
    * Optional properties: credentials.ssl.certs
    */
-  constructor(config: any, logger: any) {
+  constructor(config: any, logger: Logger) {
     if (_.isNil(logger)) {
       throw new Error('gRPC server transport provider requires a logger');
     }
@@ -324,4 +324,5 @@ export class Server {
 
 module.exports.Name = NAME;
 import { ServerReflection } from './reflection';
+import { Logger } from '../../../..';
 export { ServerReflection };
