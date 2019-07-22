@@ -18,7 +18,7 @@
   "typings": "lib/index.d.ts",
   "dependencies": {
     "@restorecommerce/kafka-client": "git+https://github.com/restorecommerce/kafka-client.git",
-    "@restorecommerce/logger": "^0.1.8",
+    "@restorecommerce/logger": "^0.1.9",
     "@restorecommerce/service-config": "^0.1.1",
     "arangojs": "^6.10.0",
     "async-retry": "^1.2.3",
