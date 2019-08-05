@@ -15,7 +15,7 @@ export async function query(db: any, collectionName: string, query: string | Aql
   try {
     return await db.query(query, args);
   } catch (err) {
-    if (err.message && err.message.indexOf('collection or view not found') == -1) {
+    if (err.message && err.message.indexOf('collection not found') == -1) {
       throw err;
     }
   }
