@@ -58,12 +58,14 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     _.forEach(docs, (document, i) => {
       docs[i] = sanitizeInputFields(document);
     });
-    const results = await collection.save(docs);
-    _.forEach(results, (result) => {
-      if (result.error === true) {
-        throw new Error(result.errorMessage);
-      }
-    });
+    for (let eachDoc of docs) {
+      const results = await collection.save(eachDoc);
+      _.forEach(results, (result) => {
+        if (result.error === true) {
+          throw new Error(result.errorMessage);
+        }
+      });
+    }
     return _.map(docs, sanitizeOutputFields);
   }
 
@@ -577,15 +579,15 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   /**
   * Adds the given edge definition to the graph.
   *
-  * @param  {string} collectionName edge collection name
+  * @param  {string} edgeName edge name
   * @param  {Object} fromVertice from vertice
   * @param  {Object} toVertice from vertice
   * @return  {Object} The added edge definition
   */
-  async addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
+  async addEdgeDefinition(edgeName: string, fromVertice: Object | [Object],
     toVertice: Object | [Object]): Promise<Object> {
-    if (_.isNil(collectionName)) {
-      throw new Error('missing edge collection name');
+    if (_.isNil(edgeName)) {
+      throw new Error('missing edge name');
     }
     if (_.isNil(fromVertice)) {
       throw new Error('missing from vertice');
@@ -606,14 +608,14 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     try {
       edgeDef = await this.graph.addEdgeDefinition(
         {
-          collection: collectionName,
+          collection: edgeName,
           from: fromVertice,
           to: toVertice
         }
       );
     } catch (err) {
       // if edge def already exists return
-      if (err.message === 'multi use of edge collection in edge def') {
+      if (err.message === `${edgeName} multi use of edge collection in edge def`) {
         return edgeDef;
       }
       throw { code: err.code, message: err.message };
