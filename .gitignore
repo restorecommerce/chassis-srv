@@ -3,8 +3,6 @@ npm-debug.log
 
 coverage/
 
-kafka*.tgz
-
 lib/
 src/*.js
 src/**/*.js
@@ -15,3 +13,4 @@ test/**/*.js
 .settings
 .directory
 .vscode
+.nyc_output
