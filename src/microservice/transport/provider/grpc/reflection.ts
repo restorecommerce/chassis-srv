@@ -4,8 +4,23 @@ import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as path from 'path';
 
+function recursiveResolvePath(t, finalPackage) {
+  if (t.parent) {
+    let temp = (finalPackage === '') ? (t.parent.name) : (t.parent.name + '.' + finalPackage);
+    finalPackage = recursiveResolvePath(t.parent, temp);
+    return finalPackage;
+  }
+  return finalPackage;
+}
+
 function findType(t: any, root: any): any {
-  const pkgName = t.parent.name;
+  let pkgName;
+  if (t.parent) {
+    pkgName = recursiveResolvePath(t, '');
+  }
+  if (pkgName.charAt(0) === '.') {
+    pkgName = pkgName.substring(1);
+  }
 
   const files = _.keys(root.files);
   let foundAst;
@@ -188,9 +203,7 @@ function applyProtoRoot(filename, root) {
   }
   filename.root = path.resolve(filename.root) + '/';
   root.resolvePath = function (originPath, importPath, alreadyNormalized) {
-    return protoBuf.util.path.resolve(filename.root,
-      importPath,
-      alreadyNormalized);
+    return protoBuf.util.path.resolve(filename.root, importPath, alreadyNormalized);
   };
   return filename.file;
 }
@@ -210,22 +223,6 @@ export class ServerReflection {
   constructor(root: protoBuf.Root, config: any) {
     // this.builder = builder;
     root = new protoBuf.Root();
-    // let protoRoot = config.transports[0].protoRoot;
-    // // Extract protoFilePath and protoRoot from the config.
-    // let files = config.transports[0].protos;
-    // _.forEach(files, (fileName, key) => {
-    //   // let filename = { root: protoroot, file: fileName };
-    //   const protoFilePath = fileName;
-    //   root.resolvePath = function (origin: string, target: string): string {
-    //     // ignore the same file
-    //     if (target == protoFilePath) {
-    //       return protoFilePath;
-    //     }
-    //     // Resolved target path for the import files
-    //     return protoRoot + target;
-    //   };
-    // });
-
     let protoroot = config.transports[0].protoRoot;
     let files = config.transports[0].protos;
     _.forEach(files, (fileName, key) => {
@@ -374,7 +371,9 @@ export class ServerReflection {
       };
     }
     const res = findType(t, this.root);
-    const FileDescriptorProto: any = this.root.lookupType('google.protobuf.FileDescriptorProto');
+    let FileDescriptorProto;
+    const fileDescriptorRoot = protoBuf.loadSync('node_modules/@restorecommerce/protos/google/protobuf/descriptor.proto');
+    FileDescriptorProto = fileDescriptorRoot.lookupType('google.protobuf.FileDescriptorProto');
     if (_.isNil(FileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
