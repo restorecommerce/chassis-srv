@@ -169,7 +169,7 @@ function createDescriptorProto(message: any): any {
     name: message.name,
     field: fields,
     // extension
-    nestedType,
+    nested_type: nestedType,
     enumType: enums,
     // extensionRange
     oneofDecl: oneofs,
@@ -187,7 +187,7 @@ function createFileDescriptorProto(file: any, ast: any): any {
     dependency: ast.imports,
     // publicDependency
     // weakDependency
-    messageType: messages,
+    message_type: messages,
     // enumType
     // service
     // extension
