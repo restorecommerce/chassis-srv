@@ -156,7 +156,7 @@ function createDescriptorProto(message: any): any {
   const fields = _.map(message.fields, (field) => {
     return createFieldDescriptorProto(field, message.oneofs);
   });
-  const nestedType = _.map(message.nestedType, (type) => {
+  const nestedType = _.map(message.nested, (type) => {
     return createDescriptorProto(type);
   });
   const oneofs = _.map(message.oneofs, (value) => {
@@ -180,7 +180,7 @@ function createDescriptorProto(message: any): any {
 }
 
 function createFileDescriptorProto(file: any, ast: any): any {
-  const messages = _.map(ast.messages, createDescriptorProto);
+  const messages = _.map(ast.root.nested, createDescriptorProto);
   return {
     name: ast.root.name,
     package: ast.package,
