@@ -180,8 +180,16 @@ function createDescriptorProto(message: any): any {
 }
 
 function createFileDescriptorProto(file: any, ast: any): any {
-  // const messages = _.map(ast.root.nested, createDescriptorProto);
-  const messages = _.map(ast.root.nested.io.nested.restorecommerce.nested.user.nested, createDescriptorProto);
+  const packageName = ast.package;
+  const pkgArr = packageName.split('.');
+  let normalizedObj = ast.root.nested;
+  for (let obj of pkgArr) {
+    normalizedObj = normalizedObj[obj];
+    if (normalizedObj.nested) {
+      normalizedObj = normalizedObj.nested;
+    }
+  }
+  const messages = _.map(normalizedObj, createDescriptorProto);
   return {
     name: ast.root.name,
     package: ast.package,
@@ -196,21 +204,6 @@ function createFileDescriptorProto(file: any, ast: any): any {
     // sourceCodeInfo
     syntax: ast.syntax,
   };
-}
-
-function normalizeObject(object, finalObject) {
-  if (typeof object === 'object') {
-    const key = Object.keys(object)[0];
-    if (key === 'nested') {
-      finalObject = object;
-    }
-    if (!key) {
-      return;
-    }
-    return normalizeObject(object[key], finalObject);
-  } else {
-    return finalObject;
-  }
 }
 
 function applyProtoRoot(filename, root) {
