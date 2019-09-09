@@ -224,6 +224,7 @@ export class ServerReflection {
 
   root: protoBuf.Root;
   config: any;
+  fileDescriptorProto: protoBuf.Type;
 
   /**
    * @param (ProtoBuf.Builder) The protobuf builder  which the gRPC transport provider is using.
@@ -240,6 +241,8 @@ export class ServerReflection {
     });
     this.root = root;
     this.config = config;
+    const fileDescriptorRoot = protoBuf.loadSync('node_modules/@restorecommerce/protos/google/protobuf/descriptor.proto');
+    this.fileDescriptorProto = fileDescriptorRoot.lookupType('google.protobuf.FileDescriptorProto');
   }
 
   /**
@@ -318,6 +321,8 @@ export class ServerReflection {
         const result = await method;
         await call.write(result);
         openCall = false;
+        await call.end();
+        return result;
       } catch (error) {
         openCall = false;
         logger.info(error);
@@ -344,19 +349,18 @@ export class ServerReflection {
         },
       };
     }
-    const FileDescriptorProto: any = this.root.lookupType('google.protobuf.FileDescriptorProto');
     const protoFilepath = this.root.files[file];
     const ast: any = protoBuf.parse(fs.readFileSync(protoFilepath).toString(), new protoBuf.Root());
-    if (_.isNil(FileDescriptorProto)) {
+    if (_.isNil(this.fileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
     const fdp = createFileDescriptorProto(protoFilepath, ast);
-    const fDescProto = FileDescriptorProto.create(fdp);
+    const fDescProto = this.fileDescriptorProto.create(fdp);
     return {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto: Buffer.from(JSON.stringify(fDescProto)),
+        file_descriptor_proto: this.fileDescriptorProto.encode(fDescProto).finish()
       },
     };
   }
@@ -380,19 +384,16 @@ export class ServerReflection {
       };
     }
     const res = findType(t, this.root);
-    let FileDescriptorProto;
-    const fileDescriptorRoot = protoBuf.loadSync('node_modules/@restorecommerce/protos/google/protobuf/descriptor.proto');
-    FileDescriptorProto = fileDescriptorRoot.lookupType('google.protobuf.FileDescriptorProto');
-    if (_.isNil(FileDescriptorProto)) {
+    if (_.isNil(this.fileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
     const fdp = createFileDescriptorProto(res.file, res.ast);
-    const fDescProto = FileDescriptorProto.create(fdp);
+    const fDescProto = this.fileDescriptorProto.create(fdp);
     return {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto: Buffer.from(JSON.stringify(fDescProto)),
+        file_descriptor_proto:  this.fileDescriptorProto.encode(fDescProto).finish()
       },
     };
   }
@@ -434,17 +435,16 @@ export class ServerReflection {
       };
     }
     const res = findType(t, this.root);
-    const FileDescriptorProto: any = this.root.lookupType('google.protobuf.FileDescriptorProto');
-    if (_.isNil(FileDescriptorProto)) {
+    if (_.isNil(this.fileDescriptorProto)) {
       throw new Error('Could not find google.protobuf.FileDescriptorProto');
     }
     const fdp = createFileDescriptorProto(res.file, res.ast);
-    const fDescProto = FileDescriptorProto.create(fdp);
+    const fDescProto = this.fileDescriptorProto.create(fdp);
     return {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto: Buffer.from(JSON.stringify(fDescProto)),
+        file_descriptor_proto: this.fileDescriptorProto.encode(fDescProto).finish()
       },
     };
   }
