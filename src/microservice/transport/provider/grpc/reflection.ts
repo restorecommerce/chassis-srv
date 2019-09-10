@@ -237,11 +237,15 @@ export class ServerReflection {
     let files = config.transports[0].protos;
     _.forEach(files, (fileName, key) => {
       let filename = { root: protoroot, file: fileName };
-      root.loadSync(applyProtoRoot(filename, root));
+      root.loadSync(applyProtoRoot(filename, root), { keepCase: true });
     });
     this.root = root;
     this.config = config;
-    const fileDescriptorRoot = protoBuf.loadSync('node_modules/@restorecommerce/protos/google/protobuf/descriptor.proto');
+    const protoRoot = 'node_modules/@restorecommerce/protos/';
+    const descriptor_file = 'google/protobuf/descriptor.proto';
+    const filename = { root: protoRoot, file: descriptor_file };
+    const root_desc = new protoBuf.Root();
+    const fileDescriptorRoot = root_desc.loadSync(applyProtoRoot(filename, root_desc), { keepCase: true });
     this.fileDescriptorProto = fileDescriptorRoot.lookupType('google.protobuf.FileDescriptorProto');
   }
 
@@ -393,7 +397,7 @@ export class ServerReflection {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto:  this.fileDescriptorProto.encode(fDescProto).finish()
+        file_descriptor_proto: this.fileDescriptorProto.encode(fDescProto).finish()
       },
     };
   }
