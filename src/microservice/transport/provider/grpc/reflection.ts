@@ -241,9 +241,9 @@ export class ServerReflection {
     });
     this.root = root;
     this.config = config;
-    const protoRoot = 'node_modules/@restorecommerce/protos/';
+    // const protoRoot = 'node_modules/@restorecommerce/protos/';
     const descriptor_file = 'google/protobuf/descriptor.proto';
-    const filename = { root: protoRoot, file: descriptor_file };
+    const filename = { root: protoroot, file: descriptor_file };
     const root_desc = new protoBuf.Root();
     const fileDescriptorRoot = root_desc.loadSync(applyProtoRoot(filename, root_desc), { keepCase: true });
     this.fileDescriptorProto = fileDescriptorRoot.lookupType('google.protobuf.FileDescriptorProto');
