@@ -67,7 +67,14 @@ function makeResponseStreamServerEndpoint(endpoint: any,
       write(response: any): any {
         call.write(response);
       },
-      end(): any {
+      end(err?: any): any {
+        if (err) {
+          if (!err.code) {
+            // default to gRPC Internal error code
+            err.code = grpc.status.INTERNAL;
+          }
+          call.emit('error', { code: err.code, message: err.message });
+        }
         call.end();
       }
     });
