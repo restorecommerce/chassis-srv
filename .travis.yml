@@ -14,7 +14,7 @@ before_install:
   - 'npm install -g tslint'
   - docker network create --driver bridge chassis_net
   - docker run --name chassis_zk -d --net=chassis_net -p 2181:2181 zookeeper:3.5.5
-  - docker run --name chassis_kafka -d --net=chassis_net -p 9092:9092 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e KAFKA_ZOOKEEPER_CONNECT=zk:2181 -v /var/run/docker.sock:/var/run/docker.sock --link chassis_zk:zk wurstmeister/kafka:2.11-2.0.0
+  - docker run --name chassis_kafka -d --net=chassis_net -p 9092:9092 -e KAFKA_ADVERTISED_HOST_NAME=127.0.0.1 -e KAFKA_ZOOKEEPER_CONNECT=zk:2181 -v /var/run/docker.sock:/var/run/docker.sock --link chassis_zk:zk wurstmeister/kafka:2.12-2.4.0
   - docker run --name chassis_redis -d --net=chassis_net -p 127.0.0.1:6379:6379  redis:5.0-rc-alpine
   - docker create --name arangodb-persist arangodb true
   - docker run --name chassis_adb -d -p 127.0.0.1:8529:8529 --volumes-from arangodb-persist -e ARANGO_NO_AUTH=1 arangodb/arangodb:3.4.7
