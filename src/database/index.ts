@@ -1,4 +1,4 @@
-import { Logger } from "..";
+import { Logger } from '..';
 
 /**
  * A key, value map containing database providers.
@@ -12,9 +12,9 @@ const databases = {};
  * @param  {string} name     database provider identifier
  * @param  {constructor} provider database provider constructor function
  */
-export function register(name: string, provider: any): any {
+export const register = (name: string, provider: any): any => {
   databases[name] = provider;
-}
+};
 
 
 // Add default providers
@@ -27,13 +27,13 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export async function get(config: any, logger: Logger, graphName?: string): Promise<DatabaseProvider> {
+export const get = async(config: any, logger: Logger, graphName?: string): Promise<DatabaseProvider> => {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
   }
   return db(config, logger, graphName);
-}
+};
 
 export interface DatabaseProvider {
   insert(collectionName: string, documents: any): Promise<void>;

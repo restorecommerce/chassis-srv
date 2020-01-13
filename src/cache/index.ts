@@ -15,9 +15,9 @@ const providers = {};
  * @param  {string} name     cache provider identifier
  * @param  {constructor} provider cache store constructor
  */
-export function register(name: string, provider: any): void {
+export const register = (name: string, provider: any): void => {
   providers[name] = provider;
-}
+};
 
 // register defaults
 // add memory provider by default, since it is included with the cache-manager.
@@ -40,7 +40,7 @@ register('memory', (config, logger) => {
  * @param [Logger] logger
  * @return Cache instance
  */
-export function get(config: any, logger: Logger): any {
+export const get = (config: any, logger: Logger): any => {
   if (_.isNil(config)) {
     throw new Error('missing argument config');
   }
@@ -60,4 +60,4 @@ export function get(config: any, logger: Logger): any {
     return stores[0];
   }
   return cacheManager.multiCaching(stores);
-}
+};

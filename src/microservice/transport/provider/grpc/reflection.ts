@@ -4,16 +4,16 @@ import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as path from 'path';
 
-function recursiveResolvePath(t, finalPackage) {
+const recursiveResolvePath = (t, finalPackage) => {
   if (t.parent) {
     let temp = (finalPackage === '') ? (t.parent.name) : (t.parent.name + '.' + finalPackage);
     finalPackage = recursiveResolvePath(t.parent, temp);
     return finalPackage;
   }
   return finalPackage;
-}
+};
 
-function findType(t: any, root: any): any {
+const findType = (t: any, root: any): any => {
   let pkgName;
   if (t.parent) {
     pkgName = recursiveResolvePath(t, '');
@@ -37,9 +37,9 @@ function findType(t: any, root: any): any {
     ast: foundAst,
     file: foundFile,
   };
-}
+};
 
-function lookupType(path: string, node: any): any {
+const lookupType = (path: string, node: any): any => {
   const elements = path.split('.');
   const msg = _.find(node.messages, { name: elements[0] });
   if (!_.isNil(msg)) {
@@ -66,11 +66,11 @@ function lookupType(path: string, node: any): any {
     return rpc;
   }
   return null;
-}
+};
 
-function isEmpty(value: any): boolean {
+const isEmpty = (value: any): boolean => {
   return _.isNil(value) || _.isEmpty(value) || _.size(value) === 0;
-}
+};
 
 const stringToTypeMap = {
   double: 1,
@@ -81,14 +81,14 @@ const stringToTypeMap = {
   string: 9,
 };
 
-function getOneOfIndex(field: any, oneofs: any): any {
+const getOneOfIndex = (field: any, oneofs: any): any => {
   if (_.isNil(oneofs)) {
     return undefined;
   }
   const index = _.findIndex(oneofs[field.name], field.index);
   if (index < 0) return undefined;
   return index;
-}
+};
 
 const stringToLabelMap = {
   optional: 1,
@@ -96,7 +96,7 @@ const stringToLabelMap = {
   repeated: 3,
 };
 
-function createFieldDescriptorProto(field: any, oneofs: any): any {
+const createFieldDescriptorProto = (field: any, oneofs: any): any => {
   const fdp: any = {
     name: field.name,
     number: field.id,
@@ -115,9 +115,9 @@ function createFieldDescriptorProto(field: any, oneofs: any): any {
     fdp.defaultValue = `${field.options.default}`;
   }
   return fdp;
-}
+};
 
-function createEnumDescriptorProto(enumType: any): any {
+const createEnumDescriptorProto = (enumType: any): any => {
   const values = _.map(enumType.values, (value) => {
     return {
       name: value.name,
@@ -130,7 +130,7 @@ function createEnumDescriptorProto(enumType: any): any {
     value: values,
     options: enumType.options,
   };
-}
+};
 
 const messageOptions = [
   'message_set_wire_format',
@@ -139,20 +139,20 @@ const messageOptions = [
   'map_entry'
 ];
 
-function createMessageOptions(options: any): any {
+const createMessageOptions = (options: any): any => {
   const opts = _.pick(options, messageOptions);
   return _.mapKeys(opts, (value, key) => {
     return _.camelCase(key);
   });
-}
+};
 
-function createFileOptions(options: any): any {
+const createFileOptions = (options: any): any => {
   return _.mapKeys(options, (value, key) => {
     return _.camelCase(key);
   });
-}
+};
 
-function createDescriptorProto(message: any): any {
+const createDescriptorProto = (message: any): any => {
   const fields = _.map(message.fields, (field) => {
     return createFieldDescriptorProto(field, message.oneofs);
   });
@@ -177,9 +177,9 @@ function createDescriptorProto(message: any): any {
     // reservedRange
     // reservedName
   };
-}
+};
 
-function createFileDescriptorProto(file: any, ast: any): any {
+const createFileDescriptorProto = (file: any, ast: any): any => {
   const packageName = ast.package;
   const pkgArr = packageName.split('.');
   let normalizedObj = ast.root.nested;
@@ -204,18 +204,18 @@ function createFileDescriptorProto(file: any, ast: any): any {
     // sourceCodeInfo
     syntax: ast.syntax,
   };
-}
+};
 
-function applyProtoRoot(filename, root) {
+const applyProtoRoot = (filename, root) => {
   if (_.isString(filename)) {
     return filename;
   }
   filename.root = path.resolve(filename.root) + '/';
-  root.resolvePath = function (originPath, importPath, alreadyNormalized) {
+  root.resolvePath = (originPath, importPath, alreadyNormalized) => {
     return protoBuf.util.path.resolve(filename.root, importPath, alreadyNormalized);
   };
   return filename.file;
-}
+};
 /**
  * An implementation of the grpc.reflection.v1alpha.ServerReflection service.
  * Uses the provided builder and config to reflection on served endpoints.

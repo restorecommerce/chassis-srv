@@ -1,5 +1,5 @@
-import { Logger as RestoreLogger } from "@restorecommerce/logger";
-import * as _ from "lodash";
+import { Logger as RestoreLogger } from '@restorecommerce/logger';
+import * as _ from 'lodash';
 
 /**
  * Logger based on a customized winston logger.
