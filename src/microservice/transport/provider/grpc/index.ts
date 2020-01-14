@@ -28,8 +28,8 @@ const errorMap = new Map([
   [grpc.status.DATA_LOSS, errors.DataLoss],
 ]);
 
-function makeNormalServerEndpoint(endpoint: any, logger: Logger): any {
-  return async function normalServerEndpoint(call: any, callback: any): Promise<any> {
+const makeNormalServerEndpoint = (endpoint: any, logger: Logger): any => {
+  return async (call: any, callback: any): Promise<any> => {
     const req = call.request;
     if (!endpoint) {
       return ({
@@ -57,17 +57,17 @@ function makeNormalServerEndpoint(endpoint: any, logger: Logger): any {
       callback(err, null);
     }
   };
-}
+};
 
-function makeResponseStreamServerEndpoint(endpoint: any,
-  logger: Logger): any {
-  return async function responseStreamServerEndpoint(call: any): Promise<any> {
+const makeResponseStreamServerEndpoint = (endpoint: any,
+  logger: Logger): any => {
+  return async (call: any): Promise<any> => {
     await endpoint({
       request: call.request,
-      write(response: any): any {
+      write:(response: any): any => {
         call.write(response);
       },
-      end(err?: any): any {
+      end:(err?: any): any => {
         if (err) {
           if (!err.code) {
             // default to gRPC Internal error code
@@ -79,10 +79,10 @@ function makeResponseStreamServerEndpoint(endpoint: any,
       }
     });
   };
-}
+};
 
-function makeRequestStreamServerEndpoint(endpoint: any, logger: Logger): any {
-  return async function requestStreamServerEndpoint(call: any, callback: any): Promise<any> {
+const makeRequestStreamServerEndpoint = (endpoint: any, logger: Logger): any => {
+  return async (call: any, callback: any): Promise<any> => {
     const requests = [];
     const fns = [];
     let end = false;
@@ -101,8 +101,8 @@ function makeRequestStreamServerEndpoint(endpoint: any, logger: Logger): any {
     });
 
     const result = await endpoint({
-      read(): any {
-        return function r(cb: any): any {
+      read:(): any => {
+        return (cb: any): any => {
           if (requests.length) {
             cb(null, requests.shift());
           } else if (end) {
@@ -117,10 +117,10 @@ function makeRequestStreamServerEndpoint(endpoint: any, logger: Logger): any {
       resolve(callback(null, result));
     });
   };
-}
+};
 
-function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: Logger): any {
-  return async function biDirectionalStreamServerEndpoint(call: any): Promise<any> {
+const makeBiDirectionalStreamServerEndpoint = (endpoint: any, logger: Logger): any => {
+  return async (call: any): Promise<any> => {
     const requests = [];
     const fns = [];
     let end = false;
@@ -138,11 +138,11 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: Logger): a
       }
     });
     await (endpoint({
-      write(response: any): any {
+      write:(response: any): any => {
         call.write(response);
       },
-      read(): any {
-        return function r(cb: any): any {
+      read:(): any => {
+        return (cb: any): any => {
           if (requests.length) {
             cb(null, requests.shift());
           } else if (end) {
@@ -152,7 +152,7 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: Logger): a
           }
         };
       },
-      end(err: any): any {
+      end:(err: any): any => {
         if (err) {
           if (!err.code) {
             // default to gRPC Internal error code
@@ -164,7 +164,7 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: Logger): a
       },
     }));
   };
-}
+};
 
 /**
  * wrapServerEndpoint wraps the endpoint to provide a gRPC service method.
@@ -173,7 +173,7 @@ function makeBiDirectionalStreamServerEndpoint(endpoint: any, logger: Logger): a
  * @param  {object} stream Settings for request,response or bi directional stream.
  * @return {function}          The function can be used as a gRPC service method.
  */
-function wrapServerEndpoint(endpoint: any, logger: Logger, stream: any): any {
+const wrapServerEndpoint = (endpoint: any, logger: Logger, stream: any): any => {
   if (_.isNil(endpoint)) {
     throw new Error('missing argument endpoint');
   }
@@ -190,7 +190,7 @@ function wrapServerEndpoint(endpoint: any, logger: Logger, stream: any): any {
     return makeResponseStreamServerEndpoint(endpoint, logger);
   }
   return makeNormalServerEndpoint(endpoint, logger);
-}
+};
 
 /**
  * Server transport provider.

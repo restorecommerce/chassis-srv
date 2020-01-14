@@ -7,7 +7,7 @@ import { Logger } from '../../..';
  * @param {object} filter query filter
  * @return {object} the filter querys which are not supported by nedb converted to regexp.
  */
-function convertToRegexp(filter: any): any {
+const convertToRegexp = (filter: any): any => {
   const f = filter;
   _.forEach(f, (value, key) => {
     if (value.$startswith) {
@@ -27,7 +27,7 @@ function convertToRegexp(filter: any): any {
     }
   });
   return f;
-}
+};
 
 /**
  * Construct or operator.
@@ -36,7 +36,7 @@ function convertToRegexp(filter: any): any {
  * @param {string} name the field name the comparison is based on.
  * @return {Object} NeDB or operator query filter.
  */
-function buildOrQuery(options: any, name: string): Object {
+const buildOrQuery = (options: any, name: string): Object => {
   let opts = options;
   if (!_.isArray(options)) {
     opts = [options];
@@ -48,7 +48,7 @@ function buildOrQuery(options: any, name: string): Object {
     obj.$or.push(toInsert);
   });
   return obj;
-}
+};
 
 /**
  * NeDB database provider.
@@ -91,8 +91,7 @@ class NedbProvider {
    * @param  {Object} options     options.limit, options.offset
    * @return {array.Object}            A list of found documents.
    */
-  async find(collection: string, filter: Object = {}, options: any = {}):
-    Promise<any> {
+  async find(collection: string, filter: Object = {}, options: any = {}): Promise<any> {
     const fil = convertToRegexp(filter || {});
     let q = this.collections[collection].find(fil, options.fields);
     if (options.offset) {
@@ -282,7 +281,7 @@ class NedbProvider {
  * @return {Object} key, value map containing collection names
  * as keys and the corresponding NeDB datastores as values.
  */
-async function loadDatastores(config: any, logger: Logger): Promise<Object> {
+const loadDatastores = async (config: any, logger: Logger): Promise<Object> => {
   if (_.isNil(config.collections)) {
     throw new Error('missing collection config value');
   }
@@ -306,7 +305,7 @@ async function loadDatastores(config: any, logger: Logger): Promise<Object> {
     }
   }
   return collections;
-}
+};
 
 /**
  * Create a new NeDB provider.
@@ -315,7 +314,7 @@ async function loadDatastores(config: any, logger: Logger): Promise<Object> {
  * @param {Object} [logger] Logger
  * @return {NedbProvider} NeDB provider
  */
-export async function create(conf: Object, logger: any): Promise<any> {
+export const create = async(conf: Object, logger: any): Promise<any> => {
   let log = logger;
   if (_.isNil(logger)) {
     log = {
@@ -324,4 +323,4 @@ export async function create(conf: Object, logger: any): Promise<any> {
   }
   const collections = await loadDatastores(conf, log);
   return new NedbProvider(collections);
-}
+};
