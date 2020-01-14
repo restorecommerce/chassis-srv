@@ -11,8 +11,8 @@ const middlewareClsTracer = rTracer.koaMiddleware({
  * calls each middleware
  * @param middleware
  */
-export const chainMiddleware = (middleware: any): any => {
-  return async(request, next: any): Promise<any> => {
+export function chainMiddleware(middleware: any): any {
+  return async function middlewareChain(request, next: any): Promise<any> {
     let n = next;
     if (next) {
       for (let i = middleware.length - 1; i >= 0; i -= 1) {
@@ -35,7 +35,7 @@ export const chainMiddleware = (middleware: any): any => {
     }
     return await middleware[0](n);
   };
-};
+}
 
 /**
  * Calls middleware and business logic.
@@ -45,9 +45,9 @@ export const chainMiddleware = (middleware: any): any => {
  * @param methodName
  * @param logger
  */
-export const makeEndpoint = (middleware: any[], service: any, transportName: string,
-  methodName: string, logger: Logger): any => {
-  return async(request: any, context: any): Promise<any> => {
+export function makeEndpoint(middleware: any[], service: any, transportName: string,
+  methodName: string, logger: Logger): any {
+  return async function callEndpoint(request: any, context: any): Promise<any> {
     const ctx = context || {};
     ctx.transport = transportName;
     ctx.method = methodName;
@@ -105,4 +105,4 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       throw err;
     }
   };
-};
+}

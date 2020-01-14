@@ -1,6 +1,6 @@
 import { makeEndpoint } from './endpoint';
 import { Logger } from '../logger';
-import * as _ from 'lodash';
+import * as _ from "lodash";
 import { EventEmitter } from 'events';
 
 const transports: any = {};
@@ -11,9 +11,9 @@ const transports: any = {};
  * @param  {string} name     transport provider identifier
  * @param  {constructor} provider transport provider constructor function
  */
-export const registerTransport = (name: string, provider: any): void => {
+export function registerTransport(name: string, provider: any): void {
   transports[name] = provider;
-};
+}
 
 // register included providers
 const grpc = require('./transport/provider/grpc');
@@ -25,7 +25,7 @@ registerTransport('grpc', grpc.Server);
  * @param  {object} logger
  * @return {object} Transport
  */
-const setupTransport = (config: any, logger: Logger): any => {
+function setupTransport(config: any, logger: Logger): any {
   const transport = {};
   logger.debug('available transport providers',
     Object.keys(transports).join(','));
@@ -48,7 +48,7 @@ const setupTransport = (config: any, logger: Logger): any => {
   }
   logger.debug('using transports', Object.keys(transport).join(','));
   return transport;
-};
+}
 
 /**
  * Server is a microservice server chassis.

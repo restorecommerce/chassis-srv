@@ -10,8 +10,8 @@ import * as Long from 'long';
  * @param {Object} args list of arguments, optional
  * @return {Promise} arangojs query result
  */
-export const query = async(db: any, collectionName: string, query: string | AqlQuery,
-  args?: Object): Promise<any> => {
+export async function query(db: any, collectionName: string, query: string | AqlQuery,
+  args?: Object): Promise<any> {
   try {
     return await db.query(query, args);
   } catch (err) {
@@ -23,23 +23,23 @@ export const query = async(db: any, collectionName: string, query: string | AqlQ
   await collection.create();
   await collection.load(false);
   return db.query(query, args);
-};
+}
 
 /**
  * Convert id to arangodb friendly key.
  * @param {string} id document identification
  * @return {any} arangodb friendly key
  */
-export const idToKey = (id: string): any => {
+export function idToKey(id: string): any {
   return id.replace(/\//g, '_');
-};
+}
 
 /**
  * Ensure that the _key exists.
  * @param {Object} document Document template.
  * @return {any} Clone of the document with the _key field set.
  */
-const ensureKey = (document: any): any => {
+function ensureKey(document: any): any {
   const doc = _.clone(document);
   if (_.has(doc, '_key')) {
     return doc;
@@ -49,9 +49,9 @@ const ensureKey = (document: any): any => {
     _.set(doc, '_key', idToKey(id));
   }
   return doc;
-};
+}
 
-const ensureDatatypes = (document: any): any => {
+function ensureDatatypes(document: any): any {
   const doc = _.clone(document);
   const keys = _.keys(doc);
   for (let key of keys) {
@@ -60,25 +60,25 @@ const ensureDatatypes = (document: any): any => {
     }
   }
   return doc;
-};
+}
 
 /**
  * Remove arangodb specific fields.
  * @param {Object} document A document returned from arangodb.
  * @return {Object} A clone of the document without arangodb specific fields.
  */
-export const sanitizeOutputFields = (document: Object): Object => {
+export function sanitizeOutputFields(document: Object): Object {
   const doc = _.clone(document);
   _.unset(doc, '_id');
   _.unset(doc, '_key');
   _.unset(doc, '_rev');
   return doc;
-};
+}
 
-export const sanitizeInputFields = (document: any): any => {
+export function sanitizeInputFields(document: any): any {
   const doc = ensureDatatypes(document);
   return ensureKey(doc);
-};
+}
 
 /**
  * Auto-casting reference value by using native function of arangoDB
@@ -87,12 +87,12 @@ export const sanitizeInputFields = (document: any): any => {
  * @param {object} value - raw value optional
  * @return {object} interpreted value
  */
-export const autoCastKey = (key: any, value?: any): any => {
+export function autoCastKey(key: any, value?: any): any {
   if (_.isDate(value)) { // Date
     return `DATE_TIMESTAMP(node.${key})`;
   }
   return 'node.' + key;
-};
+}
 
 /**
  * Auto-casting raw data
@@ -100,7 +100,7 @@ export const autoCastKey = (key: any, value?: any): any => {
  * @param {object} value - raw value
  * @returns {any} interpreted value
  */
-export const autoCastValue = (value: any): any => {
+export function autoCastValue(value: any): any {
   if (_.isArray(value)) {
     return value.map(value => value.toString());
   }
@@ -120,7 +120,7 @@ export const autoCastValue = (value: any): any => {
     return new Date(value);
   }
   return value;
-};
+}
 
 /**
  * Links children of filter together via a comparision operator.
@@ -130,14 +130,13 @@ export const autoCastValue = (value: any): any => {
  * @param {any} bindVarsMap mapping of keys to values for bind variables
  * @return {any} query template string and bind variables
  */
-
-export const buildComparison = (filter: any, op: String, index: number,
-  bindVarsMap: any): any => {
+export function buildComparison(filter: any, op: String, index: number,
+  bindVarsMap: any): any {
   const ele = _.map(filter, (e) => {
     if (!_.isArray(e)) {
       e = [e];
     }
-    e = buildFilter(e, index, bindVarsMap); // eslint-disable-line
+    e = buildFilter(e, index, bindVarsMap);
     index += 1;
     return e.q;
   });
@@ -151,7 +150,8 @@ export const buildComparison = (filter: any, op: String, index: number,
     }
   }
   return { q, bindVarsMap };
-};
+}
+
 
 /**
  * Creates a filter key, value.
@@ -163,7 +163,7 @@ export const buildComparison = (filter: any, op: String, index: number,
  * @param {any} bindVarsMap mapping of keys to values for bind variables
  * @return {String} query template string
  */
-export const buildField = (key: any, value: any, index: number, bindVarsMap: any): string => {
+export function buildField(key: any, value: any, index: number, bindVarsMap: any): string {
   let bindValueVar = `@value${index}`;
   let bindValueVarWithOutPrefix = `value${index}`;
   if (_.isString(value) || _.isBoolean(value) || _.isNumber(value || _.isDate(value))) {
@@ -240,7 +240,7 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
     return `RIGHT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;
   }
   throw new Error(`unsupported operator ${_.keys(value)} in ${key}`);
-};
+}
 
 /**
  * Build ArangoDB query based on filter.
@@ -249,7 +249,7 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
  * @param {any} bindVarsMap mapping of keys to values for bind variables
  * @return {any} query template string and bind variables
  */
-export const buildFilter = (filter: any, index?: number, bindVarsMap?: any): any => {
+export function buildFilter(filter: any, index?: number, bindVarsMap?: any): any {
   if (!index) {
     index = 0;
   }
@@ -310,14 +310,14 @@ export const buildFilter = (filter: any, index?: number, bindVarsMap?: any): any
     }
     return { q, bindVarsMap };
   }
-};
+}
 
 /**
  * Build count and offset filters.
  * @param {Object} options query options
  * @return {String} template query string
  */
-export const buildLimiter = (options: any): string => {
+export function buildLimiter(options: any): string {
   // LIMIT count
   // LIMIT offset, count
   if (!_.isNil(options.limit)) {
@@ -327,7 +327,7 @@ export const buildLimiter = (options: any): string => {
     return `LIMIT @limit`;
   }
   return '';
-};
+}
 
 /**
  * Build sort filter.
@@ -336,7 +336,7 @@ export const buildLimiter = (options: any): string => {
  * @param {any} bindVarsMap Object containing bind key to values
  * @return {any} template query string and bind variables Object
  */
-export const buildSorter = (options: any, index?: number, bindVarsMap?: any): any => {
+export function buildSorter(options: any, index?: number, bindVarsMap?: any): any {
   if (_.isNil(options.sort) || _.isEmpty(options.sort)) {
     return '';
   }
@@ -364,9 +364,9 @@ export const buildSorter = (options: any, index?: number, bindVarsMap?: any): an
     i += 1;
   }
   return 'SORT ' + sortKeysOrder;
-};
+}
 
-export const buildReturn = (options: any): any => {
+export function buildReturn(options: any): any {
   let excludeIndex = 0;
   let includeIndex = 0;
   let bindVarsMap = {};
@@ -402,8 +402,8 @@ export const buildReturn = (options: any): any => {
   }
   q = 'RETURN result';
   return { q, bindVarsMap };
-};
+}
 
-export const encodeMessage = (object: Object) => {
+export function encodeMessage(object: Object) {
   return Buffer.from(JSON.stringify(object));
-};
+}

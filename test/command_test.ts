@@ -1,7 +1,7 @@
 // microservice chassis
 import * as _ from 'lodash';
-import { config, CommandInterface, database, Server } from '../lib';
-import * as chassis from '../lib';
+import { config, CommandInterface, database, Server } from './../lib';
+import * as chassis from './../lib';
 import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';

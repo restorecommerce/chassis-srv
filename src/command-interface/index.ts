@@ -325,7 +325,7 @@ export class CommandInterface implements ICommandInterface {
           };
 
           const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
-          consumer.on('message', async(message) => {
+          consumer.on('message', async function (message) {
             if (message.key in topicEvents && !_.includes(ignoreOffsets, message.offset)) {
               asyncQueue.push(message);
               that.logger.debug(`received message ${message.offset}/${targetOffset}`);

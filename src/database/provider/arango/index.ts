@@ -9,12 +9,59 @@ import { Logger } from '../../..';
 const DB_SYSTEM = '_system';
 
 /**
+ * Create a new connected ArangoDB provider.
+ *
+ * @param  {Object} conf   ArangoDB configuration
+ * @param  {Object} [logger] Logger
+ * @return {Arango}        ArangoDB provider
+ */
+export async function create(conf: any, logger: any, graphName?: string): Promise<Arango> {
+  let log = logger;
+  if (!logger) {
+    log = {
+      verbose: () => { },
+      info: () => { },
+      error: () => { },
+    };
+  }
+  let graph;
+  const conn = await connect(conf, log);
+  let db: Arango;
+  // conn is nothing but this.db
+  if (graphName) {
+    graph = conn.graph(graphName);
+    try {
+      await graph.create();
+    } catch (err) {
+      if (err.message !== 'graph already exists') {
+        throw err;
+      }
+    }
+
+    db = new ArangoGraph(conn, graph);
+  } else {
+    db = new Arango(conn);
+  }
+
+  if (conf.customQueries) {
+    conf.customQueries.forEach((obj) => {
+      const { path, name, type } = obj;
+      const script = fs.readFileSync(path, 'utf8');
+      db.registerCustomQuery(name, script, type);
+    });
+  }
+
+  return db;
+}
+
+
+/**
  * Connect to a ArangoDB.
  * @param {Object} conf Connection options.
  * @param {Logger} logger
  * @return active ArangoDB connection
  */
-const connect = async(conf: any, logger: Logger): Promise<any> => {
+async function connect(conf: any, logger: Logger): Promise<any> {
   const dbHost = conf.host || '127.0.0.1';
   const dbPort = conf.port || 8529;
   const dbName = conf.database || 'arango';
@@ -78,50 +125,4 @@ const connect = async(conf: any, logger: Logger): Promise<any> => {
     mainError = err;
   }
   throw mainError;
-};
-
-/**
- * Create a new connected ArangoDB provider.
- *
- * @param  {Object} conf   ArangoDB configuration
- * @param  {Object} [logger] Logger
- * @return {Arango}        ArangoDB provider
- */
-export const create = async (conf: any, logger: any, graphName?: string): Promise<Arango> => {
-  let log = logger;
-  if (!logger) {
-    log = {
-      verbose: () => { },
-      info: () => { },
-      error: () => { },
-    };
-  }
-  let graph;
-  const conn = await connect(conf, log);
-  let db: Arango;
-  // conn is nothing but this.db
-  if (graphName) {
-    graph = conn.graph(graphName);
-    try {
-      await graph.create();
-    } catch (err) {
-      if (err.message !== 'graph already exists') {
-        throw err;
-      }
-    }
-
-    db = new ArangoGraph(conn, graph);
-  } else {
-    db = new Arango(conn);
-  }
-
-  if (conf.customQueries) {
-    conf.customQueries.forEach((obj) => {
-      const { path, name, type } = obj;
-      const script = fs.readFileSync(path, 'utf8');
-      db.registerCustomQuery(name, script, type);
-    });
-  }
-
-  return db;
-};
+}

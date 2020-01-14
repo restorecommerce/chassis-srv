@@ -1,8 +1,8 @@
 import * as _ from 'lodash';
-import { Graph, Database } from 'arangojs';
+import { Graph, Database } from "arangojs";
 
-import { Arango } from './base';
-import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from './common';
+import { Arango } from "./base";
+import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from "./common";
 import { GraphDatabaseProvider } from '../..';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
@@ -199,7 +199,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
    * also be deleted from the database.
    * @return  {Object } removed vertex
    */
-  async removeVertexCollection(collectionName: string, dropCollection?: boolean): Promise<any> {
+  async removeVertexCollection(collectionName: string, dropCollection?: boolean):
+    Promise<any> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
@@ -273,7 +274,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * (i.e. an object with an _id or _key property).
   * @return  {Object} edge object
   */
-  async getAllEdgesForVertice(collectionName: string, documentHandle: string): Promise<[Object]> {
+  async getAllEdgesForVertice(collectionName: string, documentHandle: string):
+    Promise<[Object]> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
@@ -291,7 +293,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @param  {String} documentHandle The handle of the document
   * @return  {[Object]} list of edges
   */
-  async getInEdges(collectionName: string, documentHandle: string): Promise<[Object]> {
+  async getInEdges(collectionName: string, documentHandle: string):
+    Promise<[Object]> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge name');
     }
@@ -309,7 +312,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @param  {String} documentHandle The handle of the document
   * @return  {[Object]} list of edges
   */
-  async getOutEdges(collectionName: string, documentHandle: string): Promise<[Object]> {
+  async getOutEdges(collectionName: string, documentHandle: string):
+    Promise<[Object]> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
@@ -350,9 +354,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
     }
     if ((expanderObj[0].direction).toLowerCase() == 'inbound') {
-      directionVar = 'getInEdges(vertex)';
+      directionVar = "getInEdges(vertex)";
     } else {
-      directionVar = 'getOutEdges(vertex)';
+      directionVar = "getOutEdges(vertex)";
     }
     expanderFilter = `var connections = [];
     config.datasource.${directionVar}.forEach(function (e) {
@@ -473,9 +477,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
   arrUnique(arr) {
     let cleaned = [];
-    arr.forEach( (itm) => {
+    arr.forEach(function (itm) {
       let unique = true;
-      cleaned.forEach( (itm2) => {
+      cleaned.forEach(function (itm2) {
         if (_.isEqual(itm, itm2)) unique = false;
       });
       if (unique) cleaned.push(itm);
@@ -514,8 +518,18 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
     }
 
+    const lca = async function LCA(nodeA, nodeList: string[]) {
+      if (nodeList.length > 1) {
+        const slices = nodeList.slice(1, nodeList.length);
+        return lca(nodeA, lca(nodes[0], slices));
+      } else {
+        const result = [await findCommonAncestor(nodeA, nodeList[0])];
+        return result;
+      }
+    };
+
     const that = this;
-    const findCommonAncestor = async (nodeA, nodeB) => {
+    const findCommonAncestor = async function findCommonAncestor(nodeA, nodeB) {
       const queryTpl = `LET firstPath = (FOR v IN 1..10000
       OUTBOUND @vertex1 GRAPH @graph RETURN v)
         FOR v,e,p IN 1..10000 OUTBOUND @vertex2 GRAPH @graph
@@ -534,16 +548,6 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
       const item = await result.next();
       return item[0];
-    };
-
-    const lca = async (nodeA, nodeList: string[]) => {
-      if (nodeList.length > 1) {
-        const slices = nodeList.slice(1, nodeList.length);
-        return lca(nodeA, lca(nodes[0], slices));
-      } else {
-        const result = [await findCommonAncestor(nodeA, nodeList[0])];
-        return result;
-      }
     };
 
     let paths = []; // the edges allow us to build the tree
@@ -627,13 +631,15 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @param  {Object} definition
   * @return  {Object} replaced edge definition
   */
-  async replaceEdgeDefinition(collectionName: string, definition: Object): Promise<Object> {
+  async replaceEdgeDefinition(collectionName: string, definition: Object):
+    Promise<Object> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
     if (_.isNil(definition)) {
       throw new Error('missing edge definition');
     }
+
     return this.graph.replaceEdgeDefinition(collectionName, definition);
   }
 
@@ -646,7 +652,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * associated with the definition will also be deleted from the database.
   * @return  {Object} replaced edge definition
   */
-  async removeEdgeDefinition(definitionName: string, dropCollection?: boolean): Promise<Object> {
+  async removeEdgeDefinition(definitionName: string, dropCollection?: boolean):
+    Promise<Object> {
     if (_.isNil(definitionName)) {
       throw new Error('missing definition name');
     }
