@@ -60,7 +60,7 @@
     "typescript": "^3.7.2"
   },
   "scripts": {
-    "lint": "eslint src --ext .ts",
+    "lint": "eslint './src/**/*.ts' ",
     "pretest": "npm run build && npm run tsctests",
     "test": "npm run lint && nyc npm run mocha && nyc npm run mochaoffset",
     "mochadebug": "cross-env NODE_ENV=test; mocha -R spec test/index.js --full-trace --inspect-brk",
