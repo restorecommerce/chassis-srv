@@ -214,7 +214,7 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
   }
   if (value.$ilike) {
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$ilike);
-    return autoCastKey(key, value) + ' LIKE ' + bindValueVar;
+    return ' LIKE (' + autoCastKey(key, value) + ',' + bindValueVar + ', true)';
   }
   if (!_.isNil(value.$not)) {
     const temp = buildField(key, value.$not, index, bindVarsMap);
