@@ -7,6 +7,7 @@
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
     "outDir": "lib",
+    "sourceMap": true,
     "typeRoots": [
       "node_modules/@types"
     ]
