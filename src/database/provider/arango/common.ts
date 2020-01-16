@@ -214,6 +214,7 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
   }
   if (value.$ilike) {
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value.$ilike);
+    // @param 'true' is for case insensitive
     return ' LIKE (' + autoCastKey(key, value) + ',' + bindValueVar + ', true)';
   }
   if (!_.isNil(value.$not)) {
