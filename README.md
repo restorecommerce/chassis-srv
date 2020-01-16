@@ -6,19 +6,19 @@
 [depend]: https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square
 
-A chassis for [restorecommerce](https://github.com/restorecommerce/)-based microservices.
+A chassis for [Restorecommerce](https://github.com/restorecommerce/) microservices.
 
 ## Features
 
-- Business logic exposure through RPC endpoints
+- Business logic exposed via gRPC
 - Endpoint discovery, as well as retry and timeout mechanisms
 - Endpoint calls with custom middleware
 - Provide multiple microservice functionalities from the Restore Commerce ecosystem, such as logging, database access, cache handling or exposing system commands.
 
-
 ## Architecture
 
 The chassis consists of 6 components:
+
 - a configuration loader
 - a multi-transport configurable log infrastructure
 - a base Restore Commerce microservice structure provided by the [Server](src/microservice/server.ts) class, which emits state-related events and can be bound to a number of [gRPC](https://grpc.io/docs/) endpoints, given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
@@ -38,12 +38,12 @@ along with their associated transports or simple access configs for backing serv
 Logging functionality is provided through [logger](https://github.com/restorecommerce/logger), which uses [winston](https://github.com/winstonjs/winston). Logger output transport, severity levels and other options are configurable.
 
 Default logging levels are:
-- silly
-- verbose
-- debug
-- info
-- warn
-- error
+- `silly`
+- `verbose`
+- `debug`
+- `info`
+- `warn`
+- `error`
 
 ### Server
 
@@ -83,6 +83,7 @@ This feature can be disabled if the `latestOffset` configuration value is set to
 ## Development
 
 ### Tests
+
 See [tests](test/).
 
 ## Usage
