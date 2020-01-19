@@ -22,6 +22,13 @@ const convertToRegexp = (filter: any): any => {
       f[key] = {
         $regex: new RegExp(`^$`),
       };
+    } else if (_.has(value, '$ilike')) {
+      // neDB does not have ILIKE (LIKE with ignore case sensitive)
+      // // Finding all fields whose name contain the substring 'sort' using a regular expression
+      // convert %sOrT% =>  to /sort/
+      let iLikeVal = f[key].$ilike.slice(1,-1).toLowerCase( );
+      // convert sort =>  to regexp /sort/
+      f[key] = new RegExp(iLikeVal);
     } else if (_.isObject(value)) {
       f[key] = convertToRegexp(value);
     }

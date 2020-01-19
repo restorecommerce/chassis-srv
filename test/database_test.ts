@@ -90,7 +90,7 @@ const providers = [
             customQueries: ['script']
           });
           should.exist(result);
-          result.should.have.length(6);
+          result.should.have.length(8);
         });
         it('should apply a custom filter within a `find` query', async () => {
           const script = `filter node.id == @param`;
@@ -175,6 +175,8 @@ function testProvider(providerCfg) {
     { id: '/test/sort3', value: 'a', include: true },
     { id: '/test/sort4', value: 'b', include: true },
     { id: '/test/sort5', include: false },
+    { id: '/test/somethingDifferent', include: false },
+    { id: '/test/sortDifferent', include: false },
   ];
   const document = testData[4];
 
@@ -247,6 +249,21 @@ function testProvider(providerCfg) {
         result[0].should.deepEqual(document);
       });
     });
+
+    describe('find', () => {
+      context('with iLike filter', () => {
+        it('should return one filtering based on iLike', async function checkFind() {
+
+          const result = await db.find('test', {
+            'id': {
+              '$ilike': "%sOrT%"
+            }
+          });
+          result.should.be.length(7);
+          });
+        });
+      });
+
     context('with sort', () => {
       it('should return documents sorted in ascending order',
         async function checkSortAsc() {
