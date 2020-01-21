@@ -1,8 +1,7 @@
 import * as should from 'should';
-import * as chassis from '../lib';
-import * as config from '../lib/config';
-import { Logger } from '../lib/logger';
-import * as cache from '../lib/cache';
+import * as config from '../src/config';
+import { Logger } from '../src/logger';
+import * as cache from '../src/cache';
 
 /* global describe it beforeEach */
 

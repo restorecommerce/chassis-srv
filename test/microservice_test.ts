@@ -1,8 +1,8 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../lib/logger';
+import { Logger } from '../src/logger';
 import * as sleep from 'sleep';
-import * as chassis from '../lib';
+import * as chassis from '../src/';
 import * as sconfig from '@restorecommerce/service-config';
 import * as gRPCClient from '@restorecommerce/grpc-client';
 

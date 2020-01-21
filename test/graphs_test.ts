@@ -1,8 +1,8 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../lib/logger';
+import { Logger } from '../src/logger';
 import { Database } from 'arangojs';
-import * as chassis from '../lib';
+import * as chassis from '../src';
 const config = chassis.config;
 const database = chassis.database;
 
