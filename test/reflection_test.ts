@@ -1,9 +1,9 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../src/logger';
-import * as chassis from '../src/';
-import { grpc } from '../src/';
-import { Server } from '../src/microservice/server';
+import { Logger } from '../lib/logger';
+import * as chassis from '../lib';
+import { grpc } from '../lib';
+import { Server } from '../lib/microservice/server';
 import { Client } from '@restorecommerce/grpc-client';
 import * as sleep from 'sleep';
 

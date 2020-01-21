@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { errors } from '../src';
+import { errors } from '../lib';
 
 /* global describe it */
 

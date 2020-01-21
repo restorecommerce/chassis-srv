@@ -1,9 +1,9 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../src/logger';
+import { Logger } from '../lib/logger';
 import { Database } from 'arangojs';
-import * as chassis from '../src/';
-import { DatabaseProvider } from '../src/database';
+import * as chassis from '../lib';
+import { DatabaseProvider } from '../lib/database';
 const config = chassis.config;
 const database = chassis.database;
 
