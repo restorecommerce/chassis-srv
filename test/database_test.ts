@@ -256,7 +256,7 @@ function testProvider(providerCfg) {
 
           const result = await db.find('test', {
             'id': {
-              '$ilike': "%sOrT%"
+              '$iLike': "%sOrT%"
             }
           });
           result.should.be.length(7);
