@@ -1,7 +1,6 @@
 # chassis-srv
-<img src="http://img.shields.io/npm/v/%40restorecommerce%chassis%2Dsrv.svg?style=flat-square" alt="">[![Build Status][build]](https://travis-ci.org/restorecommerce/chassis-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/chassis-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
+[![Build Status][build]](https://travis-ci.org/restorecommerce/chassis-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/chassis-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
 
-[version]: http://img.shields.io/npm/v/chassis-srv.svg?style=flat-square
 [build]: http://img.shields.io/travis/restorecommerce/chassis-srv/master.svg?style=flat-square
 [depend]: https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square
@@ -11,17 +10,18 @@ A chassis for [Restorecommerce](https://github.com/restorecommerce/) microservic
 ## Features
 
 - Business logic exposed via gRPC
-- Endpoint discovery, as well as retry and timeout mechanisms
+- Retry and timeout logic
 - Endpoint calls with custom middleware
-- Provide multiple microservice functionalities from the Restore Commerce ecosystem, such as logging, database access, cache handling or exposing system commands.
+- Provide multiple microservice functionalities from the Restorecommerce ecosystem, such as logging, database access, cache handling or exposing system commands.
 
 ## Architecture
 
-The chassis consists of 6 components:
+The chassis consists of 7 components:
 
 - a configuration loader
 - a multi-transport configurable log infrastructure
-- a base Restore Commerce microservice structure provided by the [Server](src/microservice/server.ts) class, which emits state-related events and can be bound to a number of [gRPC](https://grpc.io/docs/) endpoints, given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
+- a base Restorecommerce microservice structure provided by the [Server](src/microservice/server.ts) class, which emits state-related events and can be bound to a number of [gRPC](https://grpc.io/docs/) endpoints, given a [Protocol Buffer](https://developers.google.com/protocol-buffers/docs/overview) interface and a transport config
+- custom middleware
 - a cache-loader based on configuration files
 - a provider-based mechanism to access different databases
 - a base implementation for a [command-interface](command-interface.md)
@@ -47,9 +47,11 @@ Default logging levels are:
 
 ### Server
 
-A [Server](src/microservice/server.ts) instance can provide multiple service endpoints and emits events related with the microservice's state. An endpoint is a wrapped gRPC method accessible from any gRPC clients.
-Endpoint calls may be intercepted with any number of chained middlewares. Service responses always include a result or an error.
-When a `Server` is instantiated, it is possible to bind one or more services to it, each of them exposing its own RPC endpoints with an associated transport configuration (port, protobuf interfaces, service name, etc). Note that other transport types beside `gRPC` are theoretically possible, although that would require an extension of the `Server` class with a custom transport config.
+A [Server](src/microservice/server.ts) instance can provide multiple service endpoints and emits events related with the microservice's state. An endpoint is a wrapped gRPC method accessible from any gRPC clients. It is also possible to configure the Server with number of times a request should be [`retried and timeout configurations`](./test/microservice_test.ts#L440). Service responses always include a result or an error. When a `Server` is instantiated, it is possible to bind one or more services to it, each of them exposing its own RPC endpoints with an associated transport configuration (port, protobuf interfaces, service name, etc). Note that other transport types beside `gRPC` are theoretically possible, although that would require an extension of the `Server` class with a custom transport config.
+
+### Middleware
+
+Endpoint calls may be intercepted with any number of [custom chained middlewares](./test/middleware_test.ts). The request traverses the middleware before reaching the service function. The middleware can call the next middleware until the last middleware calls the service function.
 
 ### Cache
 
@@ -84,7 +86,14 @@ This feature can be disabled if the `latestOffset` configuration value is set to
 
 ### Tests
 
-See [tests](test/).
+See [tests](test/). To execute the tests a set of _backing services_ are needed.
+Refer to [System](https://github.com/restorecommerce/system) repository to start the backing-services before running the tests.
+
+- To run tests
+
+```sh
+npm run test
+```
 
 ## Usage
 
