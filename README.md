@@ -16,7 +16,7 @@ A chassis for [Restorecommerce](https://github.com/restorecommerce/) microservic
 
 ## Architecture
 
-The chassis consists of 7 components:
+The chassis consists of 8 components:
 
 - a configuration loader
 - a multi-transport configurable log infrastructure
