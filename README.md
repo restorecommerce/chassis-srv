@@ -1,6 +1,7 @@
 # chassis-srv
-[![Build Status][build]](https://travis-ci.org/restorecommerce/chassis-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/chassis-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
+<img src="http://img.shields.io/npm/v/%40restorecommerce%chassis%2Dsrv.svg?style=flat-square" alt="">[![Build Status][build]](https://travis-ci.org/restorecommerce/chassis-srv?branch=master)[![Dependencies][depend]](https://david-dm.org/restorecommerce/chassis-srv)[![Coverage Status][cover]](https://coveralls.io/github/restorecommerce/chassis-srv?branch=master)
 
+[version]: http://img.shields.io/npm/v/chassis-srv.svg?style=flat-square
 [build]: http://img.shields.io/travis/restorecommerce/chassis-srv/master.svg?style=flat-square
 [depend]: https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square
 [cover]: http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square
