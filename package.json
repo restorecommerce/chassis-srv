@@ -33,8 +33,8 @@
     "redis": "^2.8.0"
   },
   "devDependencies": {
-    "@restorecommerce/grpc-client": "^0.0.1",
-    "@restorecommerce/protos": "git+https://github.com/restorecommerce/protos.git",
+    "@restorecommerce/grpc-client": "^0.0.5",
+    "@restorecommerce/protos": "^0.0.1",
     "@types/cache-manager": "^1.2.8",
     "@types/kafka-node": "^2.0.9",
     "@types/lodash": "^4.14.138",
@@ -68,7 +68,6 @@
     "mochaoffset": "cross-env NODE_ENV=test; mocha -R spec test/kafka_offsetstore_test.js --full-trace --exit --trace-warnings;",
     "tsctests": "tsc -d -p tsconfig.test.json",
     "coveralls": "nyc report --reporter=text-lcov | coveralls",
-    "postinstall": "tsc -d",
     "build:tsc": "tsc -d",
     "build:clean": "rimraf lib",
     "build": "npm-run-all lint build:clean build:tsc"
