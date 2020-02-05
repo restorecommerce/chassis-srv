@@ -112,7 +112,8 @@ export class CommandInterface implements ICommandInterface {
       restore: this.restore,
       reconfigure: this.reconfigure,
       health_check: this.check,
-      version: this.version
+      version: this.version,
+      config_update: this.configUpdate,
     };
     const topicCfg = config.events.kafka.topics.command;
     this.commandTopic = events.topic(topicCfg.topic);
@@ -495,6 +496,28 @@ export class CommandInterface implements ICommandInterface {
       version: process.env.npm_package_version,
     };
     await this.commandTopic.emit('versionResponse', {
+      services: _.keys(this.service),
+      payload: this.encodeMsg(response)
+    });
+    return response;
+  }
+
+  /**
+   * Update config for acs-client to disable it
+   * @param payload JSON object containing key value pairs for configuration
+   */
+  async configUpdate(payload: any): Promise<any> {
+    if (_.isNil(payload)) {
+      throw new errors.InvalidArgument('Invalid payload for restore command');
+    }
+    let configProperties = Object.keys(payload);
+    for (let key of configProperties) {
+      _.set(this.config, key, payload[key]);
+    }
+    const response = {
+      status: 'Configuration updated successfully'
+    };
+    await this.commandTopic.emit('configUpdateResponse', {
       services: _.keys(this.service),
       payload: this.encodeMsg(response)
     });
