@@ -22,7 +22,7 @@ export const register = (name: string, provider: any): void => {
 // register defaults
 // add memory provider by default, since it is included with the cache-manager.
 register('memory', (config, logger) => {
-  const options = {
+  const options: cacheManager.StoreConfig = {
     store: 'memory',
     max: config.max,
     maxAge: config.maxAge,
