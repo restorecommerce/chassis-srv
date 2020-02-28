@@ -44,21 +44,55 @@ export const chainMiddleware = (middleware: any): any => {
  * @param transportName
  * @param methodName
  * @param logger
+ * @param cfg
  */
 export const makeEndpoint = (middleware: any[], service: any, transportName: string,
-  methodName: string, logger: Logger): any => {
+  methodName: string, logger: Logger, cfg?: any): any => {
   return async(request: any, context: any): Promise<any> => {
     const ctx = context || {};
     ctx.transport = transportName;
     ctx.method = methodName;
     ctx.logger = logger;
+    ctx.config = cfg;
     let e;
     let rid = '';
     let middlewareChain = [];
     if (middleware && middleware.length > 0) {
       middlewareChain.push(middleware);
     }
+    /*
+      bufferFields are defined in the config under each service's method as:
+      "bufferFields": {
+        "Request": "context"
+      }
+
+      As described in the proto file of each service,
+      Request is the type of message and context is the type of data being sent.
+     */
     try {
+      // clone the request into a new object
+      let cloned = Object.assign({}, request);
+
+      // Check if the config file contains any bufferFields
+      if (ctx.config && ctx.config.services && ctx.config.services) {
+        const service = ctx.config.services;
+        const servicesKeys = Object.keys(ctx.config.services);
+        for (let key of servicesKeys) {
+          if (service[key] && service[key][ctx.method] && service[key][ctx.method].bufferFields) {
+            let bufferFields = service[key][ctx.method].bufferFields;
+            const bufferKeys = Object.keys(bufferFields);
+            for (let key of bufferKeys) {
+              const bufferField = bufferFields[key];
+              // if any bufferField is found
+              // delete it from the cloned object
+              if (cloned['request'][bufferField]) {
+                delete cloned['request'][bufferField];
+              }
+            }
+          }
+        }
+      }
+      logger.debug('invoking endpoint with request:', { request: cloned });
       if (request && request.request && request.request.headers
         && request.request.headers['x-request-id']) {
         rid = request.request.headers['x-request-id'];

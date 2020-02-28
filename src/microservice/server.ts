@@ -183,6 +183,7 @@ export class Server extends EventEmitter {
     logger.debug('binding endpoints to transports');
     const middleware = this.middleware;
     const transport = this.transport;
+    const cfg = this.config;
     for (let i = 0; i < transportNames.length; i += 1) {
       const transportName = transportNames[i];
       const provider = transport[transportName];
@@ -209,7 +210,7 @@ export class Server extends EventEmitter {
           continue;
         }
         binding[methodName] = makeEndpoint(middleware,
-          service, transportName, methodName, logger);
+          service, transportName, methodName, logger, cfg);
         logger.debug(`endpoint ${methodName} bound to transport ${transportName}`);
       }
       if (_.size(_.functions(binding)) === 0) {
