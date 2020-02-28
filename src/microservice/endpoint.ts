@@ -73,7 +73,7 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       // clone the request into a new object
       let cloned = Object.assign({}, request);
 
-      // Check if the config file contains any bufferFields
+      // Check if the cfg file contains any bufferFields
       if (ctx.config && ctx.config.services && ctx.config.services) {
         const service = ctx.config.services;
         const servicesKeys = Object.keys(ctx.config.services);
