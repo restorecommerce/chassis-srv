@@ -71,7 +71,7 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
      */
     try {
       // clone the request into a new object
-      let cloned = Object.assign({}, request);
+      let cloned = JSON.parse(JSON.stringify(request)); // create a deep clone
 
       // Check if the cfg file contains any bufferFields
       if (ctx.config && ctx.config.services && ctx.config.services) {
@@ -85,8 +85,8 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
               const bufferField = bufferFields[key];
               // if any bufferField is found
               // delete it from the cloned object
-              if (cloned['request'][bufferField]) {
-                delete cloned['request'][bufferField];
+              if (cloned.request[bufferField]) {
+                delete cloned.request[bufferField];
               }
             }
           }
