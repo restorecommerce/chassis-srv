@@ -72,7 +72,7 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
     try {
       // clone the request into a new object
       let cloned = JSON.parse(JSON.stringify(request)); // create a deep clone
-
+      let clonedRequest = cloned.request;
       // Check if the cfg file contains any bufferFields
       if (ctx.config && ctx.config.services && ctx.config.services) {
         const service = ctx.config.services;
@@ -85,14 +85,14 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
               const bufferField = bufferFields[key];
               // if any bufferField is found
               // delete it from the cloned object
-              if (cloned.request[bufferField]) {
-                delete cloned.request[bufferField];
+              if (clonedRequest[bufferField]) {
+                delete clonedRequest[bufferField];
               }
             }
           }
         }
       }
-      logger.debug('invoking endpoint with request:', { request: cloned });
+      logger.debug('invoking endpoint with request:', { request: clonedRequest });
       if (request && request.request && request.request.headers
         && request.request.headers['x-request-id']) {
         rid = request.request.headers['x-request-id'];
@@ -102,10 +102,10 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       }
 
       if (middlewareChain.length > 0) {
-        logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, request.request);
+        logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, clonedRequest);
         const chain = chainMiddleware(middlewareChain);
         const result = await chain(request, service[methodName].bind(service));
-        const req = request.request;
+        const req = clonedRequest;
         logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { req, result });
         return result;
       } else {
@@ -113,10 +113,10 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       }
 
       logger.verbose(`received request to method ${ctx.method} over transport ${ctx.transport}`,
-        request);
+        clonedRequest);
       const result = await e(request, ctx);
       logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} result`,
-        { request, result });
+        { clonedRequest, result });
       return result;
     } catch (err) {
       if (request.request) {
