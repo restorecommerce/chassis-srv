@@ -31,7 +31,7 @@ export class Arango implements DatabaseProvider {
   /**
    * Find documents based on filter.
    *
-   * @param  {String} collection Collection name
+   * @param  {String} collectionName Collection name
    * @param  {Object} filter     Key, value Object
    * @param  {Object} options     options.limit, options.offset
    * @return {Promise<any>}  Promise for list of found documents.
@@ -196,7 +196,7 @@ export class Arango implements DatabaseProvider {
    * Find each document based on it's key and update it.
    * If the document does not exist it will be created.
    *
-   * @param  {String} collection Collection name
+   * @param  {String} collectionName Collection name
    * @param {Object|Array.Object} documents
    */
   async upsert(collectionName: string, documents: any): Promise<any> {

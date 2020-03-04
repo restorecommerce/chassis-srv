@@ -70,9 +70,9 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       Request is the type of message and context is the type of data being sent.
      */
 
-    // clone the request into a new object
-    const cloned = JSON.parse(JSON.stringify(request)); // create a deep clone
-    const clonedRequest = cloned.request;
+    // deep clone the request
+    const deepClone = _.cloneDeep(request);
+    const clonedRequest = deepClone.request;
 
     try {
       // Check if the cfg file contains any bufferFields
