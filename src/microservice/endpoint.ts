@@ -69,10 +69,12 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       As described in the proto file of each service,
       Request is the type of message and context is the type of data being sent.
      */
+
+    // clone the request into a new object
+    const cloned = JSON.parse(JSON.stringify(request)); // create a deep clone
+    const clonedRequest = cloned.request;
+
     try {
-      // clone the request into a new object
-      let cloned = JSON.parse(JSON.stringify(request)); // create a deep clone
-      let clonedRequest = cloned.request;
       // Check if the cfg file contains any bufferFields
       if (ctx.config && ctx.config.services && ctx.config.services) {
         const service = ctx.config.services;
@@ -105,8 +107,7 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
         logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, clonedRequest);
         const chain = chainMiddleware(middlewareChain);
         const result = await chain(request, service[methodName].bind(service));
-        const req = clonedRequest;
-        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { req, result });
+        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { clonedRequest, result });
         return result;
       } else {
         e = service[methodName].bind(service);
@@ -119,9 +120,6 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
         { clonedRequest, result });
       return result;
     } catch (err) {
-      if (request.request) {
-        request = request.request;
-      }
       if (rid) {
         rid = `[rid: ${rid}]`;
       }
@@ -129,12 +127,12 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
         err instanceof ReferenceError || err instanceof TypeError) {
         logger.error(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
           {
-            request,
+            clonedRequest,
             err: err.stack
           });
       } else {
         logger.info(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
-          { request, err });
+          { clonedRequest, err });
       }
       throw err;
     }
