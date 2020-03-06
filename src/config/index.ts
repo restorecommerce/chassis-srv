@@ -21,7 +21,7 @@ export const load = async(baseDir: string, logger?: any): Promise<any> => {
 
 /**
  * Get config from singleton.
- * If singelton is undefined load id from current working directory.
+ * If singleton is undefined load id from current working directory.
  * @param [Logger] logger
  * @return {Object} nconf configuration object
  */

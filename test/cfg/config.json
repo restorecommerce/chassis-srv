@@ -106,6 +106,18 @@
             ]
           }
         },
+        "testBufferFields": {
+          "loadbalancer": {
+            "name": "random",
+            "seed": 0
+          },
+          "publisher": {
+            "name": "static",
+            "instances": [
+              "grpc://localhost:50051"
+            ]
+          }
+        },
         "notImplemented": {
           "loadbalancer": {
             "name": "roundRobin"
@@ -292,6 +304,14 @@
           "transport": [
             "grpcTest"
           ]
+        },
+        "testBufferFields": {
+          "transport": [
+            "grpcTest"
+          ],
+          "bufferFields": {
+            "Request": "data"
+          }
         },
         "throw": {
           "transport": [
