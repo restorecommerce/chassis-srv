@@ -22,6 +22,17 @@ const service = {
       result: 'welcome',
     };
   },
+  testBufferFields(call, context) {
+    let msg: any = { testKey: 'testVal' };
+    const msgBuffer = Buffer.from(JSON.stringify(msg));
+    const request = call.request;
+    request.value.should.be.equal('helloWorld');
+
+    return {
+      result:'helloBack',
+      data: msgBuffer
+    };
+  },
   throw(request, context) {
     throw new Error('forced error');
   },
@@ -149,7 +160,7 @@ describe('microservice.Server', () => {
         });
         await server.bind('test', service);
         await server.bind('stream', service);
-      });
+        });
   });
   describe('calling start', () => {
     it('should expose the created endpoints via transports',
@@ -161,19 +172,16 @@ describe('microservice.Server', () => {
         await server.start();
         sleep.sleep(1);
         serving.should.equal(true);
-
         let grpcConfig = cfg.get('client:test:transports:grpc');
         should.exist(grpcConfig);
         should.exist(grpcConfig.service);
-
         const logger = new Logger(cfg.get('logger'));
         let client: gRPCClient.grpcClient = new grpcClient(grpcConfig, logger);
         let instance: string;
         let result;
         should.exist(client);
-
-        // 'test' endpoint
-        const testCfgPath: String = 'client:test:endpoints:test:publisher:instances:0';
+        // --- 'test' endpoint ---
+        const testCfgPath: string = 'client:test:endpoints:test:publisher:instances:0';
         instance = cfg.get(testCfgPath);
         const testF = client.makeEndpoint('test', instance);
         result = await testF({
@@ -187,7 +195,42 @@ describe('microservice.Server', () => {
         should.exist(result.data.result);
         result.data.result.should.be.equal('welcome');
 
-        // 'throw' endpoint
+        // --- 'testBufferFields' endpoint ---
+        const testBufferFieldsCfgPath: string = 'client:test:endpoints:testBufferFields:publisher:instances:0';
+        instance = cfg.get(testBufferFieldsCfgPath);
+        const testBufferFieldsF = client.makeEndpoint('testBufferFields', instance);
+
+        // this is the response we should get if we make a 'helloWorld' request
+        result = await testBufferFieldsF({
+            value: 'helloWorld',
+          },
+          {
+            test: true,
+          });
+
+        should.ifError(result.error);
+        should.exist(result.data);
+
+        const response = result.data;
+        const deepClone = _.cloneDeep(response); // make a copy of the response object
+
+        should.exist(deepClone.result);
+        should.exist(deepClone.data);
+
+        // Check if the cfg has bufferFields enabled and then remove them from the copy we made
+        const bufferFieldsCfgPath: string = 'server:services:test:testBufferFields:bufferFields:Request';
+        const bufferField = cfg.get(bufferFieldsCfgPath);
+        if (deepClone[bufferField]) {
+          delete deepClone[bufferField];
+        }
+
+        // Check if the processed response has the expected values
+        // and no buffer data anymore
+        should.exist(deepClone.result);
+        should.not.exist(deepClone.data);
+        deepClone.result.should.be.equal('helloBack');
+
+        // --- 'throw' endpoint ---
         const throwCfgPath = 'client:test:publisher:instances:0';
         instance = cfg.get(throwCfgPath);
         const throwF = client.makeEndpoint('throw', instance);
@@ -203,7 +246,7 @@ describe('microservice.Server', () => {
         result.error.details.should.containEql('forced error');
         should.not.exist(result.data);
 
-        // 'notFound' endpoint
+        // --- 'notFound' endpoint ---
         const notFoundCfgPath = 'client:test:publisher:instances:0';
         instance = cfg.get(notFoundCfgPath);
         const notFound = client.makeEndpoint('notFound', instance);
@@ -219,7 +262,7 @@ describe('microservice.Server', () => {
         result.error.details.should.containEql('test not found');
         should.not.exist(result.data);
 
-        // 'notImplemented' endpoint
+        // --- 'notImplemented' endpoint ---
         const nIC = 'client:test:endpoints:notImplemented:publisher:instances:0';
         instance = cfg.get(nIC);
         const notImplementedF = client.makeEndpoint('notImplemented',
