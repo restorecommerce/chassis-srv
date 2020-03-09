@@ -217,7 +217,7 @@ describe('microservice.Server', () => {
         should.exist(deepClone.result);
         should.exist(deepClone.data);
 
-        // Check if the cfg has bufferFields enabled and then remove them from the copy we made
+        // Check if the cfg has bufferFields and then remove them from the copy we made
         const bufferFieldsCfgPath: string = 'server:services:test:testBufferFields:bufferFields:Request';
         const bufferField = cfg.get(bufferFieldsCfgPath);
         if (deepClone[bufferField]) {
