@@ -22,16 +22,9 @@ const service = {
       result: 'welcome',
     };
   },
-  testBufferFields(call, context) {
-    let msg: any = { testKey: 'testVal' };
-    const msgBuffer = Buffer.from(JSON.stringify(msg));
+  create(call, context) {
     const request = call.request;
-    request.value.should.be.equal('helloWorld');
-
-    return {
-      result:'helloBack',
-      data: msgBuffer
-    };
+    return request;
   },
   throw(request, context) {
     throw new Error('forced error');
@@ -195,40 +188,43 @@ describe('microservice.Server', () => {
         should.exist(result.data.result);
         result.data.result.should.be.equal('welcome');
 
-        // --- 'testBufferFields' endpoint ---
-        const testBufferFieldsCfgPath: string = 'client:test:endpoints:testBufferFields:publisher:instances:0';
-        instance = cfg.get(testBufferFieldsCfgPath);
-        const testBufferFieldsF = client.makeEndpoint('testBufferFields', instance);
+        // --- 'testCreate' endpoint ---
+        const testCreateCfgPath: string = 'client:test:endpoints:create:publisher:instances:0';
+        instance = cfg.get(testCreateCfgPath);
+        const testCreateF = client.makeEndpoint('create', instance);
 
-        // this is the response we should get if we make a 'helloWorld' request
-        result = await testBufferFieldsF({
-            value: 'helloWorld',
-          },
+        let msg: any = {
+          testKey: 'testVal'
+        };
+        const msgBuffer: any = Buffer.from(JSON.stringify(msg));
+        result = await testCreateF(
           {
-            test: true,
+            items:[{
+              value:'helloWorld123',
+              data: {value: msgBuffer}
+            }]
           });
-
         should.ifError(result.error);
         should.exist(result.data);
+        should.exist(result.data.items);
+        const response = result.data.items;
+        const deepClone = _.cloneDeep(response[0]); // make a clone of the response object
 
-        const response = result.data;
-        const deepClone = _.cloneDeep(response); // make a copy of the response object
-
-        should.exist(deepClone.result);
+        should.exist(deepClone);
+        should.exist(deepClone);
         should.exist(deepClone.data);
-
-        // Check if the cfg has bufferFields and then remove them from the copy we made
-        const bufferFieldsCfgPath: string = 'server:services:test:testBufferFields:bufferFields:Request';
-        const bufferField = cfg.get(bufferFieldsCfgPath);
+        should.exist(deepClone.value);
+        // Check if the cfg has bufferFields and then remove them from the cloned object we made
+        const createCfgPath: string = 'server:services:test:create:bufferFields:Request';
+        const bufferField = cfg.get(createCfgPath);
         if (deepClone[bufferField]) {
           delete deepClone[bufferField];
         }
-
         // Check if the processed response has the expected values
         // and no buffer data anymore
-        should.exist(deepClone.result);
+        should.exist(deepClone.value);
         should.not.exist(deepClone.data);
-        deepClone.result.should.be.equal('helloBack');
+        deepClone.value.should.be.equal('helloWorld123');
 
         // --- 'throw' endpoint ---
         const throwCfgPath = 'client:test:publisher:instances:0';

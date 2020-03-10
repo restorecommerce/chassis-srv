@@ -106,7 +106,7 @@
             ]
           }
         },
-        "testBufferFields": {
+        "create": {
           "loadbalancer": {
             "name": "random",
             "seed": 0
@@ -305,7 +305,7 @@
             "grpcTest"
           ]
         },
-        "testBufferFields": {
+        "create": {
           "transport": [
             "grpcTest"
           ],
