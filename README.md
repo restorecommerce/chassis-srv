@@ -32,9 +32,7 @@ The chassis consists of 8 components:
 
 Configs are loaded using the [nconf](https://github.com/indexzero/nconf)-based module [service-config](https://github.com/restorecommerce/service-config). Such configuration files may contain endpoint specifications
 along with their associated transports or simple access configs for backing services such as a database or even a Kafka instance.
-
-Each microservice which is making use of the Chassis Service can be configured in a way that the buffered data is not being displayed in the logs anymore. 
-Inside the config file of the respective service, every method can take an additional property named `bufferFields` which contains the name of the fields which should be removed.
+To remove the buffered data from being logged [bufferedFields](./test/cfg/config.json#L312) configuration can be set.
 
 ### Logging
 

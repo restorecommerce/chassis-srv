@@ -207,24 +207,6 @@ describe('microservice.Server', () => {
         should.ifError(result.error);
         should.exist(result.data);
         should.exist(result.data.items);
-        const response = result.data.items;
-        const deepClone = _.cloneDeep(response[0]); // make a clone of the response object
-
-        should.exist(deepClone);
-        should.exist(deepClone);
-        should.exist(deepClone.data);
-        should.exist(deepClone.value);
-        // Check if the cfg has bufferFields and then remove them from the cloned object we made
-        const createCfgPath: string = 'server:services:test:create:bufferFields:Request';
-        const bufferField = cfg.get(createCfgPath);
-        if (deepClone[bufferField]) {
-          delete deepClone[bufferField];
-        }
-        // Check if the processed response has the expected values
-        // and no buffer data anymore
-        should.exist(deepClone.value);
-        should.not.exist(deepClone.data);
-        deepClone.value.should.be.equal('helloWorld123');
 
         // --- 'throw' endpoint ---
         const throwCfgPath = 'client:test:publisher:instances:0';

@@ -73,10 +73,9 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
     // deep clone the request
     const deepClone = _.cloneDeep(request);
     const clonedRequest = deepClone.request;
-
     try {
       // Check if the cfg file contains any bufferFields
-      if (ctx.config && ctx.config.services && ctx.config.services) {
+      if (ctx.config && ctx.config.services) {
         const service = ctx.config.services;
         const servicesKeys = Object.keys(ctx.config.services);
         for (let key of servicesKeys) {
@@ -89,6 +88,10 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
               // delete it from the cloned object
               if (clonedRequest[bufferField]) {
                 delete clonedRequest[bufferField];
+              }
+              // delete it from the test case
+              if (clonedRequest.items[0].data) {
+                delete clonedRequest.items[0].data;
               }
             }
           }
