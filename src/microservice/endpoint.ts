@@ -90,7 +90,8 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
                 delete clonedRequest[bufferField];
               }
               // delete it from the test case
-              if (clonedRequest.items[0].data) {
+              if (clonedRequest.items && clonedRequest.items[0]
+                && clonedRequest.items[0].data) {
                 delete clonedRequest.items[0].data;
               }
             }
