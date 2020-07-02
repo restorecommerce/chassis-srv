@@ -1,6 +1,6 @@
 {
   "name": "@restorecommerce/chassis-srv",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Restore Commerce microservice chassis",
   "main": "./lib/index.js",
   "author": "Invend GmbH",
@@ -17,12 +17,12 @@
   ],
   "typings": "lib/index.d.ts",
   "dependencies": {
-    "@restorecommerce/kafka-client": "^0.1.5",
-    "@restorecommerce/logger": "^0.1.11",
-    "@restorecommerce/service-config": "^0.1.4",
+    "@restorecommerce/kafka-client": "^0.1.9",
+    "@restorecommerce/logger": "^0.1.16",
+    "@restorecommerce/service-config": "^0.1.6",
     "arangojs": "^6.11.1",
     "async-retry": "^1.2.3",
-    "cache-manager": "^2.11.1",
+    "cache-manager": "^3.3.0",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^1.2.0",
     "grpc": "^1.23.3",
@@ -34,22 +34,22 @@
   },
   "devDependencies": {
     "@restorecommerce/grpc-client": "^0.0.5",
-    "@restorecommerce/protos": "0.0.2",
+    "@restorecommerce/protos": "0.0.8",
     "@types/cache-manager": "^2.10.1",
     "@types/kafka-node": "^3.0.0",
     "@types/lodash": "^4.14.138",
     "@types/long": "^4.0.0",
     "@types/mocha": "^7.0.1",
     "@types/nedb": "^1.8.9",
-    "@types/node": "^13.7.2",
+    "@types/node": "^14.0.14",
     "@typescript-eslint/eslint-plugin": "^2.20.0",
     "@typescript-eslint/eslint-plugin-tslint": "^2.20.0",
     "@typescript-eslint/parser": "^2.20.0",
     "coveralls": "^3.0.6",
     "cross-env": "^7.0.0",
-    "eslint": "^6.7.0",
+    "eslint": "^7.3.1",
     "eslint-plugin-prefer-arrow-functions": "^3.0.1",
-    "mocha": "^7.0.1",
+    "mocha": "^8.0.1",
     "mocha-typescript": "^1.1.17",
     "npm-run-all": "^4.1.5",
     "nyc": "^15.0.0",
@@ -78,6 +78,6 @@
     "path": false
   },
   "engines": {
-    "node": ">= 9.2.0"
+    "node": ">= 12.0.0"
   }
 }
