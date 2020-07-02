@@ -1,3 +1,7 @@
+### 0.0.6 (July 2nd, 2020)
+
+- fix to send error details
+
 ### 0.0.5 (July 2nd, 2020)
 
 - map errors
