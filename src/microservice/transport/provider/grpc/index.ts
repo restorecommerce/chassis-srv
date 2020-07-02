@@ -64,10 +64,10 @@ const makeResponseStreamServerEndpoint = (endpoint: any,
   return async (call: any): Promise<any> => {
     await endpoint({
       request: call.request,
-      write:(response: any): any => {
+      write: (response: any): any => {
         call.write(response);
       },
-      end:(err?: any): any => {
+      end: (err?: any): any => {
         if (err) {
           if (!err.code) {
             // default to gRPC Internal error code
@@ -100,22 +100,26 @@ const makeRequestStreamServerEndpoint = (endpoint: any, logger: Logger): any => 
       }
     });
 
-    const result = await endpoint({
-      read:(): any => {
-        return (cb: any): any => {
-          if (requests.length) {
-            cb(null, requests.shift());
-          } else if (end) {
-            throw new Error('stream end');
-          } else {
-            fns.push(cb);
-          }
-        };
-      }
-    });
-    return new Promise((resolve, reject) => {
-      resolve(callback(null, result));
-    });
+    let result;
+    try {
+      result = await endpoint({
+        read: (): any => {
+          return (cb: any): any => {
+            if (requests.length) {
+              cb(null, requests.shift());
+            } else if (end) {
+              throw new Error('stream end');
+            } else {
+              fns.push(cb);
+            }
+          };
+        }
+      });
+      callback(null, result);
+    } catch (err) {
+      this.logger.error('Error caught streaming request', err.message);
+      callback(err, null);
+    }
   };
 };
 
@@ -138,10 +142,10 @@ const makeBiDirectionalStreamServerEndpoint = (endpoint: any, logger: Logger): a
       }
     });
     await (endpoint({
-      write:(response: any): any => {
+      write: (response: any): any => {
         call.write(response);
       },
-      read:(): any => {
+      read: (): any => {
         return (cb: any): any => {
           if (requests.length) {
             cb(null, requests.shift());
@@ -152,7 +156,7 @@ const makeBiDirectionalStreamServerEndpoint = (endpoint: any, logger: Logger): a
           }
         };
       },
-      end:(err: any): any => {
+      end: (err: any): any => {
         if (err) {
           if (!err.code) {
             // default to gRPC Internal error code
