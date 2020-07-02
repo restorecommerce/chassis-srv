@@ -1,3 +1,7 @@
+### 0.0.5 (July 2nd, 2020)
+
+- map errors
+
 ### 0.0.4 (July 2nd, 2020)
 
 - fix request streaming error handling and updated dependecies

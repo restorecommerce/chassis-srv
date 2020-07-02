@@ -117,7 +117,14 @@ const makeRequestStreamServerEndpoint = (endpoint: any, logger: Logger): any => 
       });
       callback(null, result);
     } catch (err) {
-      this.logger.error('Error caught streaming request', err.message);
+      logger.error('Error caught streaming request', err.message);
+      err.code = grpc.status.INTERNAL;
+      errorMap.forEach((Err, key) => {
+        if (err.constructor.name === Err.name) {
+          err = new Err(err.message);
+          err.code = key;
+        }
+      }, errorMap);
       callback(err, null);
     }
   };
