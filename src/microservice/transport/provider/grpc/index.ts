@@ -69,11 +69,14 @@ const makeResponseStreamServerEndpoint = (endpoint: any,
       },
       end: (err?: any): any => {
         if (err) {
-          if (!err.code) {
-            // default to gRPC Internal error code
-            err.code = grpc.status.INTERNAL;
-          }
-          call.emit('error', { code: err.code, message: err.message });
+          err.code = grpc.status.INTERNAL;
+          errorMap.forEach((Err, key) => {
+            if (err.constructor.name === Err.name) {
+              err = new Err(err.details);
+              err.code = key;
+            }
+          }, errorMap);
+          call.emit('error', err);
         }
         call.end();
       }
@@ -165,11 +168,14 @@ const makeBiDirectionalStreamServerEndpoint = (endpoint: any, logger: Logger): a
       },
       end: (err: any): any => {
         if (err) {
-          if (!err.code) {
-            // default to gRPC Internal error code
-            err.code = grpc.status.INTERNAL;
-          }
-          call.emit('error', { code: err.code, message: err.message });
+          err.code = grpc.status.INTERNAL;
+          errorMap.forEach((Err, key) => {
+            if (err.constructor.name === Err.name) {
+              err = new Err(err.details);
+              err.code = key;
+            }
+          }, errorMap);
+          call.emit('error', err);
         }
         call.end();
       },
