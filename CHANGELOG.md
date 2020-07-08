@@ -1,3 +1,7 @@
+### 0.0.7 (July 8th, 2020)
+
+- fix to send complete error object in streaming case
+
 ### 0.0.6 (July 2nd, 2020)
 
 - fix to send error details
