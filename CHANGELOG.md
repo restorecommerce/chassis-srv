@@ -1,3 +1,7 @@
+### 0.0.8 (July 8th, 2020)
+
+- updated grpc-client, kafka-client and other dependencies
+
 ### 0.0.7 (July 8th, 2020)
 
 - fix to send complete error object in streaming case
