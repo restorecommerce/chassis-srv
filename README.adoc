@@ -102,7 +102,7 @@ Furthermore, services can later expose their database operations via gRPC.
 Exposure of these operations is easily achieved using the https://github.com/restorecommerce/resource-base-interface[resource-base-interface].
 
 [#configuration_command_interface]
-=== Command interface
+=== Command Interface
 
 An interface for system commands (useful information retrieval, system control, etc) is also provided.
 For more details about all implemented operations please refer link:./docs/modules/ROOT/pages/command-interface.adoc[command-interface].
