@@ -23,13 +23,13 @@ The chassis service consists of 8 components:
 
 * a configuration loader
 * a multi-transport configurable log infrastructure
-* a base Restorecommerce microservice structure provided by the link:src/microservice/server.ts[Server] class,
+* a base Restorecommerce microservice structure provided by the link:../../../../src/microservice/server.ts[Server] class,
 which emits state-related events and can be bound to a number of https://grpc.io/docs/[gRPC] endpoints,
 given a https://developers.google.com/protocol-buffers/docs/overview[Protocol Buffer] interface and a transport config
 * custom middleware
 * a cache-loader based on configuration files
 * a provider-based mechanism to access different databases
-* a base implementation for a link:command-interface.md[command-interface]
+* a base implementation for a link:./command-interface.adoc[command-interface]
 * periodic storage for https://kafka.apache.org/[Apache Kafka] topic offsets
 
 [#configuration]
@@ -39,7 +39,7 @@ Configs are loaded using the https://github.com/indexzero/nconf[nconf]-based mod
 https://github.com/restorecommerce/service-config[service-config].
 Such configuration files may contain endpoint specifications
 along with their associated transports or simple access configs for backing services such as a database or even a Kafka instance.
-To remove the buffered data from being logged link:./test/cfg/config.json#L312[bufferedFields] configuration can be set.
+To remove the buffered data from being logged link:../../../../test/cfg/config.json[bufferedFields] configuration can be set.
 
 [#configuration_logging]
 === Logging
@@ -59,11 +59,11 @@ Default logging levels are:
 [#configuration_server]
 === Server
 
-A link:src/microservice/server.ts[Server] instance can provide multiple service endpoints
+A link:../../../../src/microservice/server.ts[Server] instance can provide multiple service endpoints
 and emits events related with the microservice's state.
 An endpoint is a wrapped gRPC method accessible from any gRPC clients.
 It is also possible to configure the Server with number of times a request should be
-link:./test/microservice_test.ts#L440[`retried and timeout configurations`].
+link:../../../..//test/microservice_test.ts[`retried and timeout configurations`].
 Service responses always include a result or an error. When a `Server` is instantiated,
 it is possible to bind one or more services to it, each of them exposing its own RPC endpoints
 with an associated transport configuration (port, protobuf interfaces, service name, etc).
@@ -73,7 +73,7 @@ although that would require an extension of the `Server` class with a custom tra
 [#configuration_middleware]
 === Middleware
 
-Endpoint calls may be intercepted with any number of link:./test/middleware_test.ts[custom chained middlewares].
+Endpoint calls may be intercepted with any number of link:../../../../test/middleware_test.ts[custom chained middlewares].
 The request traverses the middleware before reaching the service function.
 The middleware can call the next middleware until the last middleware calls the service function.
 
@@ -95,9 +95,9 @@ Providers include generic database handling operations (find, insert, upsert del
 Query parameter structure for all exposed operations is similar with the structure used in
 https://docs.mongodb.com/manual/tutorial/getting-started/[MongoDB] queries.
 The ArangoDB provider supports graph database creation and exposes a simple API to manage vertices and edges.
-It also provides a flexible traversal method. For more details, see link:test/graphs_test.ts[graph tests]
+It also provides a flexible traversal method. For more details, see link:../../../../test/graphs_test.ts[graph tests]
 and the https://docs.arangodb.com/3.3/HTTP/Gharial/[ArangoDB graphs documentation].
-Database providers can be used as a database abstration by any service that owns a set of resources.
+Database providers can be used as a database abstraction by any service that owns a set of resources.
 Furthermore, services can later expose their database operations via gRPC.
 Exposure of these operations is easily achieved using the https://github.com/restorecommerce/resource-base-interface[resource-base-interface].
 
@@ -105,7 +105,7 @@ Exposure of these operations is easily achieved using the https://github.com/res
 === Command interface
 
 An interface for system commands (useful information retrieval, system control, etc) is also provided.
-For more details about all implemented operations please refer link:command-interface.md[command-interface].
+For more details about all implemented operations please refer link:./command-interface.adoc[command-interface].
 This interface can be directly exposed as a gRPC endpoint and it can be extended by a microservice for custom functionality.
 
 [#configuration_offset_store]
