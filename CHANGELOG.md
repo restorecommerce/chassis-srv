@@ -1,3 +1,7 @@
+### 0.1.1 (July 21st, 2020)
+
+- fix to update keys for setApiKey and configUpdate
+
 ### 0.1.0 (July 21st, 2020)
 
 - restructured config of command interface

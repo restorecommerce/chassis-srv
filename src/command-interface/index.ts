@@ -513,7 +513,7 @@ export class CommandInterface implements ICommandInterface {
     try {
       let configProperties = Object.keys(payload);
       for (let key of configProperties) {
-        _.set(this.config.get(), key, payload[key]);
+        this.config.set(key, payload[key]);
       }
       response = {
         status: 'Configuration updated successfully'
@@ -541,7 +541,7 @@ export class CommandInterface implements ICommandInterface {
     try {
       let configProperties = Object.keys(payload);
       for (let key of configProperties) {
-        _.set(this.config.get(), key, payload[key]);
+        this.config.set(key, payload[key]);
       }
       response = {
         status: 'ApiKey set successfully'
