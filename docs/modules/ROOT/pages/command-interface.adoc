@@ -18,10 +18,12 @@ The `CommandResponse` message is mainly used on Kafka events, as it contains a `
 
 The following common system commands are available (also see below):
 
-* check (microservice health check)
+* health_check (microservice health check)
 * restore (re-process https://kafka.apache.org/[Apache Kafka] event messages to restore system data)
 * reset (reset system data and state)
 * version (return runtime version information)
+* set_api_key (sets api key on microservices)
+* config_update (update configuration on microservices)
 
 Unimplemented:
 
@@ -44,7 +46,7 @@ link:../../../../src/command-interface/index.ts[CommandInterface] class.
 
 == Common Commands
 
-=== Check
+=== HealthCheck
 
 This command allows to retrieve a healt status for a service (note that a restorecommerce microservice may have several
 service names bound to it).
@@ -113,6 +115,17 @@ Response fields:
 |version |string |required |NPM package version
 |nodejs |string |required |Node.js version
 |===
+
+=== SetApiKey
+
+This command `set_api_key` sets the `authentication:apiKey` on the microservices, the configuration to set the API Key is provided
+in the payload of the command. This API Key is used by the https://github.com/restorecommerce/acs-client[`acs-client`]
+to override access control checks for https://github.com/restorecommerce/acs-client[`access-control-srv`].
+
+=== ConfigUpdate
+
+This command `config_update` sets the provided configuration on the microservices. The configuration to be set is provided in the
+payload of the command.
 
 == Usage
 

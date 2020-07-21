@@ -114,6 +114,7 @@ export class CommandInterface implements ICommandInterface {
       health_check: this.check,
       version: this.version,
       config_update: this.configUpdate,
+      set_api_key: this.setApiKey,
     };
     const topicCfg = config.events.kafka.topics.command;
     this.commandTopic = events.topic(topicCfg.topic);
@@ -326,7 +327,7 @@ export class CommandInterface implements ICommandInterface {
           };
 
           const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
-          consumer.on('message', async(message) => {
+          consumer.on('message', async (message) => {
             if (message.key in topicEvents && !_.includes(ignoreOffsets, message.offset)) {
               asyncQueue.push(message);
               that.logger.debug(`received message ${message.offset}/${targetOffset}`);
@@ -508,19 +509,54 @@ export class CommandInterface implements ICommandInterface {
    */
   async configUpdate(payload: any): Promise<any> {
     if (_.isNil(payload)) {
-      throw new errors.InvalidArgument('Invalid payload for restore command');
+      throw new errors.InvalidArgument('Invalid payload for configUpdate command');
     }
-    let configProperties = Object.keys(payload);
-    for (let key of configProperties) {
-      _.set(this.config, key, payload[key]);
+    let response;
+    try {
+      let configProperties = Object.keys(payload);
+      for (let key of configProperties) {
+        _.set(this.config, key, payload[key]);
+      }
+      response = {
+        status: 'Configuration updated successfully'
+      };
+      await this.commandTopic.emit('configUpdateResponse', {
+        services: _.keys(this.service),
+        payload: this.encodeMsg(response)
+      });
+    } catch (error) {
+      this.logger.error('Error executing configUpdate Command', { message: error.message });
+      response = error.message;
     }
-    const response = {
-      status: 'Configuration updated successfully'
-    };
-    await this.commandTopic.emit('configUpdateResponse', {
-      services: _.keys(this.service),
-      payload: this.encodeMsg(response)
-    });
+    return response;
+  }
+
+  /**
+   * Sets provided authentication apiKey on configuration
+   * @param payload JSON object containing key value pairs for authentication apiKey
+   */
+  async setApiKey(payload: any): Promise<any> {
+    if (_.isNil(payload)) {
+      throw new errors.InvalidArgument('Invalid payload for setApiKey command');
+    }
+    let response;
+    try {
+      let configProperties = Object.keys(payload);
+      for (let key of configProperties) {
+        _.set(this.config, key, payload[key]);
+      }
+      response = {
+        status: 'ApiKey set successfully'
+      };
+      await this.commandTopic.emit('setApiKeyResponse', {
+        services: _.keys(this.service),
+        payload: this.encodeMsg(response)
+      });
+    } catch (err) {
+      this.logger.error('Error executing setApiKey Command', { message: err.message });
+      response = err.message;
+    }
+
     return response;
   }
 

@@ -1,3 +1,7 @@
+### 0.0.8 (July 21st, 2020)
+
+- added setApiKey command, updated tests and documentation
+
 ### 0.0.8 (July 8th, 2020)
 
 - updated grpc-client, kafka-client and other dependencies

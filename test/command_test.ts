@@ -273,4 +273,61 @@ describe('CommandInterfaceService', () => {
       data.nodejs.should.equal(process.version);
     });
   });
+  describe('setApiKey', () => {
+    it('should set the provided authentication api key on configuration', async function version() {
+      validate = function (msg: any, eventName: string): void {
+        eventName.should.equal('setApiKeyResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.exist(payload.status);
+        payload.status.should.equal('ApiKey set successfully');
+      };
+      const offset = await commandTopic.$offset(-1);
+      const apiKeyPayload = encodeMsg({
+        authentication: {
+          apiKey: 'test-api-key-value'
+        }
+      });
+      const resp = await service.command({
+        name: 'set_api_key',
+        payload: apiKeyPayload
+      });
+      await commandTopic.$wait(offset);
+      should.not.exist(resp.error);
+      should.exist(resp.data);
+      const data = decodeMsg(resp.data);
+      should.exist(data.status);
+      data.status.should.equal('ApiKey set successfully');
+    });
+  });
+  describe('configUpdate', () => {
+    it('should update the provide configuration', async function version() {
+      validate = function (msg: any, eventName: string): void {
+        eventName.should.equal('configUpdateResponse');
+        should.exist(msg.services);
+        msg.services.should.containEql('commandinterface');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.exist(payload.status);
+        payload.status.should.equal('Configuration updated successfully');
+      };
+      const offset = await commandTopic.$offset(-1);
+      const configPayload = encodeMsg({
+        authentication: {
+        }
+      });
+      const resp = await service.command({
+        name: 'config_update',
+        payload: configPayload
+      });
+      await commandTopic.$wait(offset);
+      should.not.exist(resp.error);
+      should.exist(resp.data);
+      const data = decodeMsg(resp.data);
+      should.exist(data.status);
+      data.status.should.equal('Configuration updated successfully');
+    });
+  });
 });
