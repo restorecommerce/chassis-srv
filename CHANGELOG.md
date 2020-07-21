@@ -1,4 +1,8 @@
-### 0.0.8 (July 21st, 2020)
+### 0.1.0 (July 21st, 2020)
+
+- restructured config of command interface
+
+### 0.0.9 (July 21st, 2020)
 
 - added setApiKey command, updated tests and documentation
 

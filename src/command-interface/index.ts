@@ -56,17 +56,14 @@ export class CommandInterface implements ICommandInterface {
         return;
       }
     }
-    if (!_.has(config, 'server.services')) {
+    if (!config.get('server:services')) {
       throw new Error('missing config server.services');
     }
 
     this.config = config;
     this.logger = logger;
 
-    if (!_.has(this.config, 'events')
-      || !_.has(this.config.events, 'kafka')
-      || !_.has(this.config.events.kafka, 'topics')
-      || !_.has(this.config.events.kafka.topics, 'command')) {
+    if (!this.config.get('events:kafka:topics:command')) {
       throw new Error('Commands topic configuration was not provided.');
     }
 
@@ -79,7 +76,7 @@ export class CommandInterface implements ICommandInterface {
     this.service = {};
     const service = this.service;
     const health = this.health;
-    _.forEach(config.server.services, (serviceCfg, serviceName) => {
+    _.forEach(config.get('server:services'), (serviceCfg, serviceName) => {
       service[serviceName] = {
         bound: false,
         transport: {},
@@ -116,14 +113,15 @@ export class CommandInterface implements ICommandInterface {
       config_update: this.configUpdate,
       set_api_key: this.setApiKey,
     };
-    const topicCfg = config.events.kafka.topics.command;
+    const topicCfg = config.get('events:kafka:topics:command');
     this.commandTopic = events.topic(topicCfg.topic);
     // check for buffer fields
     this.bufferedCollection = new Map<string, string>();
-    if (this.config.fieldHandlers && this.config.fieldHandlers.bufferFields) {
-      for (let bufferedCollection in this.config.fieldHandlers.bufferFields) {
+    if (this.config.get('fieldHandlers:bufferFields')) {
+      for (let bufferedCollection in this.config.get('fieldHandlers:bufferFields')) {
+        const buffFields = this.config.get('fieldHandlers:bufferFields');
         this.bufferedCollection.set(bufferedCollection,
-          this.config.fieldHandlers.bufferFields[bufferedCollection]);
+          buffFields[bufferedCollection]);
       }
       this.logger.info('Buffered collections are:', this.bufferedCollection);
     }
@@ -175,8 +173,8 @@ export class CommandInterface implements ICommandInterface {
 
     // the Kafka config should contains a key-value pair, mapping
     // a label with the topic's name
-    const kafkaEventsCfg = this.config.events.kafka;
-    const kafkaCfg = this.config.events.kafka.topics;
+    const kafkaEventsCfg = this.config.get('events:kafka');
+    const kafkaCfg = this.config.get('events:kafka:topics');
     if (_.isNil(kafkaCfg) || kafkaCfg.length == 0) {
       throw new errors.Internal('Kafka topics config not available');
     }
@@ -207,15 +205,15 @@ export class CommandInterface implements ICommandInterface {
     const restoreCollections = _.keys(restoreSetup);
 
     try {
-      const dbCfgs = this.config.database;
+      const dbCfgs = this.config.get('database');
       const dbCfgNames = _.keys(dbCfgs);
       for (let i = 0; i < dbCfgNames.length; i += 1) {
         const dbCfgName = dbCfgNames[i];
         const dbCfg = dbCfgs[dbCfgName];
         const collections = dbCfg.collections;
         let graphName;
-        if (this.config.graph) {
-          graphName = this.config.graph.graphName;
+        if (this.config.get('graph')) {
+          graphName = this.config.get('graph:graphName');
         }
         const db = await database.get(dbCfg, this.logger, graphName);
 
@@ -289,7 +287,7 @@ export class CommandInterface implements ICommandInterface {
             // decode protobuf
             let decodedMsg = that.kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
             decodedMsg = _.pick(decodedMsg, _.keys(decodedMsg)); // preventing protobuf.js special fields
-            eventListener(decodedMsg, context, that.config, eventName).then(() => {
+            eventListener(decodedMsg, context, that.config.get(), eventName).then(() => {
               done();
             }).catch((err) => {
               that.logger.error(`Exception caught invoking restore listener for event ${eventName}:`, err);
@@ -392,7 +390,7 @@ export class CommandInterface implements ICommandInterface {
 
     let errorMsg = null;
     try {
-      const dbCfgs = this.config.database;
+      const dbCfgs = this.config.get('database');
       const dbCfgNames = _.keys(dbCfgs);
       for (let i = 0; i < dbCfgNames.length; i += 1) {
         const dbCfgName = dbCfgNames[i];
@@ -515,7 +513,7 @@ export class CommandInterface implements ICommandInterface {
     try {
       let configProperties = Object.keys(payload);
       for (let key of configProperties) {
-        _.set(this.config, key, payload[key]);
+        _.set(this.config.get(), key, payload[key]);
       }
       response = {
         status: 'Configuration updated successfully'
@@ -543,7 +541,7 @@ export class CommandInterface implements ICommandInterface {
     try {
       let configProperties = Object.keys(payload);
       for (let key of configProperties) {
-        _.set(this.config, key, payload[key]);
+        _.set(this.config.get(), key, payload[key]);
       }
       response = {
         status: 'ApiKey set successfully'

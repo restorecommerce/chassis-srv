@@ -76,7 +76,7 @@ describe('CommandInterfaceService', () => {
     const config = cfg.get();
     delete config.database.nedb;  // not supported in default implementation
 
-    const cis = new CommandInterface(server, config, logger, events);
+    const cis = new CommandInterface(server, cfg, logger, events);
     await server.bind('commandinterface', cis);
     await server.start();
 
