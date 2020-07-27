@@ -107,7 +107,8 @@ Exposure of these operations is easily achieved using the https://github.com/res
 === Command Interface
 
 An interface for system commands (useful information retrieval, system control, etc) is also provided.
-For more details about all implemented operations please refer link:./command-interface.adoc[command-interface].
+For more details about all implemented operations please refer
+link:https://github.com/restorecommerce/chassis-srv/blob/master/docs/modules/ROOT/pages/command-interface.adoc[command-interface].
 This interface can be directly exposed as a gRPC endpoint and it can be extended by a microservice for custom functionality.
 
 [#configuration_offset_store]
