@@ -6,6 +6,7 @@ import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as sconfig from '@restorecommerce/service-config';
+import { createClient } from 'redis';
 
 
 /**
@@ -76,7 +77,12 @@ describe('CommandInterfaceService', () => {
     const config = cfg.get();
     delete config.database.nedb;  // not supported in default implementation
 
-    const cis = new CommandInterface(server, cfg, logger, events);
+    // init redis client for subject index
+    const redisConfig = cfg.get('redis');
+    redisConfig.db = cfg.get('redis:db-indexes:db-offsetStore');
+    const redisClient = createClient(redisConfig);
+
+    const cis = new CommandInterface(server, cfg, logger, events, redisClient);
     await server.bind('commandinterface', cis);
     await server.start();
 
@@ -328,6 +334,35 @@ describe('CommandInterfaceService', () => {
       const data = decodeMsg(resp.data);
       should.exist(data.status);
       data.status.should.equal('Configuration updated successfully');
+    });
+  });
+  describe('flushCache', () => {
+    it('should set the provided authentication api key on configuration', async function version() {
+      validate = function (msg: any, eventName: string): void {
+        eventName.should.equal('flushCacheResponse');
+        should.exist(msg.payload);
+        const payload = decodeMsg(msg.payload);
+        should.exist(payload.status);
+        payload.status.should.equal('Successfully flushed cache pattern');
+      };
+      const offset = await commandTopic.$offset(-1);
+      const flushCachePayload = encodeMsg({
+        data: 
+          {
+            db_index: 0,
+            pattern: 'user'
+          }
+      });
+      const resp = await service.command({
+        name: 'flush_cache',
+        payload: flushCachePayload
+      });
+      await commandTopic.$wait(offset);
+      should.not.exist(resp.error);
+      should.exist(resp.data);
+      const data = decodeMsg(resp.data);
+      should.exist(data.status);
+      data.status.should.equal('Successfully flushed cache pattern');
     });
   });
 });

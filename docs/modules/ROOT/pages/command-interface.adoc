@@ -127,6 +127,27 @@ to override access control checks for https://github.com/restorecommerce/acs-cli
 This command `config_update` sets the provided configuration on the microservices. The configuration to be set is provided in the
 payload of the command.
 
+=== FlushCache
+
+This command `flush_cache` is used to flush / invalidate the cache.
+
+Possible `payload` fields in a request:
+
+|===
+|Field |Type |Label |Description
+
+|data |FlushCacheData |required | flush cache payload
+|===
+
+`FlushCacheData`
+
+|===
+|Field |Type |Label |Description
+
+|db_index |number |optional |Redis DB index to be flushed
+|pattern |string |optional |Pattern to match redis keys to be flushed
+|===
+
 == Usage
 
 See link:../../../../test/command_test.ts[tests].

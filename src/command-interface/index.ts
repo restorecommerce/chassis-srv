@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import * as async from 'async';
 import * as kafka from 'kafka-node';
 import { Logger } from '..';
+import { RedisClient } from 'redis';
 
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -25,6 +26,11 @@ interface RestoreData {
   base_offset: number;
   ignore_offset: number[];
   entity: string; // resource name
+}
+
+interface FlushCacheData {
+  db_index?: number;
+  pattern?: string;
 }
 
 /**
@@ -49,7 +55,8 @@ export class CommandInterface implements ICommandInterface {
   commands: any;
   commandTopic: Topic;
   bufferedCollection: Map<string, string>;
-  constructor(server: Server, config: any, logger: Logger, events: Events) {
+  redisClient: RedisClient;
+  constructor(server: Server, config: any, logger: Logger, events: Events, redisClient: RedisClient) {
     if (_.isNil(events)) {
       if (logger.error) {
         logger.error('No Kafka client was provided. Disabling all commands.');
@@ -62,6 +69,7 @@ export class CommandInterface implements ICommandInterface {
 
     this.config = config;
     this.logger = logger;
+    this.redisClient = redisClient;
 
     if (!this.config.get('events:kafka:topics:command')) {
       throw new Error('Commands topic configuration was not provided.');
@@ -112,6 +120,7 @@ export class CommandInterface implements ICommandInterface {
       version: this.version,
       config_update: this.configUpdate,
       set_api_key: this.setApiKey,
+      flush_cache: this.flushCache
     };
     const topicCfg = config.get('events:kafka:topics:command');
     this.commandTopic = events.topic(topicCfg.topic);
@@ -558,6 +567,112 @@ export class CommandInterface implements ICommandInterface {
     return response;
   }
 
+  /**
+  * Flush the cache based on DB index and prefix passed, if no dbIndex is passed
+  * then the complete Cache is flushed.
+  *
+  * @param prefix An optional prefix to flush instead of entire cache
+  */
+  async flushCache(payload: any): Promise<any> {
+    let flushCachePayload: FlushCacheData;
+    if (payload && payload.data) {
+      flushCachePayload = payload.data;
+    }
+    let dbIndex, pattern, response;
+    if (flushCachePayload) {
+      dbIndex = flushCachePayload.db_index;
+      pattern = flushCachePayload.pattern;
+    }
+
+    try {
+      if (pattern != undefined) {
+        let flushPattern = '*' + pattern + '*';
+        this.logger.debug('Flushing cache wiht pattern', { dbIndex, flushPattern });
+        await new Promise((resolve, reject) => {
+          let cursor = '0';
+          // based on given subject prefix delete 100 matching keys at time using cursor scan
+          this.redisClient.multi().select(dbIndex).scan(cursor, 'MATCH', flushPattern,
+            'COUNT', '100', (err, reply) => {
+              if (err) {
+                this.logger.error('Failed flushing cache pattern', { err, pattern });
+                return reject(err);
+              }
+              cursor = reply[0];
+              if (cursor === '0') {
+                let keys = reply[1];
+                if (keys.length > 0) {
+                  this.redisClient.multi().select(dbIndex).del(keys, (err1, reply1) => {
+                    if (err1) {
+                      this.logger.error('Failed flushing cache pattern', { err1, pattern });
+                      return reject(err1);
+                    }
+                  }).exec();
+                }
+                // end condition when cursor is 0, resolve
+                this.logger.debug('Successfully flushed cache pattern', { dbIndex, pattern });
+                response = {
+                  status: 'Successfully flushed cache pattern'
+                };
+                resolve();
+              } else {
+                let keys = reply[1];
+                // iterate each key and delete it
+                this.redisClient.multi().select(dbIndex).del(keys, (err1, reply1) => {
+                  if (err1) {
+                    this.logger.error('Failed flushing cache pattern', { err1, pattern });
+                    return reject(err1);
+                  }
+                }).exec();
+              }
+            }).exec();
+        });
+      } else {
+        this.logger.debug('Flushing cache', { dbIndex });
+        await new Promise((resolve, reject) => {
+          if (dbIndex || dbIndex === 0) {
+            // Flush all keys in the given dbIndex (flushDB)
+            this.redisClient.multi().select(dbIndex).flushdb(async (err, reply) => {
+              if (err) {
+                this.logger.error('Failed flushing cache with DB index', { err, dbIndex });
+                return reject();
+              }
+
+              if (reply) {
+                this.logger.debug('Successfully flushed cache with DB index', { dbIndex });
+                response = {
+                  status: `Successfully flushed cache with DB index ${dbIndex}`
+                };
+                return resolve();
+              }
+            }).exec();
+          } else {
+            // Flush Complete Redis Cache (flushAll)
+            this.redisClient.flushall(async (err, reply) => {
+              if (err) {
+                this.logger.error('Failed flushing complete cache', { err });
+                return reject();
+              }
+              if (reply) {
+                this.logger.debug('Successfully flushed complete cache');
+                response = {
+                  status: 'Successfully flushed complete cache'
+                };
+                return resolve();
+              }
+            });
+          }
+        });
+      }
+    } catch (err) {
+      response = err.message;
+    }
+    await this.commandTopic.emit('flushCacheResponse', {
+      services: _.keys(this.service),
+      payload: this.encodeMsg(response)
+    });
+    return response;
+  }
+
   // Helper functions
 
   /**
@@ -621,14 +736,15 @@ export class CommandInterface implements ICommandInterface {
    * @returns google.protobuf.Any formatted message
    */
   encodeMsg(msg: any): any {
-
-    const stringified = JSON.stringify(msg);
-    const encoded = Buffer.from(stringified).toString('base64');
-    const ret = {
-      type_url: 'payload',
-      value: encoded
-    };
-    return ret;
+    if (msg) {
+      const stringified = JSON.stringify(msg);
+      const encoded = Buffer.from(stringified).toString('base64');
+      const ret = {
+        type_url: 'payload',
+        value: encoded
+      };
+      return ret;
+    }
   }
 
 }
