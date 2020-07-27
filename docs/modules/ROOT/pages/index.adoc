@@ -5,7 +5,7 @@ https://travis-ci.org/restorecommerce/chassis-srv?branch=master[image:http://img
 https://david-dm.org/restorecommerce/chassis-srv[image:https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square[Dependencies]]
 https://coveralls.io/github/restorecommerce/chassis-srv?branch=master[image:http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square[Coverage Status]]
 
-A library for https://github.com/restorecommerce/[Restorecommerce] microservices.
+A base service part of the link:https://github.com/restorecommerce[Restorecommerce].
 
 [#features]
 == Features
