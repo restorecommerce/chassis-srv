@@ -1,3 +1,7 @@
+### 0.1.2 (July 27th, 2020)
+
+- added flush cache on command interface
+
 ### 0.1.1 (July 21st, 2020)
 
 - fix to update keys for setApiKey and configUpdate
