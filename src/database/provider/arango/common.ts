@@ -10,19 +10,21 @@ import * as Long from 'long';
  * @param {Object} args list of arguments, optional
  * @return {Promise} arangojs query result
  */
-export const query = async(db: any, collectionName: string, query: string | AqlQuery,
+export const query = async (db: any, collectionName: string, query: string | AqlQuery,
   args?: Object): Promise<any> => {
+  const collection = db.collection(collectionName);
+  const collectionExists = await collection.exists();
   try {
-    return await db.query(query, args);
-  } catch (err) {
-    if (err.message && err.message.indexOf('collection or view not found') == -1) {
+    if (!collectionExists) {
+      await collection.create();
+      await collection.load(false);
+    }
+  } catch(err) {
+    if (err.message && err.message.indexOf('duplicate name') == -1) {
       throw err;
     }
   }
-  const collection = db.collection(collectionName);
-  await collection.create();
-  await collection.load(false);
-  return db.query(query, args);
+  return await db.query(query, args);
 };
 
 /**

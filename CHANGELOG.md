@@ -1,3 +1,7 @@
+### 0.1.3 (July 30th, 2020)
+
+- added check for collection exists for arangoDB
+
 ### 0.1.2 (July 27th, 2020)
 
 - added flush cache on command interface
