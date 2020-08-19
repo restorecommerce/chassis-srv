@@ -1,3 +1,7 @@
+### 0.1.4 (August 19th, 2020)
+
+- updated kafka-client and logger
+
 ### 0.1.3 (July 30th, 2020)
 
 - added check for collection exists for arangoDB
