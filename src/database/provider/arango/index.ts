@@ -71,9 +71,11 @@ const connect = async(conf: any, logger: Logger): Promise<any> => {
     }, { retries: attempts, minTimeout: delay });
   }
   catch (err) {
+    const safeError = Object.getOwnPropertyNames(Object.getPrototypeOf(err))
+      .reduce((acc, curr) => { return acc[curr] = err[curr], acc }, {});
     logger.error(
       'Database connection error', {
-        err, dbHost, dbPort, dbName, attempt: i
+        err: safeError, dbHost, dbPort, dbName, attempt: i
       });
     mainError = err;
   }
