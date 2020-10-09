@@ -1,3 +1,7 @@
+### 0.1.5 (October 9th, 2020)
+
+- Add standard GRPC health service
+
 ### 0.1.4 (August 19th, 2020)
 
 - updated kafka-client and logger
