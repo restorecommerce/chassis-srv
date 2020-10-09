@@ -32,3 +32,6 @@ export { ICommandInterface, CommandInterface };
 
 import { OffsetStore } from './offsets';
 export { OffsetStore };
+
+import { Health } from './health';
+export { Health };
