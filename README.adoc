@@ -5,9 +5,11 @@ https://travis-ci.org/restorecommerce/chassis-srv?branch=master[image:http://img
 https://david-dm.org/restorecommerce/chassis-srv[image:https://img.shields.io/david/restorecommerce/chassis-srv.svg?style=flat-square[Dependencies]]
 https://coveralls.io/github/restorecommerce/chassis-srv?branch=master[image:http://img.shields.io/coveralls/restorecommerce/chassis-srv/master.svg?style=flat-square[Coverage Status]]
 
-A base service part of the link:https://github.com/restorecommerce[Restorecommerce].
+A chassis microservice.
 
 Please consult the documentation for using it:
 
 - *link:https://docs.restorecommerce.io/chassis-srv/index.html[Usage]*
 - *link:https://docs.restorecommerce.io/architecture/index.html[General Architecture]*
+
+Part of link:https://github.com/restorecommerce[Restorecommerce].
