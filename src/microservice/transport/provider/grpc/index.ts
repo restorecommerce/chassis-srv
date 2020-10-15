@@ -2,6 +2,7 @@ import * as path from 'path';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as errors from '../../../errors';
+import { Logger } from '@restorecommerce/logger';
 
 /**
  * Name of the transport
@@ -355,5 +356,4 @@ export class Server {
 
 module.exports.Name = NAME;
 import { ServerReflection } from './reflection';
-import { Logger } from '../../../..';
 export { ServerReflection };

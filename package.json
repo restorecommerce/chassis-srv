@@ -1,6 +1,6 @@
 {
   "name": "@restorecommerce/chassis-srv",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Restore Commerce microservice chassis",
   "main": "./lib/index.js",
   "author": "n-fuse GmbH",
@@ -17,9 +17,11 @@
   ],
   "typings": "lib/index.d.ts",
   "dependencies": {
+    "@restorecommerce/protos": "0.0.12",
+    "@restorecommerce/grpc-client": "0.0.7",
     "@restorecommerce/kafka-client": "^0.1.12",
-    "@restorecommerce/logger": "^0.2.1",
-    "@restorecommerce/service-config": "^0.1.6",
+    "@restorecommerce/logger": "^0.3.5",
+    "@restorecommerce/service-config": "^0.3.1",
     "arangojs": "^6.14.1",
     "async-retry": "^1.2.3",
     "cache-manager": "^3.3.0",
@@ -33,8 +35,6 @@
     "redis": "^3.0.2"
   },
   "devDependencies": {
-    "@restorecommerce/grpc-client": "0.0.6",
-    "@restorecommerce/protos": "0.0.8",
     "@types/cache-manager": "^2.10.3",
     "@types/kafka-node": "^3.0.0",
     "@types/lodash": "^4.14.157",

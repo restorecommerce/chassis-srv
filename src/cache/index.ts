@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as cacheManager from 'cache-manager';
-import { Logger } from '..';
+import { Logger } from '@restorecommerce/logger';
 
 /**
  * A key, value map containing cache providers.

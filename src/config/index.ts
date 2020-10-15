@@ -1,4 +1,4 @@
-import * as readConfig from '@restorecommerce/service-config';
+import { createServiceConfig } from '@restorecommerce/service-config';
 
 // singleton
 let config;
@@ -10,12 +10,8 @@ let config;
  */
 export const load = async(baseDir: string, logger?: any): Promise<any> => {
   return new Promise((resolve, reject) => {
-    readConfig(baseDir, logger, (err, cfg) => {
-      if (err)
-        reject(err);
-      config = cfg;
-      resolve(cfg);
-    });
+    config = createServiceConfig(baseDir, {logger});
+    resolve(config);
   });
 };
 

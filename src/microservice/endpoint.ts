@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as rTracer from 'cls-rtracer';
-import { Logger } from '..';
+import { Logger } from '@restorecommerce/logger';
 
 const middlewareClsTracer = rTracer.koaMiddleware({
   useHeader: true,

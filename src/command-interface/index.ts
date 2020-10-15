@@ -6,7 +6,7 @@ import { Events, Topic } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
 import * as async from 'async';
 import * as kafka from 'kafka-node';
-import { Logger } from '..';
+import { Logger } from '@restorecommerce/logger';
 import { RedisClient } from 'redis';
 
 const ServingStatus = {

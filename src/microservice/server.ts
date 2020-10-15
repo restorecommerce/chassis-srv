@@ -1,5 +1,5 @@
 import { makeEndpoint } from './endpoint';
-import { Logger } from '../logger';
+import { Logger, createLogger } from '@restorecommerce/logger';
 import * as _ from 'lodash';
 import { EventEmitter } from 'events';
 
@@ -79,9 +79,9 @@ export class Server extends EventEmitter {
     // logger
     if (_.isNil(logger)) {
       if (_.isNil(this.config.logger)) {
-        this.logger = new Logger();
+        this.logger = createLogger();
       } else {
-        this.logger = new Logger(this.config.logger);
+        this.logger = createLogger(this.config.logger);
       }
     } else {
       this.logger = logger;

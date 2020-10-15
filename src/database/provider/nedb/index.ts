@@ -1,6 +1,6 @@
 import * as Datastore from 'nedb';
 import * as _ from 'lodash';
-import { Logger } from '../../..';
+import { Logger } from '@restorecommerce/logger';
 
 /**
  * Converts unsupported functions to regexp.

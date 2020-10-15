@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { Logger } from '../lib/logger';
 import * as sleep from 'sleep';
 import * as chassis from '../lib';
-import * as sconfig from '@restorecommerce/service-config';
+import { createServiceConfig } from '@restorecommerce/service-config';
 import * as gRPCClient from '@restorecommerce/grpc-client';
 
 const config = chassis.config;
@@ -96,7 +96,7 @@ describe('microservice.Server', () => {
         await config.load(process.cwd() + '/test');
         cfg = await config.get();
         const logger = new Logger(cfg.get('logger'));
-        cfg = sconfig(process.cwd() + '/test', logger);
+        cfg = createServiceConfig(process.cwd() + '/test', {logger});
         cfg.set('server:services', undefined);
         (() => {
           server = new Server(cfg.get('server'));

@@ -1,27 +1,24 @@
-import { Logger as RestoreLogger } from '@restorecommerce/logger';
-import * as _ from 'lodash';
+import { Logger as RestoreLogger, createLogger, RestoreLoggerOptions } from '@restorecommerce/logger';
+
+// TODO Remove
+
+class WinstonLoggerClass {
+  constructor(opts?: RestoreLoggerOptions) {
+    const logger = createLogger(opts);
+    Object.setPrototypeOf(this, logger);
+  }
+}
+
+const RCLogger = WinstonLoggerClass as { new(opts?: RestoreLoggerOptions): RestoreLogger };
 
 /**
  * Logger based on a customized winston logger.
  */
-export class Logger extends RestoreLogger {
+export class Logger extends RCLogger {
   /**
    * @param {Object} config Logger configuration
    */
-  constructor(config?: any) {
-    let conf = config || {};
-    if (_.isEmpty(conf)) {
-      conf = {
-        console: {
-          handleExceptions: false,
-          level: 'silly',
-          colorize: true,
-          prettyPrint: true,
-        },
-      };
-    }
-    super(conf);
+  constructor(config?: RestoreLoggerOptions) {
+    super(config);
   }
 }
-
-// module.exports = Logger;

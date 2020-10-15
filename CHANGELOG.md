@@ -1,3 +1,9 @@
+### 0.1.6 (October 15th, 2020)
+
+- Update logger and service-config
+- Add redis readiness check
+- Add dependency readiness checks
+
 ### 0.1.5 (October 9th, 2020)
 
 - Add standard GRPC health service

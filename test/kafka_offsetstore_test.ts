@@ -1,8 +1,8 @@
 import * as should from 'should';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import { Logger } from '@restorecommerce/logger';
+import { createLogger} from '@restorecommerce/logger';
 import { OffsetStore } from './../lib/offsets';
-import * as sconfig from '@restorecommerce/service-config';
+import { createServiceConfig } from '@restorecommerce/service-config';
 import * as sleep from 'sleep';
 
 
@@ -16,8 +16,8 @@ describe('offsetStore', () => {
   const eventName = 'testCreated';
   const testMessage = { value: 'testValue', count: 1 };
 
-  const cfg = sconfig(process.cwd() + '/test');
-  const logger = new Logger(cfg.get('logger'));
+  const cfg = createServiceConfig(process.cwd() + '/test');
+  const logger = createLogger(cfg.get('logger'));
 
   beforeEach(async function start() {
     events = new Events(cfg.get('events:kafka'), logger);
