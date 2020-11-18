@@ -1,3 +1,7 @@
+### 0.1.7 (November 18th, 2020)
+
+- Update dependencies
+
 ### 0.1.6 (October 15th, 2020)
 
 - Update logger and service-config
