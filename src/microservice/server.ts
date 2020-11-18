@@ -1,5 +1,6 @@
 import { makeEndpoint } from './endpoint';
-import { Logger, createLogger } from '@restorecommerce/logger';
+import { createLogger } from '@restorecommerce/logger';
+import { Logger } from 'winston';
 import * as _ from 'lodash';
 import { EventEmitter } from 'events';
 

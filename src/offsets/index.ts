@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import * as redis from 'redis';
-import { Logger } from '@restorecommerce/logger';
+import { Logger } from 'winston';
 
 /**
  * Stores the offsets of the provided topics to redis periodically

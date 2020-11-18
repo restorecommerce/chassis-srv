@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../lib/logger';
+import { createLogger } from '@restorecommerce/logger';
 import * as sleep from 'sleep';
 import * as chassis from '../lib';
 import { createServiceConfig } from '@restorecommerce/service-config';
@@ -95,8 +95,7 @@ describe('microservice.Server', () => {
       async function throwErrorOnMissingConfig() {
         await config.load(process.cwd() + '/test');
         cfg = await config.get();
-        const logger = new Logger(cfg.get('logger'));
-        cfg = createServiceConfig(process.cwd() + '/test', {logger});
+        cfg = createServiceConfig(process.cwd() + '/test');
         cfg.set('server:services', undefined);
         (() => {
           server = new Server(cfg.get('server'));
@@ -106,7 +105,6 @@ describe('microservice.Server', () => {
       async function throwErrorOnMissingTransportConfig() {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
-        const logger = new Logger(cfg.get('logger'));
         cfg.set('server:transports', undefined);
         (() => {
           server = new Server(cfg.get('server'));
@@ -116,7 +114,6 @@ describe('microservice.Server', () => {
       async function throwNoConfig() {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
-        const logger = new Logger(cfg.get('logger'));
         cfg.set('server:services', undefined);
         cfg.set('server:transports', undefined);
         (() => {
@@ -127,7 +124,7 @@ describe('microservice.Server', () => {
       async function correctConfig() {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
-        const logger = new Logger(cfg.get('logger'));
+        const logger = createLogger(cfg.get('logger'));
         server = new Server(cfg.get('server'), logger);
         should.exist(server);
         should.exist(server.logger);
@@ -168,7 +165,7 @@ describe('microservice.Server', () => {
         let grpcConfig = cfg.get('client:test:transports:grpc');
         should.exist(grpcConfig);
         should.exist(grpcConfig.service);
-        const logger = new Logger(cfg.get('logger'));
+        const logger = createLogger(cfg.get('logger'));
         let client: gRPCClient.grpcClient = new grpcClient(grpcConfig, logger);
         let instance: string;
         let result;
@@ -381,7 +378,7 @@ describe('microservice.Client', () => {
       async function correctConfig() {
         await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
-        const logger = new Logger(cfg.get('logger'));
+        const logger = createLogger(cfg.get('logger'));
         client = new Client(cfg.get('client:test'), logger);
         should.exist(client);
         should.exist(client.logger);
@@ -418,7 +415,7 @@ describe('microservice.Client', () => {
     before(async function initServer() {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
-      const logger = new Logger(cfg.get('logger'));
+      const logger = createLogger(cfg.get('logger'));
       server = new Server(cfg.get('server'), logger);
       await server.bind('test', service);
       await server.start();

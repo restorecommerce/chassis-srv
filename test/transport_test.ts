@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as co from 'co';
-import { Logger } from '../lib/logger';
+import { createLogger } from '@restorecommerce/logger';
 import * as gRPCClient from '@restorecommerce/grpc-client';
 import * as chassis from '../lib';
 const grpcClient = gRPCClient.grpcClient;
@@ -60,7 +60,7 @@ providers.forEach((provider) => {
       describe('constructing the server provider with proper config',
         () => {
           it('should result in a server transport provider', () => {
-            const logger = new Logger(provider.config.logger);
+            const logger = createLogger(provider.config.logger);
             server = new Server(provider.config.server, logger);
             should.exist(server);
           });
@@ -102,7 +102,7 @@ providers.forEach((provider) => {
       describe('constructing the client provider with proper config',
         () => {
           it('should result in a client transport provider', () => {
-            const logger = new Logger(provider.config.logger);
+            const logger = createLogger(provider.config.logger);
             client = new Client(provider.config.client, logger);
             should.exist(client);
           });
@@ -143,7 +143,7 @@ providers.forEach((provider) => {
           };
           before(async function startServer() {
             this.timeout(5000);
-            const logger = new Logger(provider.config.logger);
+            const logger = createLogger(provider.config.logger);
             server = new provider.Server(provider.config.server, logger);
             await server.bind('test', service);
             await server.start();

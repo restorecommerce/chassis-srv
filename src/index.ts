@@ -9,8 +9,6 @@ import { create as arango } from './database/provider/arango';
 export { arango };
 import { create as nedb } from './database/provider/nedb';
 export { nedb };
-import { Logger } from './logger';
-export { Logger };
 
 import { Server as Server } from './microservice/server';
 export { Server };

@@ -1,7 +1,7 @@
-import {CommandInterface} from '../command-interface';
-import {ServiceConfig} from '@restorecommerce/service-config';
-import {Client} from '@restorecommerce/grpc-client';
-import {Logger} from '@restorecommerce/logger';
+import { CommandInterface } from '../command-interface';
+import { ServiceConfig } from '@restorecommerce/service-config';
+import { Client } from '@restorecommerce/grpc-client';
+import { Logger } from 'winston';
 
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -74,7 +74,7 @@ export class Health {
 
     if (service === 'readiness') {
       if (this.ci.redisClient && !this.ci.redisClient.ping()) {
-        return {status: ServingStatus.NOT_SERVING};
+        return { status: ServingStatus.NOT_SERVING };
       }
 
       if (this.opts) {
@@ -83,17 +83,17 @@ export class Health {
             const response = await this.endpoints[service].check({});
             if ('error' in response && response.error) {
               this.opts.logger.warn('Readiness error from ' + service + ':', response);
-              return {status: ServingStatus.NOT_SERVING};
+              return { status: ServingStatus.NOT_SERVING };
             }
           }
         }
 
         try {
           if (this.opts.readiness && !await this.opts.readiness()) {
-            return {status: ServingStatus.NOT_SERVING};
+            return { status: ServingStatus.NOT_SERVING };
           }
         } catch (e) {
-          return {status: ServingStatus.NOT_SERVING};
+          return { status: ServingStatus.NOT_SERVING };
         }
       }
     }
@@ -101,7 +101,7 @@ export class Health {
     const response = await this.ci.check({});
 
     if (!('status' in response)) {
-      return {status: ServingStatus.UNKNOWN};
+      return { status: ServingStatus.UNKNOWN };
     }
 
     return response;

@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../lib/logger';
+import { createLogger } from '@restorecommerce/logger';
 import { Database } from 'arangojs';
 import * as chassis from '../lib';
 import { DatabaseProvider } from '../lib/database';
@@ -17,7 +17,7 @@ const providers = [
     init: async function init(): Promise<DatabaseProvider> {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
-      const logger = new Logger(cfg.get('logger'));
+      const logger = createLogger(cfg.get('logger'));
       return database.get(cfg.get('database:arango'), logger);
     },
     drop: async function drop(): Promise<any> {
@@ -153,7 +153,7 @@ const providers = [
     init: async function init(): Promise<DatabaseProvider> {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
-      const logger = new Logger(cfg.get('logger'));
+      const logger = createLogger(cfg.get('logger'));
       return database.get(cfg.get('database:nedb'), logger);
     },
     drop: async function drop(): Promise<any> { },

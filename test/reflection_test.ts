@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../lib/logger';
+import { createLogger } from '@restorecommerce/logger';
 import * as chassis from '../lib';
 import { grpc } from '../lib';
 import { Server } from '../lib/microservice/server';
@@ -15,7 +15,7 @@ describe('binding the grpc.ServerReflection service', () => {
   before(async function start() {
     await chassis.config.load(process.cwd() + '/test');
     const cfg = await chassis.config.get();
-    const logger = new Logger(cfg.get('logger'));
+    const logger = createLogger(cfg.get('logger'));
     server = new Server(cfg.get('server'), logger);
     const transportName: string = cfg.get('server:services:reflection:serverReflectionInfo:transport:0');
     const transport = server.transport[transportName];
@@ -35,7 +35,7 @@ describe('binding the grpc.ServerReflection service', () => {
   it('should provide an endpoint ServerReflectionInfo',
     async function checkEndpoint() {
       const cfg = await chassis.config.get();
-      const logger = new Logger(cfg.get('logger'));
+      const logger = createLogger(cfg.get('logger'));
       const client: Client = new Client(cfg.get('client:reflection'), logger);
       const reflectionClient: chassis.ServerReflection = await client.connect();
       const reflection = await reflectionClient.serverReflectionInfo();
@@ -47,7 +47,7 @@ describe('binding the grpc.ServerReflection service', () => {
     let serverReflectionInfo;
     beforeEach(async function connect() {
       const cfg = await chassis.config.get();
-      const logger = new Logger(cfg.get('logger'));
+      const logger = createLogger(cfg.get('logger'));
       client = new Client(cfg.get('client:reflection'), logger);
       const reflection: chassis.ServerReflection = await client.connect();
       serverReflectionInfo = await reflection.serverReflectionInfo();

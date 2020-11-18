@@ -1,6 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
-import { Logger } from '../lib/logger';
+import { createLogger } from '@restorecommerce/logger';
 import { Database } from 'arangojs';
 import * as chassis from '../lib';
 const config = chassis.config;
@@ -14,7 +14,7 @@ const providers = [
     init: async function init(): Promise<any> {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
-      const logger = new Logger(cfg.get('logger'));
+      const logger = createLogger(cfg.get('logger'));
       return database.get(cfg.get('database:arango'), logger, 'test-graph');
     }
   }

@@ -1,11 +1,12 @@
 // microservice chassis
 import * as _ from 'lodash';
-import { config, CommandInterface, database, Server } from '../lib';
+import { CommandInterface, database, Server } from '../lib';
 import * as chassis from '../lib';
 import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
-import { Events, Topic } from '@restorecommerce/kafka-client';
+import { Events } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
+import { createLogger } from '@restorecommerce/logger'
 import { createClient } from 'redis';
 
 
@@ -57,7 +58,7 @@ describe('CommandInterfaceService', () => {
   };
   before(async function setup() {
     cfg = createServiceConfig(process.cwd() + '/test');
-    const logger = new chassis.Logger(cfg.get('logger'));
+    const logger = createLogger(cfg.get('logger'));
 
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
@@ -348,10 +349,10 @@ describe('CommandInterfaceService', () => {
       const offset = await commandTopic.$offset(-1);
       const flushCachePayload = encodeMsg({
         data:
-          {
-            db_index: 0,
-            pattern: 'user'
-          }
+        {
+          db_index: 0,
+          pattern: 'user'
+        }
       });
       const resp = await service.command({
         name: 'flush_cache',

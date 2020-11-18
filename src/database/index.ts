@@ -1,4 +1,4 @@
-import { Logger } from '@restorecommerce/logger';
+import { Logger } from 'winston';
 
 /**
  * A key, value map containing database providers.

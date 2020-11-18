@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as grpc from 'grpc';
 import * as _ from 'lodash';
 import * as errors from '../../../errors';
-import { Logger } from '@restorecommerce/logger';
+import { Logger } from 'winston';
 
 /**
  * Name of the transport

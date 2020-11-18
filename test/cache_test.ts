@@ -1,7 +1,6 @@
 import * as should from 'should';
-import * as chassis from '../lib';
 import * as config from '../lib/config';
-import { Logger } from '../lib/logger';
+import { createLogger } from '@restorecommerce/logger';
 import * as cache from '../lib/cache';
 
 /* global describe it beforeEach */
@@ -11,7 +10,7 @@ describe('cache', () => {
   beforeEach(async function setup() {
     await config.load(process.cwd() + '/test');
     const cfg = await config.get();
-    logger = new Logger(cfg.get('logger'));
+    logger = createLogger(cfg.get('logger'));
   });
   describe('get', () => {
     it('should return one store with the config for one store',

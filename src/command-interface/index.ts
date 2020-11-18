@@ -6,7 +6,7 @@ import { Events, Topic } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
 import * as async from 'async';
 import * as kafka from 'kafka-node';
-import { Logger } from '@restorecommerce/logger';
+import { Logger } from 'winston';
 import { RedisClient } from 'redis';
 
 const ServingStatus = {
@@ -334,7 +334,7 @@ export class CommandInterface implements ICommandInterface {
           };
 
           const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
-          consumer.on('message', async (message) => {
+          consumer.on('message', async (message: any) => {
             if (message.key in topicEvents && !_.includes(ignoreOffsets, message.offset)) {
               asyncQueue.push(message);
               that.logger.debug(`received message ${message.offset}/${targetOffset}`);
