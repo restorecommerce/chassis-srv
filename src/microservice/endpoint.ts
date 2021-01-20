@@ -1,11 +1,15 @@
 import * as _ from 'lodash';
 import * as rTracer from 'cls-rtracer';
-import { Logger } from 'winston';
+import {Logger} from 'winston';
+import {createServiceConfig} from '@restorecommerce/service-config';
 
 const middlewareClsTracer = rTracer.koaMiddleware({
   useHeader: true,
   headerName: 'x-request-id'
 });
+
+const cfg = createServiceConfig(process.cwd());
+const oneOfFieldsConfig = cfg.get('oneOfFields');
 
 /**
  * calls each middleware
@@ -37,6 +41,20 @@ export const chainMiddleware = (middleware: any): any => {
   };
 };
 
+// iterate iterates an object recursively
+// and deletes an object's property if
+// it matches the oneOfNotUsed field
+const iterate = (obj, oneOfNotUsed) => {
+  Object.keys(obj).forEach(key => {
+    if (key === oneOfNotUsed) {
+      delete(obj[key]);
+    }
+    if (typeof obj[key] === 'object') {
+      iterate(obj[key], oneOfNotUsed);
+    }
+  });
+};
+
 /**
  * Calls middleware and business logic.
  * @param middleware
@@ -60,6 +78,61 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
     if (middleware && middleware.length > 0) {
       middlewareChain.push(middleware);
     }
+
+    // Check configuration if oneOf fields are configured for a resource
+    // and then remove unnecessary oneOf fields from the request items to
+    // avoid gRPC protobuf error.
+    // To avoid accidental removal it is important
+    // not to have fields which are named as one of the oneOf fields
+    if (ctx.method) {
+      if (
+        ctx.method === 'create' ||
+        ctx.method === 'update' ||
+        ctx.method === 'upsert'
+      ) {
+        // Read configuration for requested resource and make typeToFieldsMap
+        // oneOfType => oneOfFields[]
+        let oneOfFields = [];
+        let typeToFieldsMap = new Map<string, string[]>();
+        if (service && service.resourceName) {
+          let resourceName = service.resourceName;
+          if (oneOfFieldsConfig && (resourceName in oneOfFieldsConfig)) {
+            oneOfFields = oneOfFieldsConfig[resourceName];
+            let oneOfFieldsKeys = Object.keys(oneOfFields);
+            for (let oneOfFieldsKey of oneOfFieldsKeys) {
+              typeToFieldsMap.set(oneOfFieldsKey, oneOfFields[oneOfFieldsKey]);
+            }
+          }
+        }
+
+        // Iterate through all the items and for each item check which of the
+        // oneOf fields is set (can be multiple oneOf fields).
+        // Then push the ones not being used in a list.
+        // Finally based on this list remove fields which are not used
+        // (recursively) from each item.
+        if (request && request.request && request.request.items) {
+          for (let item of request.request.items) {
+            let oneOfNotUsedList = [];
+            let itemKeys = Object.keys(item);
+            for (let itemKey of itemKeys) {
+              if (typeToFieldsMap.has(itemKey)) {
+                let oneOfUsed = item[itemKey];
+                let fieldsArr = typeToFieldsMap.get(itemKey);
+                for (let field of fieldsArr) {
+                  if (field !== oneOfUsed) {
+                    oneOfNotUsedList.push(field);
+                  }
+                }
+              }
+            }
+            for (let oneOfNotUsed of oneOfNotUsedList) {
+              iterate(item, oneOfNotUsed);
+            }
+          }
+        }
+      }
+    }
+
     /*
       bufferFields are defined in the config under each service's method as:
       "bufferFields": {
