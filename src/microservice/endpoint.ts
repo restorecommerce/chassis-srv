@@ -84,49 +84,54 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
     // avoid gRPC protobuf error.
     // To avoid accidental removal it is important
     // not to have fields which are named as one of the oneOf fields
-    if (ctx.method) {
-      if (
-        ctx.method === 'create' ||
-        ctx.method === 'update' ||
-        ctx.method === 'upsert'
-      ) {
-        // Read configuration for requested resource and make typeToFieldsMap
-        // oneOfType => oneOfFields[]
-        let oneOfFields = [];
-        let typeToFieldsMap = new Map<string, string[]>();
-        if (service && service.resourceName) {
-          let resourceName = service.resourceName;
-          if (oneOfFieldsConfig && (resourceName in oneOfFieldsConfig)) {
-            oneOfFields = oneOfFieldsConfig[resourceName];
-            let oneOfFieldsKeys = Object.keys(oneOfFields);
-            for (let oneOfFieldsKey of oneOfFieldsKeys) {
-              typeToFieldsMap.set(oneOfFieldsKey, oneOfFields[oneOfFieldsKey]);
-            }
-          }
-        }
 
-        // Iterate through all the items and for each item check which of the
-        // oneOf fields is set (can be multiple oneOf fields).
-        // Then push the ones not being used in a list.
-        // Finally based on this list remove fields which are not used
-        // (recursively) from each item.
-        if (request && request.request && request.request.items) {
-          for (let item of request.request.items) {
-            let oneOfNotUsedList = [];
-            let itemKeys = Object.keys(item);
-            for (let itemKey of itemKeys) {
-              if (typeToFieldsMap.has(itemKey)) {
-                let oneOfUsed = item[itemKey];
-                let fieldsArr = typeToFieldsMap.get(itemKey);
-                for (let field of fieldsArr) {
-                  if (field !== oneOfUsed) {
-                    oneOfNotUsedList.push(field);
-                  }
-                }
+    if (oneOfFieldsConfig && !_.isEmpty(oneOfFieldsConfig)) {
+      if (ctx.method) {
+        if (
+          ctx.method === 'create' ||
+          ctx.method === 'update' ||
+          ctx.method === 'upsert'
+        ) {
+          // Read configuration for requested resource and make typeToFieldsMap
+          // oneOfType => oneOfFields[]
+          let oneOfFields = [];
+          let typeToFieldsMap = new Map<string, string[]>();
+          if (service && service.resourceName) {
+            let resourceName = service.resourceName;
+            if (resourceName in oneOfFieldsConfig) {
+              oneOfFields = oneOfFieldsConfig[resourceName];
+              let oneOfFieldsKeys = Object.keys(oneOfFields);
+              for (let oneOfFieldsKey of oneOfFieldsKeys) {
+                typeToFieldsMap.set(oneOfFieldsKey, oneOfFields[oneOfFieldsKey]);
               }
             }
-            for (let oneOfNotUsed of oneOfNotUsedList) {
-              iterate(item, oneOfNotUsed);
+          }
+
+          // Iterate through all the items and for each item check which of the
+          // oneOf fields is set (can be multiple oneOf fields).
+          // Then push the ones not being used in a list.
+          // Finally based on this list remove fields which are not used
+          // (recursively) from each item.
+          if (!_.isEmpty(typeToFieldsMap)) {
+            if (request && request.request && request.request.items) {
+              for (let item of request.request.items) {
+                let oneOfNotUsedList = [];
+                let itemKeys = Object.keys(item);
+                for (let itemKey of itemKeys) {
+                  if (typeToFieldsMap.has(itemKey)) {
+                    let oneOfUsed = item[itemKey];
+                    let fieldsArr = typeToFieldsMap.get(itemKey);
+                    for (let field of fieldsArr) {
+                      if (field !== oneOfUsed) {
+                        oneOfNotUsedList.push(field);
+                      }
+                    }
+                  }
+                }
+                for (let oneOfNotUsed of oneOfNotUsedList) {
+                  iterate(item, oneOfNotUsed);
+                }
+              }
             }
           }
         }
