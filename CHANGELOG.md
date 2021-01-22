@@ -1,3 +1,8 @@
+### 0.1.8 (January 22nd, 2020)
+
+- Remove of unnecessary oneOf fields from the create, update, upsert requests,
+which cause gRPC protobuff error
+
 ### 0.1.7 (November 18th, 2020)
 
 - Update dependencies
