@@ -50,10 +50,10 @@ below:
 ----
 {
   "oneOfFields": {
-    "notification": {
-      "address_type": [
-        "email",
-        "telephone_number"
+    "resourceName": { // notification
+      "oneOfName": [ // address_type
+        "fieldName1", // email
+        "fieldName2" // telephone_number
       ]
     }
   }
