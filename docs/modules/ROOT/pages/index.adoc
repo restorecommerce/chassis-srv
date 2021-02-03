@@ -35,13 +35,30 @@ given a https://developers.google.com/protocol-buffers/docs/overview[Protocol Bu
 [#configuration]
 == Configuration
 
-Configs are loaded using the https://github.com/indexzero/nconf[nconf]-based module
+- Configs are loaded using the https://github.com/indexzero/nconf[nconf]-based module
 https://github.com/restorecommerce/service-config[service-config].
-Such configuration files may contain endpoint specifications
+- Such configuration files may contain endpoint specifications
 along with their associated transports or simple access configs for backing services such as a database or even a Kafka instance.
-To remove the buffered data from being logged
+- To remove the buffered data from being logged
 link:https://github.com/restorecommerce/chassis-srv/blob/master/test/cfg/config.json#L312[bufferedFields]
 configuration can be set.
+- To avoid a gRPC protobuf error when making a read query for resources which have
+oneOf fields defined in the protobuf file, the oneOf fields can be removed from
+the request items by providing the oneOfFields like in the service configuration
+below:
+[source,json]
+----
+{
+  "oneOfFields": {
+    "notification": {
+      "address_type": [
+        "email",
+        "telephone_number"
+      ]
+    }
+  }
+}
+----
 
 [#configuration_logging]
 === Logging
