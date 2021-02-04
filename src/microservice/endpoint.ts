@@ -49,7 +49,7 @@ const iterate = (obj, oneOfNotUsed) => {
     if (key === oneOfNotUsed) {
       delete(obj[key]);
     }
-    if (typeof obj[key] === 'object') {
+    if (typeof obj[key] === 'object' && !_.isNil(obj[key])) {
       iterate(obj[key], oneOfNotUsed);
     }
   });
@@ -96,10 +96,10 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
           // oneOfType => oneOfFields[]
           let oneOfFields = [];
           let typeToFieldsMap = new Map<string, string[]>();
-          if (service && service.resourceName) {
-            let resourceName = service.resourceName;
-            if (resourceName in oneOfFieldsConfig) {
-              oneOfFields = oneOfFieldsConfig[resourceName];
+          if (service && service.name) {
+            let name = service.name;
+            if (name in oneOfFieldsConfig) {
+              oneOfFields = oneOfFieldsConfig[name];
               let oneOfFieldsKeys = Object.keys(oneOfFields);
               for (let oneOfFieldsKey of oneOfFieldsKeys) {
                 typeToFieldsMap.set(oneOfFieldsKey, oneOfFields[oneOfFieldsKey]);
