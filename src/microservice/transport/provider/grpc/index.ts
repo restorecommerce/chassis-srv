@@ -64,9 +64,9 @@ const makeResponseStreamServerEndpoint = (endpoint: any,
   logger: Logger): any => {
   return async (call: any): Promise<any> => {
     await endpoint({
-      request: call.request,
+      request: call,
       write: (response: any): any => {
-        call.write(response);
+        return call.write(response);
       },
       end: (err?: any): any => {
         if (err) {
