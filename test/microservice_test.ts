@@ -77,7 +77,7 @@ const service = {
     return { result: 'pong' };
   },
   async responseStream(call, context) {
-    const req = call.request;
+    const req = call.request.request;
     should.exist(req);
     should.exist(req.value);
     req.value.should.equal('ping');
@@ -150,7 +150,7 @@ describe('microservice.Server', () => {
         });
         await server.bind('test', service);
         await server.bind('stream', service);
-        });
+      });
   });
   describe('calling start', () => {
     it('should expose the created endpoints via transports',
@@ -196,9 +196,9 @@ describe('microservice.Server', () => {
         const msgBuffer: any = Buffer.from(JSON.stringify(msg));
         result = await testCreateF(
           {
-            items:[{
-              value:'helloWorld123',
-              data: {value: msgBuffer}
+            items: [{
+              value: 'helloWorld123',
+              data: { value: msgBuffer }
             }]
           });
         should.ifError(result.error);
@@ -285,23 +285,19 @@ describe('microservice.Server', () => {
         instance = cfg.get(responseStreamCfgPath);
         const responseStream = client.makeEndpoint('responseStream', instance);
         call = await responseStream({ value: 'ping' });
-        for (let i = 0; i < 3; i += 1) {
-          result = await call.read();
-          // Promisify the callback containing result
-          result = await new Promise((resolve, reject) => {
-            result((err, response) => {
-              if (err) {
-                reject(err);
-              }
-              resolve(response);
-            });
+        const clientRespStream = call.getResponseStream();
+        await new Promise((resolve, reject) => {
+          clientRespStream.on('data', (data) => {
+            should.ifError(data.error);
+            should.exist(data);
+            should.exist(data.result);
+            const response = ['0','1','2'];
+            if (!response.includes(data.result)) {
+              reject();
+            }
+            resolve();
           });
-
-          should.ifError(result.error);
-          should.exist(result);
-          should.exist(result.result);
-          result.result.should.be.equal(`${i}`);
-        }
+        });
 
         // 'biStream'
         const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
