@@ -1,3 +1,7 @@
+### 0.1.9 (February 11th, 2021)
+
+- Fix oneOf fields implementation to work for both resource service and device service
+
 ### 0.1.8 (January 22nd, 2020)
 
 - Remove of unnecessary oneOf fields from the create, update, upsert requests,
