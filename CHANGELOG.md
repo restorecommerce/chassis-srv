@@ -1,4 +1,4 @@
-### 0.1.9 (February 11th, 2020)
+### 0.1.9 (February 11th, 2021)
 
 - Fix oneOf fields implementation to work for both resource service and device service
 
