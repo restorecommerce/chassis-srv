@@ -87,36 +87,10 @@ const makeResponseStreamServerEndpoint = (endpoint: any,
 
 const makeRequestStreamServerEndpoint = (endpoint: any, logger: Logger): any => {
   return async (call: any, callback: any): Promise<any> => {
-    const requests = [];
-    const fns = [];
-    let end = false;
-    call.on('data', (req) => {
-      if (fns.length) {
-        fns.shift()(null, req);
-      } else {
-        requests.push(req);
-      }
-    });
-    call.on('end', () => {
-      end = true;
-      while (fns.length) {
-        fns.shift()(new Error('stream end'), null);
-      }
-    });
-
-    let result;
     try {
-      result = await endpoint({
-        read: (): any => {
-          return (cb: any): any => {
-            if (requests.length) {
-              cb(null, requests.shift());
-            } else if (end) {
-              throw new Error('stream end');
-            } else {
-              fns.push(cb);
-            }
-          };
+      const result = await endpoint({
+        getServerRequestStream: (): any => {
+          return call;
         }
       });
       callback(null, result);
