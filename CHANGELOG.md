@@ -1,3 +1,9 @@
+### 0.1.10 (February 15th, 2021)
+
+- fix to send response stream object and return write response for back pressure handling on server write
+- updated request stream on server to return stream object
+- updated dependencies
+
 ### 0.1.9 (February 11th, 2021)
 
 - Fix oneOf fields implementation to work for both resource service and device service

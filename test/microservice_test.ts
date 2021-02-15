@@ -295,7 +295,7 @@ describe('microservice.Server', () => {
             if (!response.includes(data.result)) {
               reject();
             }
-            resolve();
+            resolve(data);
           });
         });
 

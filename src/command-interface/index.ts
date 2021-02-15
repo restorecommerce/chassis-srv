@@ -613,7 +613,7 @@ export class CommandInterface implements ICommandInterface {
                 response = {
                   status: 'Successfully flushed cache pattern'
                 };
-                resolve();
+                resolve(response);
               } else {
                 let keys = reply[1];
                 // iterate each key and delete it
@@ -642,7 +642,7 @@ export class CommandInterface implements ICommandInterface {
                 response = {
                   status: `Successfully flushed cache with DB index ${dbIndex}`
                 };
-                return resolve();
+                return resolve(response);
               }
             }).exec();
           } else {
@@ -657,7 +657,7 @@ export class CommandInterface implements ICommandInterface {
                 response = {
                   status: 'Successfully flushed complete cache'
                 };
-                return resolve();
+                return resolve(response);
               }
             });
           }
