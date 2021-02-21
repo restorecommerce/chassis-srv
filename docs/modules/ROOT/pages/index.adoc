@@ -10,16 +10,16 @@ A base service part of the link:https://github.com/restorecommerce[Restorecommer
 [#features]
 == Features
 
-* Business logic exposed via gRPC
+* Business logic exposable via gRPC
 * Retry and timeout logic
+* Even sourcing via Kafka messaging
 * Endpoint calls with custom middleware
-* Provide multiple microservice functionality from the Restorecommerce ecosystem, such as logging, database access,
-cache handling or exposing system commands.
+* Primitives for logging, database access, cache handling or exposing system commands.
 
 [#architecture]
 == Architecture
 
-The chassis service consists of 8 components:
+The chassis service consists of the following components:
 
 * a configuration loader
 * a multi-transport configurable log infrastructure
