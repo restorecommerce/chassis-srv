@@ -61,6 +61,7 @@ const removeBufferFileds = (object, ctx) => {
     const service = ctx.config.services;
     const servicesKeys = Object.keys(ctx.config.services);
     for (let key of servicesKeys) {
+      // bufferFields
       if (service[key] && service[key][ctx.method] && service[key][ctx.method].bufferFields) {
         let bufferFields = service[key][ctx.method].bufferFields;
         const bufferKeys = Object.keys(bufferFields);
@@ -70,6 +71,22 @@ const removeBufferFileds = (object, ctx) => {
           // delete it from the cloned object
           if (object[bufferField]) {
             delete object[bufferField];
+          }
+          // delete it from the test case
+          if (object.items && object.items[0]
+            && object.items[0].data) {
+            delete object.items[0].data;
+          }
+        }
+      }
+      // maskFields
+      if (service[key] && service[key][ctx.method] && service[key][ctx.method].maskFields) {
+        let maskFields = service[key][ctx.method].maskFields;
+        for (let maskField of maskFields) {
+          // if any maskField is configured, mask it
+          if (object[maskField]) {
+            const maskLength = object[maskField].length;
+            object[maskField] = '*'.repeat(maskLength);
           }
           // delete it from the test case
           if (object.items && object.items[0]

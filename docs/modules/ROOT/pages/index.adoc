@@ -40,8 +40,10 @@ https://github.com/restorecommerce/service-config[service-config].
 - Such configuration files may contain endpoint specifications
 along with their associated transports or simple access configs for backing services such as a database or even a Kafka instance.
 - To remove the buffered data from being logged
-link:https://github.com/restorecommerce/chassis-srv/blob/master/test/cfg/config.json#L312[bufferedFields]
+link:https://github.com/restorecommerce/chassis-srv/blob/master/test/cfg/config.json#L343[bufferedFields]
 configuration can be set.
+- To mask the confidential data (such as password) from being logged
+link `maskFields` an array of fields can be set in configuration similar to buffer fields.
 - To avoid a gRPC protobuf error when making a read query for resources which have
 oneOf fields defined in the protobuf file, the oneOf fields can be removed from
 the request items by providing the oneOfFields like in the service configuration
