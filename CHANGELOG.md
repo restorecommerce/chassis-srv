@@ -1,3 +1,9 @@
+### 0.1.11 (March 9th, 2021)
+
+- fix for removing buffer fields in response message from logging
+- added mask fields to remove logging data
+- updated dependencies
+
 ### 0.1.10 (February 15th, 2021)
 
 - fix to send response stream object and return write response for back pressure handling on server write
