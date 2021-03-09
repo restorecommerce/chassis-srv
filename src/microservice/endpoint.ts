@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import * as rTracer from 'cls-rtracer';
-import {Logger} from 'winston';
-import {createServiceConfig} from '@restorecommerce/service-config';
+import { Logger } from 'winston';
+import { createServiceConfig } from '@restorecommerce/service-config';
 
 const middlewareClsTracer = rTracer.koaMiddleware({
   useHeader: true,
@@ -16,7 +16,7 @@ const oneOfFieldsConfig = cfg.get('oneOfFields');
  * @param middleware
  */
 export const chainMiddleware = (middleware: any): any => {
-  return async(request, next: any): Promise<any> => {
+  return async (request, next: any): Promise<any> => {
     let n = next;
     if (next) {
       for (let i = middleware.length - 1; i >= 0; i -= 1) {
@@ -47,12 +47,40 @@ export const chainMiddleware = (middleware: any): any => {
 const iterate = (obj, oneOfNotUsed) => {
   Object.keys(obj).forEach(key => {
     if (key === oneOfNotUsed) {
-      delete(obj[key]);
+      delete (obj[key]);
     }
     if (typeof obj[key] === 'object' && !_.isNil(obj[key])) {
       iterate(obj[key], oneOfNotUsed);
     }
   });
+};
+
+const removeBufferFileds = (object, ctx) => {
+  // Check if the cfg file contains any bufferFields and remove them
+  if (ctx.config && ctx.config.services) {
+    const service = ctx.config.services;
+    const servicesKeys = Object.keys(ctx.config.services);
+    for (let key of servicesKeys) {
+      if (service[key] && service[key][ctx.method] && service[key][ctx.method].bufferFields) {
+        let bufferFields = service[key][ctx.method].bufferFields;
+        const bufferKeys = Object.keys(bufferFields);
+        for (let key of bufferKeys) {
+          const bufferField = bufferFields[key];
+          // if any bufferField is found
+          // delete it from the cloned object
+          if (object[bufferField]) {
+            delete object[bufferField];
+          }
+          // delete it from the test case
+          if (object.items && object.items[0]
+            && object.items[0].data) {
+            delete object.items[0].data;
+          }
+        }
+      }
+    }
+  }
+  return object;
 };
 
 /**
@@ -66,7 +94,7 @@ const iterate = (obj, oneOfNotUsed) => {
  */
 export const makeEndpoint = (middleware: any[], service: any, transportName: string,
   methodName: string, logger: Logger, cfg?: any): any => {
-  return async(request: any, context: any): Promise<any> => {
+  return async (request: any, context: any): Promise<any> => {
     const ctx = context || {};
     ctx.transport = transportName;
     ctx.method = methodName;
@@ -150,32 +178,9 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
 
     // deep clone the request
     const deepClone = _.cloneDeep(request);
-    const clonedRequest = deepClone.request;
+    let clonedRequest = deepClone.request;
     try {
-      // Check if the cfg file contains any bufferFields
-      if (ctx.config && ctx.config.services) {
-        const service = ctx.config.services;
-        const servicesKeys = Object.keys(ctx.config.services);
-        for (let key of servicesKeys) {
-          if (service[key] && service[key][ctx.method] && service[key][ctx.method].bufferFields) {
-            let bufferFields = service[key][ctx.method].bufferFields;
-            const bufferKeys = Object.keys(bufferFields);
-            for (let key of bufferKeys) {
-              const bufferField = bufferFields[key];
-              // if any bufferField is found
-              // delete it from the cloned object
-              if (clonedRequest[bufferField]) {
-                delete clonedRequest[bufferField];
-              }
-              // delete it from the test case
-              if (clonedRequest.items && clonedRequest.items[0]
-                && clonedRequest.items[0].data) {
-                delete clonedRequest.items[0].data;
-              }
-            }
-          }
-        }
-      }
+      clonedRequest = removeBufferFileds(clonedRequest, ctx);
       logger.debug('invoking endpoint with request:', { request: clonedRequest });
       if (request && request.request && request.request.headers
         && request.request.headers['x-request-id']) {
@@ -189,7 +194,9 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
         logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, clonedRequest);
         const chain = chainMiddleware(middlewareChain);
         const result = await chain(request, service[methodName].bind(service));
-        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { clonedRequest, result });
+        let response = _.cloneDeep(result);
+        response = removeBufferFileds(response, ctx);
+        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { clonedRequest, response });
         return result;
       } else {
         e = service[methodName].bind(service);
@@ -198,8 +205,10 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       logger.verbose(`received request to method ${ctx.method} over transport ${ctx.transport}`,
         clonedRequest);
       const result = await e(request, ctx);
+      let response = _.cloneDeep(result);
+      response = removeBufferFileds(response, ctx);
       logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} result`,
-        { clonedRequest, result });
+        { clonedRequest, response });
       return result;
     } catch (err) {
       if (rid) {
