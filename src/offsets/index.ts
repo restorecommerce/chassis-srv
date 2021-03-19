@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import * as redis from 'redis';
+import * as Redis from 'ioredis';
 import { Logger } from 'winston';
 
 /**
@@ -10,7 +10,7 @@ export class OffsetStore {
   logger: Logger;
   config: any;
   kafkaEvents: Events;
-  redisClient: any;
+  redisClient: Redis;
   topics: any;
   timerID: any;
 
@@ -38,7 +38,7 @@ export class OffsetStore {
       if (_.has(redisConfig, 'db-indexes.db-offsetStore')) {
         redisConfig.db = _.get(redisConfig, 'db-indexes.db-offsetStore');
       }
-      this.redisClient = redis.createClient(redisConfig);
+      this.redisClient = new Redis(redisConfig);
     }
     this.topics = {};
     this.timerID = [];
@@ -73,7 +73,7 @@ export class OffsetStore {
     // get the latest offset here each time and store it.
     const offsetValue = await topic.$offset(-1);
     const redisKey = this.config.get('events:kafka:clientId') + ':' + topicName;
-    this.redisClient.set(redisKey, offsetValue, this.redisClient.print);
+    this.redisClient.set(redisKey, offsetValue);
   }
 
   /**

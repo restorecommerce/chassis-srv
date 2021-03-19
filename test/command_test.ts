@@ -1,13 +1,12 @@
 // microservice chassis
 import * as _ from 'lodash';
 import { CommandInterface, database, Server } from '../lib';
-import * as chassis from '../lib';
 import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
 import { Events } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createLogger } from '@restorecommerce/logger'
-import { createClient } from 'redis';
+import * as Redis from 'ioredis';
 
 
 /**
@@ -52,6 +51,7 @@ describe('CommandInterfaceService', () => {
   let testTopic;
   let commandTopic;
   let validate;
+  let redisClient;
   const eventListener = async function (msg: any,
     context: any, config: any, eventName: string): Promise<any> {
     await validate(msg, eventName);
@@ -80,8 +80,8 @@ describe('CommandInterfaceService', () => {
 
     // init redis client for subject index
     const redisConfig = cfg.get('redis');
-    redisConfig.db = cfg.get('redis:db-indexes:db-offsetStore');
-    const redisClient = createClient(redisConfig);
+    redisConfig.db = cfg.get('redis:db-indexes:db-subject');
+    redisClient = new Redis(redisConfig);
 
     const cis = new CommandInterface(server, cfg, logger, events, redisClient);
     await server.bind('commandinterface', cis);
@@ -338,7 +338,7 @@ describe('CommandInterfaceService', () => {
     });
   });
   describe('flushCache', () => {
-    it('should set the provided authentication api key on configuration', async function version() {
+    it('should flush with given db_index and pattern', async function flushCache() {
       validate = function (msg: any, eventName: string): void {
         eventName.should.equal('flushCacheResponse');
         should.exist(msg.payload);
@@ -346,11 +346,17 @@ describe('CommandInterfaceService', () => {
         should.exist(payload.status);
         payload.status.should.equal('Successfully flushed cache pattern');
       };
+      // store 3 keys to redis db index 3
+      const redis: any = new Redis({ db: 3 });
+      redis.set('user1', 'user1');
+      redis.set('user2', 'user2');
+      redis.set('user3', 'user3');
+      redis.set('testKey', 'testValue');
       const offset = await commandTopic.$offset(-1);
       const flushCachePayload = encodeMsg({
         data:
         {
-          db_index: 0,
+          db_index: 3,
           pattern: 'user'
         }
       });
@@ -358,12 +364,44 @@ describe('CommandInterfaceService', () => {
         name: 'flush_cache',
         payload: flushCachePayload
       });
+      const stream = redis.scanStream({ match: '*' });
+      // after flushing user pattern keys testKey should still be existing
+      stream.on('data', (resultKeys) => {
+        resultKeys.length.should.be.equal(1);
+      });
       await commandTopic.$wait(offset);
       should.not.exist(resp.error);
       should.exist(resp.data);
       const data = decodeMsg(resp.data);
       should.exist(data.status);
       data.status.should.equal('Successfully flushed cache pattern');
+    });
+    it('flushdb should flush all keys in specific db_index when no pattern is specified', async function flushCache() {
+      // store 3 keys to redis db index 3
+      const redis: any = new Redis({ db: 3 });
+      await redis.set('user1', 'user1');
+      await redis.set('user2', 'user2');
+      await redis.set('testKey2', 'testValue2');
+      const flushCachePayload = encodeMsg({
+        data:
+        {
+          db_index: 3 // No pattern is specified
+        }
+      });
+      const resp = await service.command({
+        name: 'flush_cache',
+        payload: flushCachePayload
+      });
+      const stream = redis.scanStream({ match: '*' });
+      // after flushing DB
+      stream.on('data', (resultKeys) => {
+        resultKeys.length.should.be.equal(0);
+      });
+      should.not.exist(resp.error);
+      should.exist(resp.data);
+      const data = decodeMsg(resp.data);
+      should.exist(data.status);
+      data.status.should.equal('Successfully flushed cache with DB index 3');
     });
   });
 });
