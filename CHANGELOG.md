@@ -1,3 +1,9 @@
+### 0.1.12 (March 19th, 2021)
+
+- migrated from redis to ioredis module (command interface and offset store)
+- modified flushCache to stream kesy and delete
+- updated dependencies
+
 ### 0.1.11 (March 9th, 2021)
 
 - fix for removing buffer fields in response message from logging
