@@ -205,7 +205,8 @@ export class Arango implements DatabaseProvider {
     if (_.isEmpty(docsWithSelector)) {
       throw new Error(`Document ID ${document.id} does not exist on ${collectionName} Collection`);
     }
-    return await collection.update(docsWithSelector[0]._key, document);
+    let updatedDoc = await collection.update(docsWithSelector[0]._key, document, { returnNew: true });
+    return sanitizeOutputFields(updatedDoc.new);
   }
 
   /**
@@ -364,7 +365,15 @@ export class Arango implements DatabaseProvider {
     if (!collectionExists) {
       await collection.create();
     }
-    return collection.saveAll(documents);
+    let returnDocs = [];
+    let createdDocs = await collection.saveAll(documents, { returnNew: true });
+    if (!_.isArray(createdDocs)) {
+      createdDocs = [createdDocs];
+    }
+    for (let doc of createdDocs) {
+      returnDocs.push(sanitizeOutputFields(doc.new));
+    }
+    return returnDocs;
   }
 
   /**
