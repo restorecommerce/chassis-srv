@@ -15,12 +15,13 @@ const providers = [
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = createLogger(cfg.get('logger'));
-      return database.get(cfg.get('database:arango'), logger, 'test-graph');
+      return database.get(cfg.get('database:arango'), logger, cfg.get('graph:graphName'),
+        cfg.get('graph:edgeDefinitions'));
     }
   }
 ];
 providers.forEach((providerCfg) => {
-  describe(`with database provider ${providerCfg.name}`, () => {
+  describe(`Graphs with database provider ${providerCfg.name}`, () => {
     testProvider(providerCfg);
   });
 });
@@ -93,12 +94,12 @@ function testProvider(providerCfg) {
       // get incoming edges for Vertice Alice
       const incomingEdges = await db.getInEdges(edgeCollectionName, `person/${result[0].id}`);
       should.exist(incomingEdges);
-      incomingEdges[0].info.should.equal('Eve knows Alice');
+      incomingEdges.edges[0].info.should.equal('Eve knows Alice');
 
       // get outgoing edges for Vertice Alice
       let outgoingEdges = await db.getOutEdges(edgeCollectionName, `person/${result[0].id}`);
       should.exist(outgoingEdges);
-      outgoingEdges[0].info.should.equal('Alice knows Bob');
+      outgoingEdges.edges[0].info.should.equal('Alice knows Bob');
     });
     it('should traverse the graph', async function traverseGraph() {
       // traverse graph
@@ -142,13 +143,15 @@ function testProvider(providerCfg) {
       removeVertice() {
       const removedDoc = await db.removeVertex(vertexCollectionName, `person/${result[2].id}`);
       should.exist(removedDoc);
-      removedDoc.should.equal(true);
+      removedDoc.error.should.equal(false);
+      removedDoc.code.should.equal(202);
     });
     it('should remove edge given the document handle', async function
       removeEdge() {
       const removedDoc = await db.removeEdge(edgeCollectionName, edgeResult._id);
       should.exist(removedDoc);
-      removedDoc.should.equal(true);
+      removedDoc.error.should.equal(false);
+      removedDoc.code.should.equal(202);
     });
   });
   describe('testing special functions', async function () {

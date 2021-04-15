@@ -5,7 +5,6 @@ import {
   sanitizeInputFields, query, sanitizeOutputFields
 } from './common';
 import { DatabaseProvider } from '../..';
-import { ArrayCursor } from 'arangojs/lib/cjs/cursor';
 
 export interface CustomQuery {
   code: string; // AQL code
@@ -57,7 +56,7 @@ export class Arango implements DatabaseProvider {
         const customQuery = this.customQueries.get(queryName);
         if (customQuery.type == 'query') {
           // standalone query
-          const result: ArrayCursor = await query(this.db, collectionName, customQuery.code, opts.customArguments || {}); // Cursor object
+          const result = await query(this.db, collectionName, customQuery.code, opts.customArguments || {}); // Cursor object
           return result.all(); // TODO: paginate
         } else {
           // filter
@@ -167,6 +166,21 @@ export class Arango implements DatabaseProvider {
     return _.map(docs, sanitizeOutputFields);
   }
 
+  async getDocumentSelector(collectionName: string, collection: any, documents: any) {
+    let ids = [];
+    if (documents && !_.isArray(documents)) {
+      documents = [documents];
+    }
+    for (let doc of documents) {
+      ids.push(doc.id);
+    }
+    let queryString = aql`FOR node in ${collection}
+      FILTER node.id IN ${ids} return node`;
+    const res = await query(this.db, collectionName, queryString);
+    const docsWithSelector = await res.all();
+    return docsWithSelector;
+  }
+
   /**
    * Find documents by filter and updates them with document.
    *
@@ -182,14 +196,16 @@ export class Arango implements DatabaseProvider {
     if (_.isNil(document)) {
       throw new Error('invalid or missing document argument');
     }
-    const doc = sanitizeInputFields(_.clone(document));
     const collection = this.db.collection(collectionName);
-    let queryString = aql`FOR node in ${collection}
-      FILTER node.id == ${doc.id}
-      UPDATE node WITH ${doc} in ${collection} return NEW`;
-    const res = await query(this.db, collectionName, queryString);
-    const upDocs = await res.all();
-    return _.map(upDocs, sanitizeOutputFields);
+    const collectionExists = await collection.exists();
+    if (!collectionExists) {
+      throw new Error(`Collection ${collectionName} does not exist for Update operation`);
+    }
+    const docsWithSelector = await this.getDocumentSelector(collectionName, collection, document);
+    if (_.isEmpty(docsWithSelector)) {
+      throw new Error(`Document ID ${document.id} does not exist on ${collectionName} Collection`);
+    }
+    return await collection.update(docsWithSelector[0]._key, document);
   }
 
   /**
@@ -344,8 +360,11 @@ export class Arango implements DatabaseProvider {
       docs[i] = sanitizeInputFields(document);
     });
     const collection = this.db.collection(collectionName);
-    const queryTemplate = aql`FOR document in ${docs} INSERT document INTO ${collection}`;
-    await query(this.db, collectionName, queryTemplate);
+    const collectionExists = await collection.exists();
+    if (!collectionExists) {
+      await collection.create();
+    }
+    return collection.saveAll(documents);
   }
 
   /**

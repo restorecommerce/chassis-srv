@@ -14,7 +14,7 @@ const DB_SYSTEM = '_system';
  * @param {Logger} logger
  * @return active ArangoDB connection
  */
-const connect = async(conf: any, logger: Logger): Promise<any> => {
+const connect = async (conf: any, logger: Logger): Promise<any> => {
   const dbHost = conf.host || '127.0.0.1';
   const dbPort = conf.port || 8529;
   const dbName = conf.database || 'arango';
@@ -73,10 +73,7 @@ const connect = async(conf: any, logger: Logger): Promise<any> => {
   catch (err) {
     const safeError = Object.getOwnPropertyNames(Object.getPrototypeOf(err))
       .reduce((acc, curr) => { return acc[curr] = err[curr], acc; }, {});
-    logger.error(
-      'Database connection error', {
-        err: safeError, dbHost, dbPort, dbName, attempt: i
-      });
+    logger.error('Database connection error', { err: safeError, dbHost, dbPort, dbName, attempt: i });
     mainError = err;
   }
   throw mainError;
@@ -89,7 +86,7 @@ const connect = async(conf: any, logger: Logger): Promise<any> => {
  * @param  {Object} [logger] Logger
  * @return {Arango}        ArangoDB provider
  */
-export const create = async (conf: any, logger: any, graphName?: string): Promise<Arango> => {
+export const create = async (conf: any, logger: any, graphName?: string, edgeDefConfig?: any): Promise<Arango> => {
   let log = logger;
   if (!logger) {
     log = {
@@ -103,9 +100,9 @@ export const create = async (conf: any, logger: any, graphName?: string): Promis
   let db: Arango;
   // conn is nothing but this.db
   if (graphName) {
-    graph = conn.graph(graphName);
     try {
-      await graph.create();
+      graph = conn.graph(graphName);
+      await graph.create(edgeDefConfig);
     } catch (err) {
       if (err.message !== 'graph already exists') {
         throw err;

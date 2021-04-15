@@ -27,12 +27,12 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export const get = async(config: any, logger: Logger, graphName?: string): Promise<DatabaseProvider> => {
+export const get = async(config: any, logger: Logger, graphName?: string, edgeConfig?: any): Promise<DatabaseProvider> => {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
   }
-  return db(config, logger, graphName);
+  return db(config, logger, graphName, edgeConfig);
 };
 
 export interface DatabaseProvider {
@@ -74,7 +74,6 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   findTreesCommonAncestor(nodes: string[], collectionName: string, edgeName: string): any;
   addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
     toVertice: Object | [Object]): any;
-  replaceEdgeDefinition(collectionName: string, definition: Object): any;
   removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;
   listGraphs(): any;
   removeEdge(collectionName: string, documentHandle: string): any;
