@@ -430,7 +430,6 @@ function testProvider(providerCfg) {
       insertResp = await db.insert(collection, newDoc);
       should.exist(insertResp);
       insertResp[0].error.should.equal(true);
-      insertResp[0].errorMessage.should.equal(`unique constraint violated - in index primary of type primary over '_key'; conflicting key: testnew`);
     });
   });
   describe('update', () => {

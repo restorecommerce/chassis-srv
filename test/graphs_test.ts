@@ -126,7 +126,7 @@ function testProvider(providerCfg) {
       const doc = await db.getVertex(vertexCollectionName, `person/${result[4].id}`);
       // doc with updated name
       doc.name = 'test';
-      await db.update(vertexCollectionName, { id: 'e' }, doc);
+      await db.update(vertexCollectionName, [doc]);
       const newdoc = await db.getEdge(vertexCollectionName, `person/${result[4].id}`);
       doc.name.should.equal('test');
     });
@@ -135,7 +135,7 @@ function testProvider(providerCfg) {
       const doc = await db.getEdge(edgeCollectionName, edgeResult._id);
       // doc with updated name
       doc.info = 'test knows Bob';
-      await db.update(edgeCollectionName, { id: 'e' }, doc);
+      await db.update(edgeCollectionName, [doc]);
       const newdoc = await db.getEdge(edgeCollectionName, edgeResult._id);
       doc.info.should.equal('test knows Bob');
     });
