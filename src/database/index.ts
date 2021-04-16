@@ -36,12 +36,12 @@ export const get = async(config: any, logger: Logger, graphName?: string, edgeCo
 };
 
 export interface DatabaseProvider {
-  insert(collectionName: string, documents: any): Promise<void>;
+  insert(collectionName: string, documents: any): Promise<Array<any>>;
   find(collectionName: string, filter?: any, options?: any): Promise<Array<any>>;
   findByID(collectionName: string, ids: string | string[], options?: any): Promise<Array<any>>;
-  update(collectionName: string, filter: any, document: any): Promise<Array<any>>;
+  update(collectionName: string, documents: any): Promise<Array<any>>;
   upsert(collectionName: string, documents: any): Promise<Array<any>>;
-  delete(collectionName: string, filter?: any): Promise<void>;
+  delete(collectionName: string, ids: string[]): Promise<Array<any>>;
   count(collectionName: string, filter?: any): Promise<number>;
   truncate(collectionName?: string): Promise<void>;
 

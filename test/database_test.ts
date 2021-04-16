@@ -191,7 +191,7 @@ function testProvider(providerCfg) {
     await providerCfg.drop();
   });
   describe('upsert', () => {
-    it('should insert a new document if it does not exist', async function checkUpsert() {
+    it('should insert a new document if it does not exist with upsert operation', async function checkUpsert() {
       const newDoc = {
         id: '/test/testupsert',
         name: 'test',
@@ -201,6 +201,15 @@ function testProvider(providerCfg) {
       result.should.deepEqual([newDoc]);
       newDoc.name = 'changed';
       result = await db.upsert(collection, newDoc);
+      result.should.deepEqual([newDoc]);
+    });
+    it('should update existing document with upsert operation', async function checkUpsert() {
+      const newDoc = {
+        id: '/test/testupsert',
+        name: 'changedAgain',
+      };
+      let result = await db.upsert(collection, newDoc);
+      should.exist(result);
       result.should.deepEqual([newDoc]);
     });
   });
@@ -404,31 +413,50 @@ function testProvider(providerCfg) {
   describe('inserting a document', () => {
     it('should store a document', async function insertDocument() {
       const newDoc = {
-        id: '/test/testnew',
+        id: 'testnew',
         name: 'test',
       };
-      await db.insert(collection, newDoc);
-      const result = await db.findByID(collection, newDoc.id);
-      result[0].should.deepEqual(newDoc);
+      let insertResp = await db.insert(collection, newDoc);
+      insertResp[0].should.deepEqual(newDoc);
+    });
+    it('should return an error response when inserting same document twice', async function insertDocument() {
+      // inserting newDoc since in afterEach we drop .i.e. for every it() -> DB is dropped
+      const newDoc = {
+        id: 'testnew',
+        name: 'test',
+      };
+      let insertResp = await db.insert(collection, newDoc);
+      insertResp[0].should.deepEqual(newDoc);
+      insertResp = await db.insert(collection, newDoc);
+      should.exist(insertResp);
+      insertResp[0].error.should.equal(true);
+      insertResp[0].errorMessage.should.equal(`unique constraint violated - in index primary of type primary over '_key'; conflicting key: testnew`);
     });
   });
   describe('update', () => {
     it('should update document', async function checkUpdate() {
       const newDoc = _.clone(document);
       newDoc.value = 'new';
-      await db.update(collection, {
-        id: document.id,
-      }, newDoc);
+      await db.update(collection, [newDoc]);
       let result = await db.findByID(collection, document.id);
       result = result[0];
       result.should.deepEqual(newDoc);
     });
+    it('should return error response when updating document which does not exist', async function checkUpdate() {
+      const invalidDoc = { id: 'invlaid', include: false };
+      let updateResp = await db.update(collection, [invalidDoc]);
+      should.exist(updateResp);
+      updateResp[0].error.should.equal(true);
+      updateResp[0].errorMessage.should.equal('document not found');
+    });
   });
   describe('delete', () => {
-    it('should delete document', async function checkDelete() {
-      await db.delete(collection, {
-        id: document.id
-      });
+    it('should delete document and also return a response for missing / invalid doc ID', async function checkDelete() {
+      let deleteResp = await db.delete(collection, [document.id, 'invalid']);
+      should.exist(deleteResp);
+      deleteResp.should.be.length(2);
+      should.exist(deleteResp[0]._id);
+      deleteResp[1].error.should.equal(true);
       const result = await db.findByID(collection, document.id);
       result.should.be.Array();
       result.should.be.length(0);

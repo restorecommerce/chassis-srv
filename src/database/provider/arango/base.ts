@@ -38,7 +38,7 @@ export class Arango implements DatabaseProvider {
   async find(collectionName: string, filter: any, options: any): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
-      throw new Error('invalid or missing collection argument');
+      throw new Error('invalid or missing collection argument for find operation');
     }
 
     let filterQuery: any = filter || {};
@@ -136,11 +136,11 @@ export class Arango implements DatabaseProvider {
   async findByID(collectionName: string, ids: string | string[]): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
-      throw new Error('invalid or missing collection argument');
+      throw new Error('invalid or missing collection argument for findByID operation');
     }
 
     if (_.isNil(ids)) {
-      throw new Error('invalid or missing ids argument');
+      throw new Error('invalid or missing ids argument for findByID operation');
     }
     if (!_.isArray(ids)) {
       ids = [ids as string];
@@ -166,13 +166,28 @@ export class Arango implements DatabaseProvider {
     return _.map(docs, sanitizeOutputFields);
   }
 
-  async getDocumentSelector(collectionName: string, collection: any, documents: any) {
+  /**
+   * retreive the documents including the document handlers (_key, _id and _rev).
+   *
+   * @param  {String} collectionName Collection name
+   * @param  {any} collection Collection Object
+   * @param  {any} documents list of documents
+   * @param  {string[]} idsArray list of document ids
+   * @returns  {Promise<any>} A list of documents including the document handlers
+   */
+  async getDocumentHandlers(collectionName: string, collection: any, documents: any,
+    idsArray?: string[]): Promise<any> {
     let ids = [];
     if (documents && !_.isArray(documents)) {
       documents = [documents];
     }
-    for (let doc of documents) {
-      ids.push(doc.id);
+    if (documents && documents.length > 0) {
+      for (let doc of documents) {
+        ids.push(doc.id);
+      }
+    }
+    if (!_.isEmpty(idsArray) && _.isArray(idsArray)) {
+      ids = idsArray;
     }
     let queryString = aql`FOR node in ${collection}
       FILTER node.id IN ${ids} return node`;
@@ -185,28 +200,54 @@ export class Arango implements DatabaseProvider {
    * Find documents by filter and updates them with document.
    *
    * @param  {String} collection Collection name
-   * @param  {Object} filter     Key, value Object
-   * @param  {Object} document  A document patch.
+   * @param  {Object} updateDocuments  List of documents to update
    */
-  async update(collectionName: string, filter: any, document: any): Promise<any> {
+  async update(collectionName: string, updateDocuments: any): Promise<any> {
+    let documents = _.cloneDeep(updateDocuments);
+    let updateDocsResponse = [];
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      throw new Error('invalid or missing collection argument');
+      throw new Error('invalid or missing collection argument for update operation');
     }
-    if (_.isNil(document)) {
-      throw new Error('invalid or missing document argument');
+    if (_.isNil(documents)) {
+      throw new Error('invalid or missing document argument for update operation');
     }
     const collection = this.db.collection(collectionName);
     const collectionExists = await collection.exists();
     if (!collectionExists) {
-      throw new Error(`Collection ${collectionName} does not exist for Update operation`);
+      throw new Error(`Collection ${collectionName} does not exist for update operation`);
     }
-    const docsWithSelector = await this.getDocumentSelector(collectionName, collection, document);
-    if (_.isEmpty(docsWithSelector)) {
-      throw new Error(`Document ID ${document.id} does not exist on ${collectionName} Collection`);
+    if (!_.isArray(documents)) {
+      throw new Error(`Documents should be list for update operation`);
     }
-    let updatedDoc = await collection.update(docsWithSelector[0]._key, document, { returnNew: true });
-    return sanitizeOutputFields(updatedDoc.new);
+    const docsWithHandlers = await this.getDocumentHandlers(collectionName, collection, documents);
+
+    // update _key for the input documents
+    for (let document of documents) {
+      let foundInDB = false;
+      for (let docWithHandler of docsWithHandlers) {
+        if (docWithHandler.id === document.id) {
+          foundInDB = true;
+          document._key = docWithHandler._key;
+          break;
+        }
+      }
+      if (!foundInDB) {
+        // if document is not found in DB use the id itself as _key
+        // this key will return an array in response since it does not exist
+        document._key = document.id;
+      }
+    }
+
+    let updatedDocs = await collection.updateAll(documents, { returnNew: true });
+    for (let doc of updatedDocs) {
+      if (doc && doc.new) {
+        updateDocsResponse.push(sanitizeOutputFields(doc.new));
+      } else {
+        updateDocsResponse.push(doc);
+      }
+    }
+    return updateDocsResponse;
   }
 
   /**
@@ -219,10 +260,10 @@ export class Arango implements DatabaseProvider {
   async upsert(collectionName: string, documents: any): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      throw new Error('invalid or missing collection argument');
+      throw new Error('invalid or missing collection argument for upsert operation');
     }
     if (_.isNil(documents)) {
-      throw new Error('invalid or missing documents argument');
+      throw new Error('invalid or missing documents argument for upsert operation');
     }
     let docs = _.cloneDeep(documents);
     if (!_.isArray(documents)) {
@@ -232,6 +273,10 @@ export class Arango implements DatabaseProvider {
       docs[i] = sanitizeInputFields(document);
     });
     const collection = this.db.collection(collectionName);
+    const collectionExists = await collection.exists();
+    if (!collectionExists) {
+      throw new Error(`Collection ${collectionName} does not exist for upsert operation`);
+    }
     const queryTemplate = aql`FOR document in ${docs} UPSERT { _key: document._key }
       INSERT document UPDATE document IN ${collection} return NEW`;
 
@@ -241,42 +286,49 @@ export class Arango implements DatabaseProvider {
   }
 
   /**
-   * Delete all documents selected by filter.
+   * Delete all documents with provided identifiers ids.
    *
    * @param  {String} collection Collection name
-   * @param  {Object} filter
+   * @param  {Object} ids list of document identifiers
+   * @return  {Promise<any>} delete response
    */
-  async delete(collectionName: string, filter: any): Promise<any> {
+  async delete(collectionName: string, ids: string[]): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
     }
-
-    let filterQuery: any = filter || {};
-    let filterResult: any;
-    if (!_.isArray(filterQuery)) {
-      filterQuery = [filterQuery];
+    if (_.isNil(ids) || _.isEmpty(ids)) {
+      throw new Error('invalid or missing document IDs argument for delete operation');
+    }
+    const collection = this.db.collection(collectionName);
+    const collectionExists = await collection.exists();
+    if (!collectionExists) {
+      throw new Error(`Collection ${collectionName} does not exist for delete operation`);
     }
 
-    if (_.isEmpty(filterQuery[0])) {
-      filterQuery = true;
+    // retreive _key for the give ids
+    const docsWithHandlers = await this.getDocumentHandlers(collectionName, collection, null, ids);
+    for (let id of ids) {
+      // check if given id is present in docsWithHandlers
+      let foundDocInDB = false;
+      for (let doc of docsWithHandlers) {
+        if (doc.id === id) {
+          foundDocInDB = true;
+          break;
+        }
+      }
+      // if document is not found in DB use the id itself as _key
+      // this key will return an array in response since it does not exist
+      if (!foundDocInDB) {
+        docsWithHandlers.push({ _key: id });
+      }
     }
-    else {
-      filterResult = buildFilter(filterQuery);
-      filterQuery = filterResult.q;
-    }
-    let varArgs = {};
-    if (filterResult && filterResult.bindVarsMap) {
-      varArgs = filterResult.bindVarsMap;
+    let deleteHandlerIds = [];
+    for (let doc of docsWithHandlers) {
+      deleteHandlerIds.push(doc._key);
     }
 
-    let queryString = `FOR node in @@collection FILTER ${filterQuery} REMOVE
-      node in @@collection`;
-    const bindVars = Object.assign({
-      '@collection': collectionName
-    }, varArgs);
-
-    await query(this.db, collectionName, queryString, bindVars);
+    return collection.removeAll(deleteHandlerIds);
   }
 
   /**
@@ -288,7 +340,7 @@ export class Arango implements DatabaseProvider {
   async count(collectionName: string, filter: any): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      throw new Error('invalid or missing collection argument');
+      throw new Error('invalid or missing collection argument for count operation');
     }
     let filterQuery: any = filter || {};
     let filterResult: any;
@@ -348,10 +400,10 @@ export class Arango implements DatabaseProvider {
    */
   async insert(collectionName: string, documents: any): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      throw new Error('invalid or missing collection argument');
+      throw new Error('invalid or missing collection argument for insert operation');
     }
     if (_.isNil(documents)) {
-      throw new Error('invalid or missing documents argument');
+      throw new Error('invalid or missing documents argument for insert operation');
     }
     let docs = _.cloneDeep(documents);
     if (!_.isArray(documents)) {
@@ -365,15 +417,19 @@ export class Arango implements DatabaseProvider {
     if (!collectionExists) {
       await collection.create();
     }
-    let returnDocs = [];
-    let createdDocs = await collection.saveAll(documents, { returnNew: true });
+    let insertResponse = [];
+    let createdDocs = await collection.saveAll(docs, { returnNew: true });
     if (!_.isArray(createdDocs)) {
       createdDocs = [createdDocs];
     }
     for (let doc of createdDocs) {
-      returnDocs.push(sanitizeOutputFields(doc.new));
+      if (doc && doc.new) {
+        insertResponse.push(sanitizeOutputFields(doc.new));
+      } else {
+        insertResponse.push(doc);
+      }
     }
-    return returnDocs;
+    return insertResponse;
   }
 
   /**
