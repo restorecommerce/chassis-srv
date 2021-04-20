@@ -247,7 +247,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       Object.assign(data, { _from: fromId });
     }
     if (toId) {
-      Object.assign(data, { _from: toId });
+      Object.assign(data, { _to: toId });
     }
     return collection.save(data);
   }
