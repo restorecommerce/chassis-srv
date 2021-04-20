@@ -272,17 +272,24 @@ export class Arango implements DatabaseProvider {
     _.forEach(docs, (document, i) => {
       docs[i] = sanitizeInputFields(document);
     });
+    let upsertResponse = [];
     const collection = this.db.collection(collectionName);
     const collectionExists = await collection.exists();
     if (!collectionExists) {
       throw new Error(`Collection ${collectionName} does not exist for upsert operation`);
     }
-    const queryTemplate = aql`FOR document in ${docs} UPSERT { _key: document._key }
-      INSERT document UPDATE document IN ${collection} return NEW`;
-
-    const res = await query(this.db, collectionName, queryTemplate);
-    const newDocs = await res.all();
-    return _.map(newDocs, sanitizeOutputFields);
+    let upsertedDocs = await collection.saveAll(docs, { returnNew: true, overwrite: true });
+    if (!_.isArray(upsertedDocs)) {
+      upsertedDocs = [upsertedDocs];
+    }
+    for (let doc of upsertedDocs) {
+      if (doc && doc.new) {
+        upsertResponse.push(sanitizeOutputFields(doc.new));
+      } else {
+        upsertResponse.push(doc);
+      }
+    }
+    return upsertResponse;
   }
 
   /**
