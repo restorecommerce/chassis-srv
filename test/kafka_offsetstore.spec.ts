@@ -1,7 +1,7 @@
 import * as should from 'should';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { createLogger} from '@restorecommerce/logger';
-import { OffsetStore } from './../lib/offsets';
+import { OffsetStore } from '../src/offsets';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import * as sleep from 'sleep';
 
@@ -20,10 +20,12 @@ describe('offsetStore', () => {
   const logger = createLogger(cfg.get('logger'));
 
   beforeEach(async function start() {
+    this.timeout(10000);
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
   });
   afterEach(async function stop() {
+    this.timeout(10000);
     await offsetStore.stop();
     await events.stop();
   });
@@ -54,7 +56,7 @@ describe('offsetStore', () => {
     });
   it('should consume a previously emitted message from Kafka',
     async function testConsumeListener() {
-      this.timeout(4000);
+      this.timeout(10000);
       // emit testMessage to kafka
       topic = await events.topic(topicName);
       await topic.emit(eventName, testMessage);

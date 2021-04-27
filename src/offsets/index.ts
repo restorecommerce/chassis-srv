@@ -57,9 +57,12 @@ export class OffsetStore {
     for (let i = 0; i < topicTypes.length; i += 1) {
       const topicType = topicTypes[i];
       const topicName = kafkaCfg.topics[topicType].topic;
-      this.topics[topicType] = this.kafkaEvents.topic(topicName);
-      this.timerID[i] = setInterval(this.storeOffset.bind(this),
-        this.config.get('redis:offsetStoreInterval'), this.topics[topicType], topicName);
+
+      this.kafkaEvents.topic(topicName).then(topic => {
+        this.topics[topicType] = topic;
+        this.timerID[i] = setInterval(this.storeOffset.bind(this),
+          this.config.get('redis:offsetStoreInterval'), this.topics[topicType], topicName);
+      });
     }
   }
 

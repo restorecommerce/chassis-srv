@@ -1,5 +1,5 @@
 import * as should from 'should';
-import { chainMiddleware as chain } from '../lib';
+import { chainMiddleware as chain } from '../src';
 
 /* global describe it*/
 

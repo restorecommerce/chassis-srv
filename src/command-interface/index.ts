@@ -5,9 +5,12 @@ import * as database from './../database';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
 import * as async from 'async';
-import * as kafka from 'kafka-node';
 import { Logger } from 'winston';
 import Redis from 'ioredis';
+import { Kafka as KafkaJS } from 'kafkajs';
+
+// For some reason this is required
+const crypto = require('crypto');
 
 const ServingStatus = {
   UNKNOWN: 'UNKNOWN',
@@ -123,7 +126,11 @@ export class CommandInterface implements ICommandInterface {
       flush_cache: this.flushCache
     };
     const topicCfg = config.get('events:kafka:topics:command');
-    this.commandTopic = events.topic(topicCfg.topic);
+
+    events.topic(topicCfg.topic).then(topic => this.commandTopic = topic).catch(err => {
+      this.logger.error('Error occurred while retrieving command kafka topic', err);
+    });
+
     // check for buffer fields
     this.bufferedCollection = new Map<string, string>();
     if (this.config.get('fieldHandlers:bufferFields')) {
@@ -237,7 +244,7 @@ export class CommandInterface implements ICommandInterface {
           for (let resource of intersection) {
             const topicName = kafkaCfg[`${resource}.resource`].topic;
             restoreEventSetup[topicName] = {
-              topic: this.kafkaEvents.topic(topicName),
+              topic: await this.kafkaEvents.topic(topicName),
               events: this.makeResourcesRestoreSetup(db, resource),
               baseOffset: restoreSetup[resource].baseOffset,
               ignoreOffset: restoreSetup[resource].ignoreOffset
@@ -275,18 +282,11 @@ export class CommandInterface implements ICommandInterface {
 
           this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
 
-          const consumerClient = new kafka.KafkaClient({ kafkaHost: kafkaEventsCfg.kafkaHost });
-          const consumer = new kafka.Consumer(
-            consumerClient,
-            [
-              { topic: restoreTopic.name, offset: baseOffset }
-            ],
-            {
-              autoCommit: true,
-              encoding: 'buffer',
-              fromOffset: true
-            }
-          );
+          const restoreGroupId = kafkaEventsCfg.groupId + '-restore-' + crypto.randomBytes(32).toString('hex');
+
+          const consumer = (this.kafkaEvents.provider.client as KafkaJS).consumer({
+            groupId: restoreGroupId
+          });
 
           const drainEvent = (message, done) => {
             const msg = message.value;
@@ -317,28 +317,56 @@ export class CommandInterface implements ICommandInterface {
                   });
                 }
               }
-              const msg = {
-                topic: topicName,
-                offset: message.offset
-              };
-              that.commandTopic.emit('restoreResponse', {
-                services: _.keys(that.service),
-                payload: that.encodeMsg(msg)
-              }).then(() => {
-                that.logger.info('Restore response emitted');
-              }).catch((err) => {
-                that.logger.error('Error emitting command response', err);
+
+              consumer.stop().then(() => consumer.disconnect()).then(() => {
+                this.kafkaEvents.provider.admin.deleteGroups([restoreGroupId]).then(() => {
+                  that.logger.debug('restore kafka group deleted');
+                  const msg = {
+                    topic: topicName,
+                    offset: message.offset
+                  };
+                  that.commandTopic.emit('restoreResponse', {
+                    services: _.keys(that.service),
+                    payload: that.encodeMsg(msg)
+                  }).then(() => {
+                    that.logger.info('Restore response emitted');
+                  }).catch((err) => {
+                    that.logger.error('Error emitting command response', err);
+                  });
+                  that.logger.info('restore process done');
+                }).catch(err => {
+                  that.logger.error('Error deleting restore kafka group:', err);
+                });
+              }).catch(err => {
+                that.logger.error('Error stopping consumer:', err);
               });
-              that.logger.info('restore process done');
             }
           };
 
           const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
-          consumer.on('message', async (message: any) => {
-            if (message.key in topicEvents && !_.includes(ignoreOffsets, message.offset)) {
-              asyncQueue.push(message);
-              that.logger.debug(`received message ${message.offset}/${targetOffset}`);
+
+          await consumer.connect().catch(err => {
+            that.logger.error(`error connecting consumer:`, err);
+            throw err;
+          });
+
+          await consumer.subscribe({
+            topic: topicName,
+          });
+
+          await consumer.run({
+            eachMessage: async (payload) => {
+              if (payload.message.key.toString() in topicEvents && !_.includes(ignoreOffsets, parseInt(payload.message.offset))) {
+                asyncQueue.push(payload.message);
+                that.logger.debug(`received message ${payload.message.offset}/${targetOffset}`);
+              }
             }
+          });
+
+          await consumer.seek({
+            topic: topicName,
+            partition: 0,
+            offset: baseOffset.toString(10)
           });
         }
 
@@ -369,20 +397,14 @@ export class CommandInterface implements ICommandInterface {
       }));
     }, 1);
 
-    asyncQueue.drain = () => {
+    asyncQueue.drain(() => {
       // commit state first, before resuming
       this.logger.verbose('Committing offsets upon async queue drain');
-      new Promise((resolve, reject) => {
-        restoreTopic.consumer.commit((err, data) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(data);
-        });
-      }).then(() => {
+      restoreTopic.commitCurrentOffsets().then(() => {
         this.logger.info('Offset committed successfully');
-      }).catch((err) => { });
-    };
+      });
+    });
+
     this.logger.info('Async queue draining started.');
     return asyncQueue;
   }

@@ -1,9 +1,0 @@
-require('./cache_test');
-require('./command_test');
-require('./database_test');
-require('./errors_test');
-require('./graphs_test');
-require('./microservice_test');
-require('./middleware_test');
-require('./reflection_test');
-require('./transport_test');

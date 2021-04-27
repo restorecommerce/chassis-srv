@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "crit",
+      "level": "debug",
       "colorize": true,
       "prettyPrint": true
     }
@@ -138,7 +138,7 @@
       "logger": {
         "console": {
           "handleExceptions": false,
-          "level": "error",
+          "level": "debug",
           "colorize": true,
           "prettyPrint": true
         }
@@ -198,15 +198,17 @@
       "logger": {
         "console": {
           "handleExceptions": false,
-          "level": "error",
+          "level": "debug",
           "colorize": true,
           "prettyPrint": true
         }
       },
       "provider": "kafka",
       "groupId": "restore-chassis-test-server",
-      "clientId": "restore-chassis-test-server",
-      "kafkaHost": "localhost:29092",
+      "kafka": {
+        "clientId": "restore-chassis-test-server",
+        "brokers": ["localhost:29092"]
+      },
       "protos": [
         "test/test.proto"
       ],
@@ -325,7 +327,7 @@
     "logger": {
       "console": {
         "handleExceptions": false,
-        "level": "error",
+        "level": "debug",
         "colorize": true,
         "prettyPrint": true
       }
