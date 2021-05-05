@@ -1,3 +1,7 @@
+### 0.2.1 (May 5th, 2021)
+
+- updated kafka-client
+
 ### 0.2.0 (April 27th, 2021)
 
 #### Contains breaking changes!
