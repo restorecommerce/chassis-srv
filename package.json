@@ -20,7 +20,7 @@
     "@restorecommerce/grpc-client": "^0.0.9",
     "@restorecommerce/kafka-client": "^0.2.0",
     "@restorecommerce/logger": "^0.6.4",
-    "@restorecommerce/protos": "^0.0.22",
+    "@restorecommerce/protos": "0.4.0",
     "@restorecommerce/service-config": "^0.4.1",
     "arangojs": "^7.4.0",
     "async": "^3.2.0",
