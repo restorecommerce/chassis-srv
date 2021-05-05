@@ -1,3 +1,11 @@
+### 0.2.1 (May 5th, 2021)
+
+#### Contains breaking changes!
+
+- arangojs update (use arangojs api instead of aql query for create, update, upsert)
+- graph api update (signature changes)
+- updated dependencies
+
 ### 0.2.0 (April 27th, 2021)
 
 #### Contains breaking changes!
