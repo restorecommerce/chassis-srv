@@ -2,9 +2,8 @@ import * as should from 'should';
 import * as co from 'co';
 import { createLogger } from '@restorecommerce/logger';
 import * as gRPCClient from '@restorecommerce/grpc-client';
-import * as chassis from '../lib';
 const grpcClient = gRPCClient.grpcClient;
-import { grpcServer } from '../lib';
+import { grpcServer } from '../src';
 import * as sleep from 'sleep';
 /* global describe it before after*/
 

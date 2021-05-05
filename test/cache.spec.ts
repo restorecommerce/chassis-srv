@@ -1,7 +1,7 @@
 import * as should from 'should';
-import * as config from '../lib/config';
+import * as config from '../src/config';
 import { createLogger } from '@restorecommerce/logger';
-import * as cache from '../lib/cache';
+import * as cache from '../src/cache';
 
 /* global describe it beforeEach */
 

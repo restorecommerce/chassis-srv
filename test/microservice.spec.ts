@@ -2,7 +2,7 @@ import * as should from 'should';
 import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
 import * as sleep from 'sleep';
-import * as chassis from '../lib';
+import * as chassis from '../src';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import * as gRPCClient from '@restorecommerce/grpc-client';
 

@@ -2,8 +2,8 @@ import * as should from 'should';
 import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
 import { Database } from 'arangojs';
-import * as chassis from '../lib';
-import { DatabaseProvider } from '../lib/database';
+import * as chassis from '../src';
+import { DatabaseProvider } from '../src/database';
 const config = chassis.config;
 const database = chassis.database;
 

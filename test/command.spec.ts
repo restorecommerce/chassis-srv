@@ -1,6 +1,5 @@
 // microservice chassis
-import * as _ from 'lodash';
-import { CommandInterface, database, Server } from '../lib';
+import { CommandInterface, database, Server } from '../src';
 import * as should from 'should';
 import { Client } from '@restorecommerce/grpc-client';
 import { Events } from '@restorecommerce/kafka-client';
@@ -57,6 +56,7 @@ describe('CommandInterfaceService', () => {
     await validate(msg, eventName);
   };
   before(async function setup() {
+    this.timeout(30000);
     cfg = createServiceConfig(process.cwd() + '/test');
     const logger = createLogger(cfg.get('logger'));
 
@@ -64,8 +64,8 @@ describe('CommandInterfaceService', () => {
     await events.start();
 
     const topics = cfg.get('events:kafka:topics');
-    testTopic = events.topic(cfg.get('events:kafka:topics:test.resource:topic'));
-    commandTopic = events.topic(cfg.get('events:kafka:topics:command:topic'));
+    testTopic = await events.topic(cfg.get('events:kafka:topics:test.resource:topic'));
+    commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
     // subscribe all response events
     for (let eventName of cfg.get('events:kafka:topics:command:events')) {
       await commandTopic.on(eventName, eventListener);
@@ -91,6 +91,7 @@ describe('CommandInterfaceService', () => {
     service = await client.connect();
   });
   after(async function teardown() {
+    this.timeout(30000);
     await server.stop();
     await events.stop();
   });
@@ -201,7 +202,8 @@ describe('CommandInterfaceService', () => {
 
   describe('restore', function checkRestore() {
     before(async function prepareKafka() {
-      for (let i = 0; i < 10; i += 1) {
+      this.timeout(30000);
+      for (let i = 0; i < 100; i += 1) {
         testEvent.count = i;
         await testTopic.emit('testCreated', testEvent);
       }
@@ -210,7 +212,7 @@ describe('CommandInterfaceService', () => {
       await db.truncate('tests');
     });
     it('should re-read all data from specified offset', async function restore() {
-      this.timeout(5000);
+      this.timeout(30000);
       validate = async function (msg: any, eventName: string) {
         eventName.should.equal('restoreResponse');
         should.exist(msg.services);
@@ -225,7 +227,7 @@ describe('CommandInterfaceService', () => {
             count: 1
           }
         });
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 100; i++) {
           result[i].count.should.equal(i);
         }
       };
@@ -238,7 +240,7 @@ describe('CommandInterfaceService', () => {
         data: [
           {
             entity: 'test',
-            base_offset: resourceOffset - 10,
+            base_offset: resourceOffset - 100,
             ignore_offset: []
           }
         ]

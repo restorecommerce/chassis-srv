@@ -1,3 +1,11 @@
+### 0.2.0 (April 27th, 2021)
+
+#### Contains breaking changes!
+
+- switch to kafkajs
+- changed config format for events
+- updated dependencies
+
 ### 0.1.12 (March 19th, 2021)
 
 - migrated from redis to ioredis module (command interface and offset store)
