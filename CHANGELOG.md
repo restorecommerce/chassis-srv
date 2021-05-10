@@ -1,6 +1,8 @@
-### 0.2.1 (May 5th, 2021)
+### 0.2.2 (May 5th, 2021)
 
-#### Contains breaking changes!
+- updated kafka-client
+
+### 0.2.1 (May 5th, 2021)
 
 - arangojs update (use arangojs api instead of aql query for create, update, upsert)
 - graph api update (signature changes)
