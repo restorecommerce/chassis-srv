@@ -67,15 +67,23 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     _.forEach(docs, (document, i) => {
       docs[i] = sanitizeInputFields(document);
     });
+    let responseDocs = [];
     for (let eachDoc of docs) {
-      const results = await collection.save(eachDoc);
-      _.forEach(results, (result) => {
-        if (result.error === true) {
-          throw new Error(result.errorMessage);
+      let result;
+      try {
+        result = await collection.save(eachDoc);
+        if (!result.error) {
+          responseDocs.push(eachDoc);
         }
-      });
+      } catch (e) {
+        responseDocs.push({
+          error: true,
+          errorNum: e.code,
+          errorMessage: e.message
+        });
+      }
     }
-    return _.map(docs, sanitizeOutputFields);
+    return _.map(responseDocs, sanitizeOutputFields);
   }
 
   /**
