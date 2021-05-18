@@ -48,6 +48,8 @@ const makeNormalServerEndpoint = (endpoint: any, logger: Logger): any => {
       const result = await endpoint(call);
       callback(null, result);
     } catch (err) {
+      logger.error('Error invoking endpoint for unary request', { err: err.message });
+      logger.error('Error stack', err);
       err.code = grpc.status.INTERNAL;
       errorMap.forEach((Err, key) => {
         if (err.constructor.name === Err.name) {
@@ -70,6 +72,8 @@ const makeResponseStreamServerEndpoint = (endpoint: any,
       },
       end: (err?: any): any => {
         if (err) {
+          logger.error('Error invoking endpoint for response stream', { err: err.message });
+          logger.error('Error stack', err);
           err.code = grpc.status.INTERNAL;
           errorMap.forEach((Err, key) => {
             if (err.constructor.name === Err.name) {
@@ -95,7 +99,8 @@ const makeRequestStreamServerEndpoint = (endpoint: any, logger: Logger): any => 
       });
       callback(null, result);
     } catch (err) {
-      logger.error('Error caught streaming request', err.details);
+      logger.error('Error invoking endpoint for request stream', { err: err.message });
+      logger.error('Error stack', err);
       err.code = grpc.status.INTERNAL;
       errorMap.forEach((Err, key) => {
         if (err.constructor.name === Err.name) {
@@ -143,6 +148,8 @@ const makeBiDirectionalStreamServerEndpoint = (endpoint: any, logger: Logger): a
       },
       end: (err: any): any => {
         if (err) {
+          logger.error('Error invoking endpoint for bi-directional stream', { err: err.message });
+          logger.error('Error stack', err);
           err.code = grpc.status.INTERNAL;
           errorMap.forEach((Err, key) => {
             if (err.constructor.name === Err.name) {

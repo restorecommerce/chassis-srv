@@ -1,3 +1,7 @@
+### 0.2.3 (May 18th, 2021)
+
+- improved error logging
+
 ### 0.2.2 (May 5th, 2021)
 
 - updated kafka-client
