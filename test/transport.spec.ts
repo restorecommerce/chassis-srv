@@ -65,18 +65,18 @@ providers.forEach((provider) => {
           });
         });
       describe('binding a service', () => {
-        it('should result in a wrapped service', async function bindService() {
+        it('should result in a wrapped service', async () => {
           await server.bind('test', service);
         });
       });
       describe('start', () => {
-        it('should start the server', async function startServer() {
+        it('should start the server', async () => {
           await server.start();
           sleep.sleep(1);
         });
       });
       describe('end', () => {
-        it('should stop the server', async function stopServer() {
+        it('should stop the server', async () => {
           await server.end();
         });
       });
@@ -108,7 +108,7 @@ providers.forEach((provider) => {
         });
       describe('makeEndpoint', () => {
         it('should fail when creating an undefined protobuf method',
-          async function checkMakeEndpoint() {
+          async () => {
             const errMessage = 'conn has no method this_method_does_not_exist';
             try {
               endpoint = await client.makeEndpoint(methodNameFail, instance);
@@ -120,7 +120,7 @@ providers.forEach((provider) => {
           });
         describe('without running server', function runWithoutServer() {
           this.slow(200);
-          it('should fail', async function checkMakeEndpoint() {
+          it('should fail', async () => {
             endpoint = client.makeEndpoint(methodName, instance);
             const result = await endpoint();
             result.error.should.be.Error();
@@ -148,27 +148,27 @@ providers.forEach((provider) => {
             await server.start();
             sleep.sleep(2);
           });
-          after(async function stopServer() {
+          after(async () => {
             await server.end();
           });
-          it('should create an endpoint', function makeEndpoint() {
+          it('should create an endpoint', () => {
             endpoint = client.makeEndpoint(methodName, instance);
             should.exist(endpoint);
           });
           it('should succeed when calling with empty context',
-            async function checkWithEmptyContext() {
+            async () => {
               const result = await endpoint(request, {});
               should.ifError(result.error);
               should.deepEqual(response, result.data);
             });
           it('should succeed when calling without context',
-            async function checkWithoutContext() {
+            async () => {
               const result = await endpoint(request);
               should.ifError(result.error);
               should.deepEqual(response, result.data);
             });
           it('should return an error when calling an unimplemented method',
-            async function checkUnimplemented() {
+            async () => {
               const endpointThrow = client.makeEndpoint('notImplemented', instance);
               should.exist(endpoint);
               const result = await endpointThrow(request);
@@ -177,7 +177,7 @@ providers.forEach((provider) => {
               should.equal(result.error.message, 'unimplemented');
             });
           it('should return an error when calling failing endpoint',
-            async function checkFailingEndpoint() {
+            async () => {
               const endpointThrow = client.makeEndpoint('throw', instance);
               should.exist(endpoint);
               const result = await endpointThrow(request);

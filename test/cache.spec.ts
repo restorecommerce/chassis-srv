@@ -7,14 +7,14 @@ import * as cache from '../src/cache';
 
 describe('cache', () => {
   let logger: any;
-  beforeEach(async function setup() {
+  beforeEach(async () => {
     await config.load(process.cwd() + '/test');
     const cfg = await config.get();
     logger = createLogger(cfg.get('logger'));
   });
   describe('get', () => {
     it('should return one store with the config for one store',
-      async function getOne() {
+      async () => {
         const cfg = await config.get();
         const c = await cache.get(cfg.get('cache:one'), logger);
         should.exist(c);
@@ -25,7 +25,7 @@ describe('cache', () => {
         res.should.equal('testvalue');
       });
     it('should return one multiCaching store with the config for many stores',
-      async function getMany() {
+      async () => {
         const cfg = await config.get();
         const c = await cache.get(cfg.get('cache:many'), logger);
         should.exist(c);

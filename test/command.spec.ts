@@ -13,7 +13,7 @@ import * as Redis from 'ioredis';
  * @param msg google.protobuf.Any
  * @returns Arbitrary JSON
  */
-function decodeMsg(msg: any): any {
+const decodeMsg = (msg: any): any => {
   const decoded = Buffer.from(msg.value, 'base64').toString();
   return JSON.parse(decoded);
 }
@@ -23,7 +23,7 @@ function decodeMsg(msg: any): any {
  * @param msg Arbitrary JSON
  * @returns google.protobuf.Any formatted message
  */
-function encodeMsg(msg: any): any {
+const encodeMsg = (msg: any): any => {
 
   const stringified = JSON.stringify(msg);
   const encoded = Buffer.from(stringified).toString('base64');
@@ -51,8 +51,8 @@ describe('CommandInterfaceService', () => {
   let commandTopic;
   let validate;
   let redisClient;
-  const eventListener = async function (msg: any,
-    context: any, config: any, eventName: string): Promise<any> {
+  const eventListener = async (msg: any,
+    context: any, config: any, eventName: string): Promise<any> => {
     await validate(msg, eventName);
   };
   before(async function setup() {
@@ -96,7 +96,7 @@ describe('CommandInterfaceService', () => {
     await events.stop();
   });
   describe('check', () => {
-    it('should return the status', async function checkHealth() {
+    it('should return the status', async () => {
       let cmdPayload = encodeMsg({
         service: 'commandinterface'
       });
@@ -107,7 +107,7 @@ describe('CommandInterfaceService', () => {
       };
 
       // validator called by the event listener
-      validate = function (msg: any, eventName: string): void {
+      validate = (msg: any, eventName: string): void => {
         eventName.should.equal('healthCheckResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -161,7 +161,7 @@ describe('CommandInterfaceService', () => {
     });
   });
   describe('reconfigure', () => {
-    it('should return an error since it is not implemented', async function reconfigure() {
+    it('should return an error since it is not implemented', async () => {
       const resp = await service.command({
         name: 'reconfigure'
       });
@@ -170,14 +170,14 @@ describe('CommandInterfaceService', () => {
   });
   describe('reset', () => {
     const docID = 'test/value';
-    before(async function prepareDatabase() {
+    before(async () => {
       await db.insert('tests', {
         id: docID,
         value: 101,
       });
     });
-    it('should clean the database', async function reset() {
-      validate = function (msg: any, eventName: string): void {
+    it('should clean the database', async () => {
+      validate = (msg: any, eventName: string): void => {
         eventName.should.equal('resetResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -200,7 +200,7 @@ describe('CommandInterfaceService', () => {
 
   });
 
-  describe('restore', function checkRestore() {
+  describe('restore', () => {
     before(async function prepareKafka() {
       this.timeout(30000);
       for (let i = 0; i < 100; i += 1) {
@@ -208,12 +208,12 @@ describe('CommandInterfaceService', () => {
         await testTopic.emit('testCreated', testEvent);
       }
     });
-    beforeEach(async function prepareDB() {
+    beforeEach(async () => {
       await db.truncate('tests');
     });
     it('should re-read all data from specified offset', async function restore() {
       this.timeout(30000);
-      validate = async function (msg: any, eventName: string) {
+      validate = async (msg: any, eventName: string) => {
         eventName.should.equal('restoreResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -256,8 +256,8 @@ describe('CommandInterfaceService', () => {
     });
   });
   describe('version', () => {
-    it('should return the version of the package and nodejs', async function version() {
-      validate = function (msg: any, eventName: string): void {
+    it('should return the version of the package and nodejs', async () => {
+      validate = (msg: any, eventName: string): void => {
         eventName.should.equal('versionResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -283,8 +283,8 @@ describe('CommandInterfaceService', () => {
     });
   });
   describe('setApiKey', () => {
-    it('should set the provided authentication api key on configuration', async function version() {
-      validate = function (msg: any, eventName: string): void {
+    it('should set the provided authentication api key on configuration', async () => {
+      validate = (msg: any, eventName: string): void => {
         eventName.should.equal('setApiKeyResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -312,8 +312,8 @@ describe('CommandInterfaceService', () => {
     });
   });
   describe('configUpdate', () => {
-    it('should update the provide configuration', async function version() {
-      validate = function (msg: any, eventName: string): void {
+    it('should update the provide configuration', async () => {
+      validate = (msg: any, eventName: string): void => {
         eventName.should.equal('configUpdateResponse');
         should.exist(msg.services);
         msg.services.should.containEql('commandinterface');
@@ -340,8 +340,8 @@ describe('CommandInterfaceService', () => {
     });
   });
   describe('flushCache', () => {
-    it('should flush with given db_index and pattern', async function flushCache() {
-      validate = function (msg: any, eventName: string): void {
+    it('should flush with given db_index and pattern', async () => {
+      validate = (msg: any, eventName: string): void => {
         eventName.should.equal('flushCacheResponse');
         should.exist(msg.payload);
         const payload = decodeMsg(msg.payload);
@@ -378,7 +378,7 @@ describe('CommandInterfaceService', () => {
       should.exist(data.status);
       data.status.should.equal('Successfully flushed cache pattern');
     });
-    it('flushdb should flush all keys in specific db_index when no pattern is specified', async function flushCache() {
+    it('flushdb should flush all keys in specific db_index when no pattern is specified', async () => {
       // store 3 keys to redis db index 3
       const redis: any = new Redis({ db: 3 });
       await redis.set('user1', 'user1');

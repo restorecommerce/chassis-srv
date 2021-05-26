@@ -14,13 +14,13 @@ let db: DatabaseProvider;
 const providers = [
   {
     name: 'arango',
-    init: async function init(): Promise<DatabaseProvider> {
+    init: async (): Promise<DatabaseProvider> => {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = createLogger(cfg.get('logger'));
       return database.get(cfg.get('database:arango'), logger);
     },
-    drop: async function drop(): Promise<any> {
+    drop: async (): Promise<any> => {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
 
@@ -31,7 +31,7 @@ const providers = [
       const db = new Database('http://' + dbHost + ':' + dbPort);
       await db.dropDatabase(dbName);
     },
-    custom: function customTests() {
+    custom: () => {
       describe('testing custom queries', () => {
         it('should register a custom query', () => {
           const script = 'return "Hello World"';
@@ -119,12 +119,13 @@ const providers = [
             include: {
               $eq: true
             }
-          }, {
-              customQueries: ['script'],
-              customArguments: {
-                param: 'a'
-              }
-            });
+          },
+          {
+            customQueries: ['script'],
+            customArguments: {
+              param: 'a'
+            }
+          });
 
           should.exist(result);
           result.should.have.length(2);
@@ -150,23 +151,18 @@ const providers = [
   },
   {
     name: 'nedb',
-    init: async function init(): Promise<DatabaseProvider> {
+    init: async (): Promise<DatabaseProvider> => {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = createLogger(cfg.get('logger'));
       return database.get(cfg.get('database:nedb'), logger);
     },
-    drop: async function drop(): Promise<any> { },
+    drop: async (): Promise<any> => { },
     custom: () => { return () => { }; }
   }
 ];
-providers.forEach((providerCfg) => {
-  describe(`with database provider ${providerCfg.name}`, () => {
-    testProvider(providerCfg);
-  });
-});
 
-function testProvider(providerCfg) {
+const testProvider = (providerCfg) => {
   const collection = 'test';
   const testData = [
     { id: '/test/sort0', value: 'c', include: true },
@@ -180,18 +176,18 @@ function testProvider(providerCfg) {
   ];
   const document = testData[4];
 
-  beforeEach(async function initDB() {
+  beforeEach(async () => {
     db = await providerCfg.init();
     await db.insert(collection, testData);
     should.exist(db);
     const result = await db.count(collection, {});
   });
 
-  afterEach(async function dropDB() {
+  afterEach(async () => {
     await providerCfg.drop();
   });
   describe('upsert', () => {
-    it('should insert a new document if it does not exist', async function checkUpsert() {
+    it('should insert a new document if it does not exist', async () => {
       const newDoc = {
         id: '/test/testupsert',
         name: 'test',
@@ -206,25 +202,25 @@ function testProvider(providerCfg) {
   });
   describe('count', () => {
     it(`should return the number of documents
-    in the collection with blank filter`, async function checkCount() {
-        const result = await db.count(collection, {});
-        should.exist(result);
-        result.should.equal(testData.length);
-      });
-    it('should return one for filtering based on id', async function checkCount() {
+    in the collection with blank filter`, async () => {
+      const result = await db.count(collection, {});
+      should.exist(result);
+      result.should.equal(testData.length);
+    });
+    it('should return one for filtering based on id', async () => {
       const result = await db.count(collection, { id: testData[0].id });
       should.exist(result);
       result.should.equal(1);
     });
   });
   describe('truncate', () => {
-    it('should delete all collection', async function checkTruncate() {
+    it('should delete all collection', async () => {
       await db.truncate();
       const result = await db.count(collection, {});
       should.exist(result);
       result.should.equal(0);
     });
-    it('should delete all documents in provided collection', async function checkTruncate() {
+    it('should delete all documents in provided collection', async () => {
       await db.truncate(collection);
       const result = await db.count(collection, {});
       should.exist(result);
@@ -232,7 +228,7 @@ function testProvider(providerCfg) {
     });
   });
   describe('findByID', () => {
-    it('should find documents', async function checkFind() {
+    it('should find documents', async () => {
       const result = await db.findByID(collection, document.id);
       should.exist(result);
       result.should.be.length(1);
@@ -241,7 +237,7 @@ function testProvider(providerCfg) {
   });
   describe('find', () => {
     context('with id filter', () => {
-      it('should return a document', async function checkFind() {
+      it('should return a document', async () => {
         const result = await db.find(collection, {
           id: document.id,
         });
@@ -252,21 +248,21 @@ function testProvider(providerCfg) {
 
     describe('find', () => {
       context('with iLike filter', () => {
-        it('should return one filtering based on iLike', async function checkFind() {
+        it('should return one filtering based on iLike', async () => {
 
           const result = await db.find('test', {
-            'id': {
-              '$iLike': "%sOrT%"
+            id: {
+              $iLike: '%sOrT%'
             }
           });
           result.should.be.length(7);
-          });
         });
       });
+    });
 
     context('with sort', () => {
       it('should return documents sorted in ascending order',
-        async function checkSortAsc() {
+        async () => {
           let sortOrderKey;
           if (providerCfg.name == 'arango') {
             sortOrderKey = 'ASC';
@@ -280,7 +276,7 @@ function testProvider(providerCfg) {
           result.should.deepEqual([testData[3], testData[4], testData[0]]);
         });
       it('should return documents sorted in descending order',
-        async function checkSortAsc() {
+        async () => {
           let sortOrderKey;
           if (providerCfg.name == 'arango') {
             sortOrderKey = 'DESC';
@@ -295,7 +291,7 @@ function testProvider(providerCfg) {
         });
     });
     context('with field limiting', () => {
-      it('should return documents with selected fields', async function checkSorting() {
+      it('should return documents with selected fields', async () => {
         const result = await db.find(collection,
           { include: true },
           // 0 is exclude and 1 is to include that particular key
@@ -316,13 +312,13 @@ function testProvider(providerCfg) {
       });
     });
     context('with limit', () => {
-      it('should return one document', async function checkFind() {
+      it('should return one document', async () => {
         const result: Object = await db.find(collection, {
           id: document.id,
         },
-          {
-            limit: 1
-          });
+        {
+          limit: 1
+        });
         should.exist(result);
         result.should.be.length(1);
         result[0].should.deepEqual(document);
@@ -330,7 +326,7 @@ function testProvider(providerCfg) {
     });
   });
   context('with filter operator', () => {
-    it('should return a document', async function checkFind() {
+    it('should return a document', async () => {
       let result = await db.find(collection, {
         $or: [
           { id: document.id },
@@ -371,10 +367,10 @@ function testProvider(providerCfg) {
       result = await db.find(collection, {
         id: document.id,
       },
-        {
-          limit: 1,
-          offset: 1,
-        });
+      {
+        limit: 1,
+        offset: 1,
+      });
       result.should.be.empty();
 
       result = await db.find(collection, {
@@ -402,7 +398,7 @@ function testProvider(providerCfg) {
     });
   });
   describe('inserting a document', () => {
-    it('should store a document', async function insertDocument() {
+    it('should store a document', async () => {
       const newDoc = {
         id: '/test/testnew',
         name: 'test',
@@ -413,7 +409,7 @@ function testProvider(providerCfg) {
     });
   });
   describe('update', () => {
-    it('should update document', async function checkUpdate() {
+    it('should update document', async () => {
       const newDoc = _.clone(document);
       newDoc.value = 'new';
       await db.update(collection, {
@@ -425,7 +421,7 @@ function testProvider(providerCfg) {
     });
   });
   describe('delete', () => {
-    it('should delete document', async function checkDelete() {
+    it('should delete document', async () => {
       await db.delete(collection, {
         id: document.id
       });
@@ -435,16 +431,15 @@ function testProvider(providerCfg) {
     });
   });
   describe('query by date', () => {
-    it('should be able to query document by its time stamp', async function
-      queryDocByTimeStamp() {
+    it('should be able to query document by its time stamp', async () => {
       const currentDate = new Date();
       const timeStamp1 = currentDate.setFullYear(currentDate.getFullYear());
       const timeStamp2 = currentDate.setFullYear(currentDate.getFullYear() + 1);
       const timeStamp3 = currentDate.setFullYear(currentDate.getFullYear() + 2);
       const timeData = [
-        { id: "a", created: timeStamp1 },
-        { id: "b", created: timeStamp2 },
-        { id: "c", created: timeStamp3 }
+        { id: 'a', created: timeStamp1 },
+        { id: 'b', created: timeStamp2 },
+        { id: 'c', created: timeStamp3 }
       ];
       await db.insert(collection, timeData);
       // should return first two documents
@@ -466,11 +461,17 @@ function testProvider(providerCfg) {
       result.should.be.Array();
       result.should.be.length(2);
       timeData.splice(2, 1);
-      result = _.sortBy(result, [function (o) { return o.id; }]);
+      result = _.sortBy(result, [ (o) => { return o.id; }]);
       result.should.deepEqual(timeData);
       // truncate test DB
       await db.truncate();
     });
   });
   describe('custom tests', () => providerCfg.custom());
-}
+};
+
+providers.forEach((providerCfg) => {
+  describe(`with database provider ${providerCfg.name}`, () => {
+    testProvider(providerCfg);
+  });
+});

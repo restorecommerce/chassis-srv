@@ -3,26 +3,26 @@ import { chainMiddleware as chain } from '../src';
 
 /* global describe it*/
 
-function endpoint(request, context) {
+const endpoint = (request, context) => {
   return {
     chain: context.chain,
   };
-}
+};
 
-function makeMiddleware(n) {
-  return function genMiddleware(next) {
-    return async function middleware(request, context) {
+const makeMiddleware = (n) => {
+  return (next) => {
+    return async (request, context) => {
       context.chain.push(n);
       return await next(request, context);
     };
   };
-}
+};
 
 describe('endpoint.chain', () => {
   let middleware: any;
   const tree = [];
   let e;
-  it('should chain middleware', function checkChainMiddleware() {
+  it('should chain middleware', () => {
     const middlewares = [];
     for (let i = 0; i < 5; i += 1) {
       tree.push(i);
@@ -31,11 +31,11 @@ describe('endpoint.chain', () => {
     middleware = chain(middlewares);
   });
   it('should return an async function which gives an endpoint',
-    async function checkMiddlewareCreating() {
+    async () => {
       e = await middleware(endpoint);
       should.exist(e);
     });
-  it('should call middlewares in sequence from first to last', async function checkMiddlewareCalling() {
+  it('should call middlewares in sequence from first to last', async () => {
     const result = await e({}, {
       chain: [],
     });

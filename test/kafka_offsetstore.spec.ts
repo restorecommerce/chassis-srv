@@ -36,7 +36,7 @@ describe('offsetStore', () => {
       offsetStore = new OffsetStore(events, cfg, logger);
       topic = await (events.topic(topicName));
 
-      const listener = function listener(message, context) {
+      const listener = (message, context) => {
         testMessage.value.should.equal(message.value);
         testMessage.count.should.equal(message.count);
       };
@@ -64,7 +64,7 @@ describe('offsetStore', () => {
       // start offsetTracker subscribing to previous offset value read
       // from redis and consume the above message
       offsetStore = new OffsetStore(events, cfg, logger);
-      const listener = async function listener(message, context) {
+      const listener = async (message, context) => {
         testMessage.value.should.equal(message.value);
         testMessage.count.should.equal(message.count);
       };

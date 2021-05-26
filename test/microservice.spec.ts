@@ -92,7 +92,7 @@ describe('microservice.Server', () => {
   let server: chassis.Server;
   describe('constructing the sever', () => {
     it('should throw an error when services config is missing',
-      async function throwErrorOnMissingConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         cfg = await config.get();
         cfg = createServiceConfig(process.cwd() + '/test');
@@ -102,7 +102,7 @@ describe('microservice.Server', () => {
         }).should.throw('missing services configuration');
       });
     it('should throw an error when transports config is missing',
-      async function throwErrorOnMissingTransportConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
         cfg.set('server:transports', undefined);
@@ -111,7 +111,7 @@ describe('microservice.Server', () => {
         }).should.throw('missing transports configuration');
       });
     it('should throw an error when configuration does not exist',
-      async function throwNoConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
         cfg.set('server:services', undefined);
@@ -121,7 +121,7 @@ describe('microservice.Server', () => {
         }).should.throw('missing server configuration');
       });
     it('should return a server when provided with correct config',
-      async function correctConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
         const logger = createLogger(cfg.get('logger'));
@@ -142,7 +142,7 @@ describe('microservice.Server', () => {
   });
   describe('calling bind', () => {
     it('should wrap a service and create endpoints for each object function',
-      async function bindService() {
+      async () => {
         const boundServices = 2;
         let currentBoundServices = 0;
         server.on('bound', () => {
@@ -154,7 +154,7 @@ describe('microservice.Server', () => {
   });
   describe('calling start', () => {
     it('should expose the created endpoints via transports',
-      async function checkEndpoints() {
+      async () => {
         let serving = false;
         server.on('serving', () => {
           serving = !serving;
@@ -171,22 +171,22 @@ describe('microservice.Server', () => {
         let result;
         should.exist(client);
         // --- 'test' endpoint ---
-        const testCfgPath: string = 'client:test:endpoints:test:publisher:instances:0';
+        const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
         instance = cfg.get(testCfgPath);
         const testF = client.makeEndpoint('test', instance);
         result = await testF({
           value: 'hello',
         },
-          {
-            test: true,
-          });
+        {
+          test: true,
+        });
         should.ifError(result.error);
         should.exist(result.data);
         should.exist(result.data.result);
         result.data.result.should.be.equal('welcome');
 
         // --- 'testCreate' endpoint ---
-        const testCreateCfgPath: string = 'client:test:endpoints:create:publisher:instances:0';
+        const testCreateCfgPath = 'client:test:endpoints:create:publisher:instances:0';
         instance = cfg.get(testCreateCfgPath);
         const testCreateF = client.makeEndpoint('create', instance);
 
@@ -212,9 +212,9 @@ describe('microservice.Server', () => {
         result = await throwF({
           value: 'hello',
         },
-          {
-            test: true,
-          });
+        {
+          test: true,
+        });
         should.exist(result.error);
         result.error.should.be.Error();
         result.error.message.should.equal('internal');
@@ -228,9 +228,9 @@ describe('microservice.Server', () => {
         result = await notFound({
           value: 'hello',
         },
-          {
-            test: true,
-          });
+        {
+          test: true,
+        });
         should.exist(result.error);
         result.error.should.be.Error();
         result.error.message.should.equal('not found');
@@ -245,9 +245,9 @@ describe('microservice.Server', () => {
         result = await notImplementedF({
           value: 'hello',
         },
-          {
-            test: true,
-          });
+        {
+          test: true,
+        });
         should.exist(result.error);
         result.error.should.be.Error();
         result.error.message.should.equal('unimplemented');
@@ -328,7 +328,7 @@ describe('microservice.Server', () => {
   });
 
   describe('connecting with multiple clients', () => {
-    it('should be possible', async function checkMultipleClients() {
+    it('should be possible', async () => {
       const numClients = 3;
       const conns = [];
       const clients = [];
@@ -360,7 +360,7 @@ describe('microservice.Server', () => {
   });
   describe('calling end', () => {
     it('should stop the server and no longer provide endpoints',
-      async function endServer() {
+      async () => {
         await server.stop();
       });
   });
@@ -371,7 +371,7 @@ describe('microservice.Client', () => {
   let server;
   describe('constructing the client', () => {
     it('should create a client when providing correct configuration',
-      async function correctConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
         const logger = createLogger(cfg.get('logger'));
@@ -382,7 +382,7 @@ describe('microservice.Client', () => {
         client.middleware.should.have.iterable();
       });
     it('should throw an error when providing no configuration',
-      async function errorOnNoConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
         cfg.set('client:test', null);
@@ -391,7 +391,7 @@ describe('microservice.Client', () => {
         }).should.throw('missing config argument');
       });
     it('should throw an error when providing with invalid configuration',
-      async function errorInvalidConfig() {
+      async () => {
         await config.load(process.cwd() + '/test');
         let cfg = await config.get();
         cfg.set('client:test:endpoints', null);
@@ -408,7 +408,7 @@ describe('microservice.Client', () => {
       });
   });
   context('with running server', () => {
-    before(async function initServer() {
+    before(async () => {
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = createLogger(cfg.get('logger'));
@@ -417,12 +417,12 @@ describe('microservice.Client', () => {
       await server.start();
       sleep.sleep(1);
     });
-    after(async function stopServer() {
+    after(async () => {
       await server.stop();
     });
     describe('connect', () => {
       it('should return a service object with endpoint functions',
-        async function connectToEndpoints() {
+        async () => {
           let connected = false;
           client.on('connected', () => {
             connected = !connected;
@@ -450,10 +450,10 @@ describe('microservice.Client', () => {
           result = await testService.test({
             value: 'hello',
           },
-            {
-              timeout: 5000,
-              retry: 2,
-            }
+          {
+            timeout: 5000,
+            retry: 2,
+          }
           );
           should.exist(result);
           should.not.exist(result.error);
@@ -463,7 +463,7 @@ describe('microservice.Client', () => {
         });
     });
     describe('end', () => {
-      it('should disconnect from all endpoints', async function disconnect() {
+      it('should disconnect from all endpoints', async () => {
         await client.end();
       });
     });
@@ -471,7 +471,7 @@ describe('microservice.Client', () => {
   context('without a running server', () => {
     describe('connect', () => {
       it('Call should not be created from a closed channel ',
-        async function connectToEndpoints() {
+        async () => {
           const testService = await client.connect();
           should.exist(testService);
           should.exist(testService.test);
@@ -482,9 +482,9 @@ describe('microservice.Client', () => {
           const result = await testService.test({
             value: 'hello',
           },
-            {
-              timeout: 100,
-            });
+          {
+            timeout: 100,
+          });
           should.exist(result);
           should.exist(result.error);
           let err = result.error;
@@ -495,7 +495,7 @@ describe('microservice.Client', () => {
     });
     describe('end', () => {
       it('should disconnect from all endpoints',
-        async function disconnect() {
+        async () => {
           client.on('disconnected', () => {
             // logger.info('all endpoints disconnected');
           });

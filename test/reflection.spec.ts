@@ -12,7 +12,7 @@ import * as sleep from 'sleep';
 
 describe('binding the grpc.ServerReflection service', () => {
   let server: Server;
-  before(async function start() {
+  before(async () => {
     await chassis.config.load(process.cwd() + '/test');
     const cfg = await chassis.config.get();
     const logger = createLogger(cfg.get('logger'));
@@ -33,7 +33,7 @@ describe('binding the grpc.ServerReflection service', () => {
     sleep.sleep(2);
   });
   it('should provide an endpoint ServerReflectionInfo',
-    async function checkEndpoint() {
+    async () => {
       const cfg = await chassis.config.get();
       const logger = createLogger(cfg.get('logger'));
       const client: Client = new Client(cfg.get('client:reflection'), logger);
@@ -45,20 +45,20 @@ describe('binding the grpc.ServerReflection service', () => {
   describe('calling endpoint ServerReflectionInfo', () => {
     let client: Client;
     let serverReflectionInfo;
-    beforeEach(async function connect() {
+    beforeEach(async () => {
       const cfg = await chassis.config.get();
       const logger = createLogger(cfg.get('logger'));
       client = new Client(cfg.get('client:reflection'), logger);
       const reflection: chassis.ServerReflection = await client.connect();
       serverReflectionInfo = await reflection.serverReflectionInfo();
     });
-    afterEach(async function disconnect() {
+    afterEach(async () => {
       await serverReflectionInfo.end();
       await client.end();
     });
     describe('with fileByFilename request', () => {
       it('should return file by file name response',
-        async function checkFileByFilename() {
+        async () => {
           await serverReflectionInfo.write({
             file_by_filename: 'test.proto',
           });
@@ -78,7 +78,7 @@ describe('binding the grpc.ServerReflection service', () => {
     });
     describe('with fileContainingSymbol request', () => {
       it('should return file containing path / symbol response',
-        async function checkFileContainingSymbol() {
+        async () => {
           await serverReflectionInfo.write({
             file_containing_symbol: 'test.Test',
           });
@@ -98,7 +98,7 @@ describe('binding the grpc.ServerReflection service', () => {
     });
     describe('with fileContainingExtension request', () => {
       it('should return file extension response',
-        async function checkFileContainingExtension() {
+        async () => {
           await serverReflectionInfo.write({
             file_containing_extension: {
               containing_type: 'test.ExtendMe',
@@ -121,7 +121,7 @@ describe('binding the grpc.ServerReflection service', () => {
     });
     describe('with allExtensionNumbersOfType request', () => {
       it('should get allExtensionsNumbers response',
-        async function checkallExtensionNumbersOfType() {
+        async () => {
           await serverReflectionInfo.write({
             all_extension_numbers_of_type: 'test.ExtendMe',
           });
@@ -145,7 +145,7 @@ describe('binding the grpc.ServerReflection service', () => {
     });
     describe('with listServices request', () => {
       it('should list all exposed services',
-        async function listAllServices() {
+        async () => {
           await serverReflectionInfo.write({
             list_services: '',
           });
