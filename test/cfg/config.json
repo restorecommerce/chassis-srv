@@ -49,6 +49,16 @@
       }
     ]
   },
+  "graph": {
+    "graphName": "chassis-graph-test",
+    "edgeDefinitions": [
+      {
+        "edgeName": "knows",
+        "from": "person",
+        "to": "person"
+      }
+    ]
+  },
   "client": {
     "commandinterface": {
       "address": "localhost:50051",

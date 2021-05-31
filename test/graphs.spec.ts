@@ -15,7 +15,8 @@ const providers = [
       await config.load(process.cwd() + '/test');
       const cfg = await config.get();
       const logger = createLogger(cfg.get('logger'));
-      return database.get(cfg.get('database:arango'), logger, 'test-graph');
+      return database.get(cfg.get('database:arango'), logger, cfg.get('graph:graphName'),
+        cfg.get('graph:edgeDefinitions'));
     }
   }
 ];
@@ -86,12 +87,12 @@ const testProvider = (providerCfg) => {
       // get incoming edges for Vertice Alice
       const incomingEdges = await db.getInEdges(edgeCollectionName, `person/${result[0].id}`);
       should.exist(incomingEdges);
-      incomingEdges[0].info.should.equal('Eve knows Alice');
+      incomingEdges.edges[0].info.should.equal('Eve knows Alice');
 
       // get outgoing edges for Vertice Alice
       let outgoingEdges = await db.getOutEdges(edgeCollectionName, `person/${result[0].id}`);
       should.exist(outgoingEdges);
-      outgoingEdges[0].info.should.equal('Alice knows Bob');
+      outgoingEdges.edges[0].info.should.equal('Alice knows Bob');
     });
     it('should traverse the graph', async () => {
       // traverse graph
@@ -117,7 +118,7 @@ const testProvider = (providerCfg) => {
       const doc = await db.getVertex(vertexCollectionName, `person/${result[4].id}`);
       // doc with updated name
       doc.name = 'test';
-      await db.update(vertexCollectionName, { id: 'e' }, doc);
+      await db.update(vertexCollectionName, [doc]);
       const newdoc = await db.getEdge(vertexCollectionName, `person/${result[4].id}`);
       doc.name.should.equal('test');
     });
@@ -125,19 +126,21 @@ const testProvider = (providerCfg) => {
       const doc = await db.getEdge(edgeCollectionName, edgeResult._id);
       // doc with updated name
       doc.info = 'test knows Bob';
-      await db.update(edgeCollectionName, { id: 'e' }, doc);
+      await db.update(edgeCollectionName, [doc]);
       const newdoc = await db.getEdge(edgeCollectionName, edgeResult._id);
       doc.info.should.equal('test knows Bob');
     });
     it('should remove a vertice given the document handle', async () => {
       const removedDoc = await db.removeVertex(vertexCollectionName, `person/${result[2].id}`);
       should.exist(removedDoc);
-      removedDoc.should.equal(true);
+      removedDoc.error.should.equal(false);
+      removedDoc.code.should.equal(202);
     });
     it('should remove edge given the document handle', async () => {
       const removedDoc = await db.removeEdge(edgeCollectionName, edgeResult._id);
       should.exist(removedDoc);
-      removedDoc.should.equal(true);
+      removedDoc.error.should.equal(false);
+      removedDoc.code.should.equal(202);
     });
   });
   describe('testing special functions', async () => {
@@ -182,7 +185,7 @@ const testProvider = (providerCfg) => {
 };
 
 providers.forEach((providerCfg) => {
-  describe(`with database provider ${providerCfg.name}`, () => {
+  describe(`Graphs with database provider ${providerCfg.name}`, () => {
     testProvider(providerCfg);
   });
 });

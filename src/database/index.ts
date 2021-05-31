@@ -27,21 +27,21 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export const get = async(config: any, logger: Logger, graphName?: string): Promise<DatabaseProvider> => {
+export const get = async(config: any, logger: Logger, graphName?: string, edgeConfig?: any): Promise<DatabaseProvider> => {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
   }
-  return db(config, logger, graphName);
+  return db(config, logger, graphName, edgeConfig);
 };
 
 export interface DatabaseProvider {
-  insert(collectionName: string, documents: any): Promise<void>;
+  insert(collectionName: string, documents: any): Promise<Array<any>>;
   find(collectionName: string, filter?: any, options?: any): Promise<Array<any>>;
   findByID(collectionName: string, ids: string | string[], options?: any): Promise<Array<any>>;
-  update(collectionName: string, filter: any, document: any): Promise<Array<any>>;
+  update(collectionName: string, documents: any): Promise<Array<any>>;
   upsert(collectionName: string, documents: any): Promise<Array<any>>;
-  delete(collectionName: string, filter?: any): Promise<void>;
+  delete(collectionName: string, ids: string[]): Promise<Array<any>>;
   count(collectionName: string, filter?: any): Promise<number>;
   truncate(collectionName?: string): Promise<void>;
 
@@ -74,7 +74,6 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   findTreesCommonAncestor(nodes: string[], collectionName: string, edgeName: string): any;
   addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
     toVertice: Object | [Object]): any;
-  replaceEdgeDefinition(collectionName: string, definition: Object): any;
   removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;
   listGraphs(): any;
   removeEdge(collectionName: string, documentHandle: string): any;
