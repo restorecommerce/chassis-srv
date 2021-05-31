@@ -1,7 +1,7 @@
 // microservice chassis
 import { CommandInterface, database, Server } from '../src';
 import * as should from 'should';
-import { Client } from '@restorecommerce/grpc-client';
+import { GrpcClient } from '@restorecommerce/grpc-client';
 import { Events } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createLogger } from '@restorecommerce/logger'
@@ -16,7 +16,7 @@ import * as Redis from 'ioredis';
 const decodeMsg = (msg: any): any => {
   const decoded = Buffer.from(msg.value, 'base64').toString();
   return JSON.parse(decoded);
-}
+};
 
 /**
  *
@@ -32,7 +32,7 @@ const encodeMsg = (msg: any): any => {
     value: encoded
   };
   return ret;
-}
+};
 
 /*
  * Note: Running Kafka and ArangoDB instances are required.
@@ -87,8 +87,8 @@ describe('CommandInterfaceService', () => {
     await server.bind('commandinterface', cis);
     await server.start();
 
-    const client = new Client(cfg.get('client:commandinterface'), logger);
-    service = await client.connect();
+    const client = new GrpcClient(cfg.get('client:commandinterface'));
+    service = client.commandinterface;
   });
   after(async function teardown() {
     this.timeout(30000);
@@ -123,9 +123,9 @@ describe('CommandInterfaceService', () => {
       let resp = await service.command(msg);
       await commandTopic.$wait(offset); // wait for response on both Kafka & gRPC
 
+      should.exist(resp);
       should.not.exist(resp.error);
-      should.exist(resp.data);
-      let data = decodeMsg(resp.data);
+      let data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('SERVING');
 
@@ -138,8 +138,8 @@ describe('CommandInterfaceService', () => {
         name: 'health_check',
         payload: cmdPayload
       });
-      should.exist(resp.data);
-      data = decodeMsg(resp.data);
+      should.exist(resp);
+      data = decodeMsg(resp);
       should.not.exist(resp.error); // no exception thrown
       should.exist(data.error);  // tolerant error handling
       data.error.should.equal('Service does_not_exist does not exist');
@@ -154,8 +154,8 @@ describe('CommandInterfaceService', () => {
       });
       await commandTopic.$wait(offset); // wait for response on both Kafka & gRPC
       should.not.exist(resp.error);
-      should.exist(resp.data);
-      data = decodeMsg(resp.data);
+      should.exist(resp);
+      data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('SERVING');
     });

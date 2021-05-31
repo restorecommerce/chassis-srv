@@ -1,6 +1,6 @@
 import { CommandInterface } from '../command-interface';
 import { ServiceConfig } from '@restorecommerce/service-config';
-import { Client } from '@restorecommerce/grpc-client';
+import { GrpcClient } from '@restorecommerce/grpc-client';
 import { Logger } from 'winston';
 
 const ServingStatus = {
@@ -52,9 +52,9 @@ export class Health {
             }
           };
 
-          const client = new Client(serviceConfig, this.opts.logger);
+          const client = new GrpcClient(serviceConfig);
           new Promise(async () => {
-            this.endpoints[dependency] = await client.connect().catch(err => {
+            this.endpoints[dependency] = await client.dependency.catch(err => {
               this.opts.logger.error('error connecting to service ' + dependency + ': ', err);
               throw err;
             });

@@ -4,12 +4,10 @@ import { createLogger } from '@restorecommerce/logger';
 import * as sleep from 'sleep';
 import * as chassis from '../src';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import * as gRPCClient from '@restorecommerce/grpc-client';
+import { GrpcClient } from '@restorecommerce/grpc-client';
 
 const config = chassis.config;
-const Client = gRPCClient.Client;
 const Server = chassis.Server;
-const grpcClient = gRPCClient.grpcClient;
 const grpc = chassis.grpc;
 const errors = chassis.errors;
 
@@ -166,15 +164,15 @@ describe('microservice.Server', () => {
         should.exist(grpcConfig);
         should.exist(grpcConfig.service);
         const logger = createLogger(cfg.get('logger'));
-        let client: gRPCClient.grpcClient = new grpcClient(grpcConfig, logger);
+        let client = new GrpcClient(grpcConfig);
         let instance: string;
         let result;
         should.exist(client);
         // --- 'test' endpoint ---
-        const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
-        instance = cfg.get(testCfgPath);
-        const testF = client.makeEndpoint('test', instance);
-        result = await testF({
+        // const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
+        // instance = cfg.get(testCfgPath);
+        // const testF = client.makeEndpoint('test', instance);
+        result = await client.test.test({
           value: 'hello',
         },
         {
@@ -186,15 +184,15 @@ describe('microservice.Server', () => {
         result.data.result.should.be.equal('welcome');
 
         // --- 'testCreate' endpoint ---
-        const testCreateCfgPath = 'client:test:endpoints:create:publisher:instances:0';
-        instance = cfg.get(testCreateCfgPath);
-        const testCreateF = client.makeEndpoint('create', instance);
+        // const testCreateCfgPath = 'client:test:endpoints:create:publisher:instances:0';
+        // instance = cfg.get(testCreateCfgPath);
+        // const testCreateF = client.makeEndpoint('create', instance);
 
         let msg: any = {
           testKey: 'testVal'
         };
         const msgBuffer: any = Buffer.from(JSON.stringify(msg));
-        result = await testCreateF(
+        result = await client.test.create(
           {
             items: [{
               value: 'helloWorld123',
@@ -206,10 +204,10 @@ describe('microservice.Server', () => {
         should.exist(result.data.items);
 
         // --- 'throw' endpoint ---
-        const throwCfgPath = 'client:test:publisher:instances:0';
-        instance = cfg.get(throwCfgPath);
-        const throwF = client.makeEndpoint('throw', instance);
-        result = await throwF({
+        // const throwCfgPath = 'client:test:publisher:instances:0';
+        // instance = cfg.get(throwCfgPath);
+        // const throwF = client.makeEndpoint('throw', instance);
+        result = await client.test.throw({
           value: 'hello',
         },
         {
@@ -222,10 +220,10 @@ describe('microservice.Server', () => {
         should.not.exist(result.data);
 
         // --- 'notFound' endpoint ---
-        const notFoundCfgPath = 'client:test:publisher:instances:0';
-        instance = cfg.get(notFoundCfgPath);
-        const notFound = client.makeEndpoint('notFound', instance);
-        result = await notFound({
+        // const notFoundCfgPath = 'client:test:publisher:instances:0';
+        // instance = cfg.get(notFoundCfgPath);
+        // const notFound = client.makeEndpoint('notFound', instance);
+        result = await client.test.notFound({
           value: 'hello',
         },
         {
@@ -238,11 +236,11 @@ describe('microservice.Server', () => {
         should.not.exist(result.data);
 
         // --- 'notImplemented' endpoint ---
-        const nIC = 'client:test:endpoints:notImplemented:publisher:instances:0';
-        instance = cfg.get(nIC);
-        const notImplementedF = client.makeEndpoint('notImplemented',
-          instance);
-        result = await notImplementedF({
+        // const nIC = 'client:test:endpoints:notImplemented:publisher:instances:0';
+        // instance = cfg.get(nIC);
+        // const notImplementedF = client.makeEndpoint('notImplemented',
+        //   instance);
+        result = await client.test.notImplemented({
           value: 'hello',
         },
         {
@@ -253,76 +251,87 @@ describe('microservice.Server', () => {
         result.error.message.should.equal('unimplemented');
         should.not.exist(result.data);
 
-        grpcConfig = cfg.get('client:stream:transports:grpc');
-        await client.end();
-        client = new grpcClient(grpcConfig, logger);
-
         // 'requestStream'
-        const requestStreamCfgPath: String = 'client:stream:publisher:instances:0';
-        instance = cfg.get(requestStreamCfgPath);
-        const requestStream = client.makeEndpoint('requestStream', instance);
-        let call = await requestStream();
-        for (let i = 0; i < 3; i += 1) {
-          await call.write({ value: 'ping' });
-        }
-        result = await call.end();
-        // Promisify the callback to get response
-        result = await new Promise((resolve, reject) => {
-          result((err, response) => {
-            if (err) {
-              reject(err);
-            }
-            resolve(response);
-          });
+        result = await client.stream.requestStream({
+          value: 'ping'
         });
+        // const requestStreamCfgPath: String = 'client:stream:publisher:instances:0';
+        // instance = cfg.get(requestStreamCfgPath);
+        // const requestStream = client.makeEndpoint('requestStream', instance);
+        // let call = await requestStream();
+        // for (let i = 0; i < 3; i += 1) {
+        //   await call.write({ value: 'ping' });
+        // }
+        // result = await call.end();
+        // // Promisify the callback to get response
+        // result = await new Promise((resolve, reject) => {
+        //   result((err, response) => {
+        //     if (err) {
+        //       reject(err);
+        //     }
+        //     resolve(response);
+        //   });
+        // });
         should.ifError(result.error);
         should.exist(result);
         should.exist(result.result);
         result.result.should.be.equal('pong');
 
         // 'responseStream'
-        const responseStreamCfgPath = 'client:stream:publisher:instances:0';
-        instance = cfg.get(responseStreamCfgPath);
-        const responseStream = client.makeEndpoint('responseStream', instance);
-        call = await responseStream({ value: 'ping' });
-        const clientRespStream = call.getResponseStream();
-        await new Promise((resolve, reject) => {
-          clientRespStream.on('data', (data) => {
-            should.ifError(data.error);
-            should.exist(data);
-            should.exist(data.result);
-            const response = ['0','1','2'];
-            if (!response.includes(data.result)) {
-              reject();
-            }
-            resolve(data);
-          });
+        result = await client.stream.responseStream({
+          value: 'ping'
         });
+        result.subscribe(data => {
+          console.log('Data response stream is...', data);
+        });
+        // const responseStreamCfgPath = 'client:stream:publisher:instances:0';
+        // instance = cfg.get(responseStreamCfgPath);
+        // const responseStream = client.makeEndpoint('responseStream', instance);
+        // call = await responseStream({ value: 'ping' });
+        // const clientRespStream = call.getResponseStream();
+        // await new Promise((resolve, reject) => {
+        //   clientRespStream.on('data', (data) => {
+        //     should.ifError(data.error);
+        //     should.exist(data);
+        //     should.exist(data.result);
+        //     const response = ['0','1','2'];
+        //     if (!response.includes(data.result)) {
+        //       reject();
+        //     }
+        //     resolve(data);
+        //   });
+        // });
 
         // 'biStream'
-        const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
-        instance = cfg.get(biStreamCfgPath);
-        const biStream = client.makeEndpoint('biStream', instance);
-        call = await biStream();
-        for (let i = 0; i < 3; i += 1) {
-          await call.write({ value: 'ping' });
-        }
-        for (let i = 0; i < 3; i += 1) {
-          result = await call.read();
-          result = await new Promise((resolve, reject) => {
-            result((err, response) => {
-              if (err) {
-                reject(err);
-              }
-              resolve(response);
-            });
-          });
-          should.ifError(result.error);
-          should.exist(result);
-          should.exist(result.result);
-          result.result.should.be.equal('pong');
-        }
-        await call.end();
+        result = await client.stream.biStream({
+          value: 'ping'
+        });
+        result.subscribe(data => {
+          console.log('Data Bi directional stream is...', data);
+        });
+        // const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
+        // instance = cfg.get(biStreamCfgPath);
+        // const biStream = client.makeEndpoint('biStream', instance);
+        // call = await biStream();
+        // for (let i = 0; i < 3; i += 1) {
+        //   await call.write({ value: 'ping' });
+        // }
+        // for (let i = 0; i < 3; i += 1) {
+        //   result = await call.read();
+        //   result = await new Promise((resolve, reject) => {
+        //     result((err, response) => {
+        //       if (err) {
+        //         reject(err);
+        //       }
+        //       resolve(response);
+        //     });
+        //   });
+        //   should.ifError(result.error);
+        //   should.exist(result);
+        //   should.exist(result.result);
+        //   result.result.should.be.equal('pong');
+        // }
+        // await call.end();
         await client.end();
       });
   });
@@ -334,10 +343,9 @@ describe('microservice.Server', () => {
       const clients = [];
       const cfg = await chassis.config.get();
       for (let i = 0; i < numClients; i += 1) {
-        const conn = new Client(cfg.get('client:test'));
-        conns.push(conn);
-        const c = await conn.connect();
-        clients.push(c);
+        const conn = new GrpcClient(cfg.get('client:test'));
+        conns.push(conn.test);
+        clients.push(conn.test);
       }
       const reqs = [];
       for (let i = 0; i < numClients; i += 1) {
@@ -374,12 +382,8 @@ describe('microservice.Client', () => {
       async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
-        const logger = createLogger(cfg.get('logger'));
-        client = new Client(cfg.get('client:test'), logger);
+        client = new GrpcClient(cfg.get('client:test'));
         should.exist(client);
-        should.exist(client.logger);
-        should.exist(client.middleware);
-        client.middleware.should.have.iterable();
       });
     it('should throw an error when providing no configuration',
       async () => {
@@ -387,24 +391,16 @@ describe('microservice.Client', () => {
         const cfg = await chassis.config.get();
         cfg.set('client:test', null);
         (() => {
-          client = new Client(null, null);
+          client = new GrpcClient(null);
         }).should.throw('missing config argument');
       });
     it('should throw an error when providing with invalid configuration',
       async () => {
         await config.load(process.cwd() + '/test');
         let cfg = await config.get();
-        cfg.set('client:test:endpoints', null);
         (() => {
-          client = new Client(cfg.get('client:test'));
+          client = new GrpcClient(cfg.get('client:testInvalid'));
         }).should.throw('no endpoints configured');
-
-        await config.load(process.cwd() + '/test');
-        cfg = await config.get();
-        cfg.set('client:test:transports', null);
-        (() => {
-          client = new Client(cfg.get('client:test'));
-        }).should.throw('no transports configured');
       });
   });
   context('with running server', () => {
