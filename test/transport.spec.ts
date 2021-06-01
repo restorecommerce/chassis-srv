@@ -1,8 +1,6 @@
 import * as should from 'should';
-import * as co from 'co';
 import { createLogger } from '@restorecommerce/logger';
-import * as gRPCClient from '@restorecommerce/grpc-client';
-const grpcClient = gRPCClient.grpcClient;
+import { GrpcClient } from '@restorecommerce/grpc-client';
 import { grpcServer } from '../src';
 import * as sleep from 'sleep';
 /* global describe it before after*/
@@ -10,13 +8,19 @@ import * as sleep from 'sleep';
 const providers = [{
   config: {
     client: {
-      name: 'grpcTest',
-      provider: 'grpc',
-      service: 'test.Test',
-      protos: ['test/test.proto'],
-      protoRoot: 'node_modules/@restorecommerce/protos/',
-      addr: 'grpc://localhost:50060',
-      timeout: 100,
+      test: {
+        address: 'localhost:50060',
+        proto: {
+          protoRoot: 'node_modules/@restorecommerce/protos/',
+          protoPath: 'test/test.proto',
+          services: {
+            test: {
+              packageName: 'test',
+              serviceName: 'Test'
+            }
+          }
+        }
+      }
     },
     server: {
       name: 'grpcTest',
@@ -31,14 +35,14 @@ const providers = [{
     logger: {
       console: {
         handleExceptions: false,
-        level: "error",
+        level: 'crit',
         colorize: true,
         prettyPrint: true
       }
     }
   },
   name: 'grpc',
-  Client: grpcClient,
+  Client: GrpcClient,
   Server: grpcServer,
 }];
 
@@ -47,6 +51,7 @@ providers.forEach((provider) => {
     describe('the server', () => {
       const Server = provider.Server;
       let server;
+      /* eslint-disable */
       const service = {
         test(request, context) { },
       };
@@ -85,10 +90,9 @@ providers.forEach((provider) => {
       const Client = provider.Client;
       let client;
       const methodName = 'test';
-      const methodNameFail = 'this_method_does_not_exist';
-      const instance = provider.config.client.addr;
       let endpoint;
       const response = {
+        status: [],
         result: 'abcd',
       };
       const request = {
@@ -96,22 +100,21 @@ providers.forEach((provider) => {
       };
       it('should conform to a client provider', () => {
         should.exist(Client.constructor);
-        should.exist(Client.prototype.makeEndpoint);
       });
       describe('constructing the client provider with proper config',
         () => {
           it('should result in a client transport provider', () => {
             const logger = createLogger(provider.config.logger);
-            client = new Client(provider.config.client, logger);
+            client = new GrpcClient(provider.config.client.test, logger);
             should.exist(client);
           });
         });
       describe('makeEndpoint', () => {
         it('should fail when creating an undefined protobuf method',
           async () => {
-            const errMessage = 'conn has no method this_method_does_not_exist';
+            const errMessage = 'client.test.methodNameFail is not a function';
             try {
-              endpoint = await client.makeEndpoint(methodNameFail, instance);
+              endpoint = await client.test.methodNameFail({});
             } catch (err) {
               should.exist(err);
               err.message.should.equal(errMessage);
@@ -121,10 +124,9 @@ providers.forEach((provider) => {
         describe('without running server', function runWithoutServer() {
           this.slow(200);
           it('should fail', async () => {
-            endpoint = client.makeEndpoint(methodName, instance);
-            const result = await endpoint();
-            result.error.should.be.Error();
-            result.error.details.should.containEql('14 UNAVAILABLE: failed to connect to all addresses');
+            endpoint = client.test[methodName];
+            const result = await endpoint({});
+            result.status.error.message.should.equal('14 UNAVAILABLE: No connection established');
           });
         });
         describe('with running server', () => {
@@ -152,41 +154,34 @@ providers.forEach((provider) => {
             await server.end();
           });
           it('should create an endpoint', () => {
-            endpoint = client.makeEndpoint(methodName, instance);
+            endpoint = client.test[methodName];
             should.exist(endpoint);
           });
           it('should succeed when calling with empty context',
             async () => {
               const result = await endpoint(request, {});
-              should.ifError(result.error);
-              should.deepEqual(response, result.data);
+              should.deepEqual(response, result);
             });
           it('should succeed when calling without context',
             async () => {
               const result = await endpoint(request);
-              should.ifError(result.error);
-              should.deepEqual(response, result.data);
+              should.deepEqual(response, result);
             });
           it('should return an error when calling an unimplemented method',
             async () => {
-              const endpointThrow = client.makeEndpoint('notImplemented', instance);
+              const endpointThrow = client.test['notImplemented'];
               should.exist(endpoint);
               const result = await endpointThrow(request);
-              should.not.exist(result.data);
-              should.exist(result.error);
-              should.equal(result.error.message, 'unimplemented');
+              result.status.error.code.should.equal(12);
+              result.status.error.message.should.equal('12 UNIMPLEMENTED: The server does not implement this method');
             });
           it('should return an error when calling failing endpoint',
             async () => {
-              const endpointThrow = client.makeEndpoint('throw', instance);
+              const endpointThrow = client.test['throw'];
               should.exist(endpoint);
               const result = await endpointThrow(request);
-              should.not.exist(result.data);
-              should.exist(result.error);
-              should.exist(result.error.message);
-              should.exist(result.error.details);
-              should.equal(result.error.message, 'internal');
-              result.error.details.should.containEql(errMessage);
+              result.status.error.code.should.equal(13);
+              result.status.error.message.should.equal('13 INTERNAL: forced error');
             });
         });
       });
