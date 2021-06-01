@@ -149,12 +149,24 @@ export class CommandInterface implements ICommandInterface {
    */
   async command(call, context?: any): Promise<any> {
     if (_.isNil(call.request) && _.isNil(call.name)) {
-      throw new errors.InvalidArgument('No command name provided');
+      const result = {
+        error: {
+          code: 400,
+          message: 'No command name provided',
+        }
+      };
+      return this.encodeMsg(result);
     }
     const name = call.name || call.request.name;
 
     if (_.isNil(this.commands[name])) {
-      throw new errors.InvalidArgument(`Command name ${name} does not exist`);
+      const result = {
+        error: {
+          code: 400,
+          message: `Command name ${name} does not exist`
+        }
+      };
+      return this.encodeMsg(result);
     }
     const payload = call.payload ? this.decodeMsg(call.payload) :
       (call.request.payload ? this.decodeMsg(call.request.payload) : null);
@@ -171,7 +183,12 @@ export class CommandInterface implements ICommandInterface {
    */
   reconfigure(): any {
     this.logger.info('reconfigure is not implemented');
-    throw new errors.Unimplemented('reconfigure is not implemented');
+    return {
+      error: {
+        code: 501,
+        message: 'reconfigure is not implemented',
+      }
+    };
   }
 
   /**
@@ -182,7 +199,13 @@ export class CommandInterface implements ICommandInterface {
    */
   async restore(payload: any): Promise<any> {
     if (_.isEmpty(payload) || _.isEmpty(payload.data)) {
-      throw new errors.InvalidArgument('Invalid payload for restore command');
+      // throw new errors.InvalidArgument('Invalid payload for restore command');
+      return {
+        error: {
+          code: 400,
+          message: 'Invalid payload for restore command'
+        }
+      };
     }
 
     const restoreData: RestoreData[] = payload.data || [];
@@ -192,7 +215,12 @@ export class CommandInterface implements ICommandInterface {
     const kafkaEventsCfg = this.config.get('events:kafka');
     const kafkaCfg = this.config.get('events:kafka:topics');
     if (_.isNil(kafkaCfg) || kafkaCfg.length == 0) {
-      throw new errors.Internal('Kafka topics config not available');
+      return {
+        error: {
+          code: 500,
+          message: 'Kafka topics config not available'
+        }
+      };
     }
 
     const topicLabels = _.keys(kafkaCfg).filter((elem, index) => {
@@ -466,7 +494,9 @@ export class CommandInterface implements ICommandInterface {
         error: errorMsg
       };
     }
-    return {};
+    return {
+      status: 'Reset concluded successfully'
+    };
   }
 
   /**
@@ -476,7 +506,12 @@ export class CommandInterface implements ICommandInterface {
    */
   async check(payload: any): Promise<any> {
     if (_.isNil(payload)) {
-      throw new errors.InvalidArgument('Invalid payload for restore command');
+      return {
+        error: {
+          code: 400,
+          message: 'Invalid payload for restore command'
+        }
+      };
     }
     const serviceName = payload.service;
 
@@ -496,7 +531,10 @@ export class CommandInterface implements ICommandInterface {
       const errorMsg = 'Service ' + serviceName + ' does not exist';
       this.logger.warn(errorMsg);
       return {
-        error: errorMsg
+        error: {
+          code: 404,
+          message: errorMsg
+        }
       };
     }
     let status = ServingStatus.UNKNOWN;
@@ -538,7 +576,12 @@ export class CommandInterface implements ICommandInterface {
    */
   async configUpdate(payload: any): Promise<any> {
     if (_.isNil(payload)) {
-      throw new errors.InvalidArgument('Invalid payload for configUpdate command');
+      return {
+        error: {
+          code: 400,
+          message: 'Invalid payload for configUpdate command'
+        }
+      };
     }
     let response;
     try {
@@ -566,7 +609,12 @@ export class CommandInterface implements ICommandInterface {
    */
   async setApiKey(payload: any): Promise<any> {
     if (_.isNil(payload)) {
-      throw new errors.InvalidArgument('Invalid payload for setApiKey command');
+      return {
+        error: {
+          code: 400,
+          message: 'Invalid payload for setApiKey command'
+        }
+      };
     }
     let response;
     try {

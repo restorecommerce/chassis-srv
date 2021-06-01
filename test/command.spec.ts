@@ -63,7 +63,6 @@ describe('CommandInterfaceService', () => {
     events = new Events(cfg.get('events:kafka'), logger);
     await events.start();
 
-    const topics = cfg.get('events:kafka:topics');
     testTopic = await events.topic(cfg.get('events:kafka:topics:test.resource:topic'));
     commandTopic = await events.topic(cfg.get('events:kafka:topics:command:topic'));
     // subscribe all response events
@@ -142,7 +141,8 @@ describe('CommandInterfaceService', () => {
       data = decodeMsg(resp);
       should.not.exist(resp.error); // no exception thrown
       should.exist(data.error);  // tolerant error handling
-      data.error.should.equal('Service does_not_exist does not exist');
+      data.error.code.should.equal(404);
+      data.error.message.should.equal('Service does_not_exist does not exist');
       // should check all binded services if no service is specified
       cmdPayload = encodeMsg({
         service: ''
@@ -165,7 +165,10 @@ describe('CommandInterfaceService', () => {
       const resp = await service.command({
         name: 'reconfigure'
       });
-      should.exist(resp.error);
+      const decodedResp = decodeMsg(resp);
+      should.exist(decodedResp.error);
+      decodedResp.error.code.should.equal(501);
+      decodedResp.error.message.should.equal('reconfigure is not implemented');
     });
   });
   describe('reset', () => {
@@ -191,8 +194,10 @@ describe('CommandInterfaceService', () => {
       });
       await commandTopic.$wait(offset);
 
-      should.not.exist(resp.error);
-      should.exist(resp.data);
+      const decodedResp = decodeMsg(resp);
+      should.not.exist(decodedResp.error);
+      should.exist(decodedResp.status);
+      decodedResp.status.should.equal('Reset concluded successfully');
 
       const result = await db.findByID('tests', docID);
       result.should.be.length(0);
@@ -273,9 +278,7 @@ describe('CommandInterfaceService', () => {
         name: 'version',
       });
       await commandTopic.$wait(offset);
-      should.not.exist(resp.error);
-      should.exist(resp.data);
-      const data = decodeMsg(resp.data);
+      const data = decodeMsg(resp);
       should.exist(data.version);
       data.version.should.equal(process.env.npm_package_version);
       should.exist(data.nodejs);
@@ -304,9 +307,7 @@ describe('CommandInterfaceService', () => {
         payload: apiKeyPayload
       });
       await commandTopic.$wait(offset);
-      should.not.exist(resp.error);
-      should.exist(resp.data);
-      const data = decodeMsg(resp.data);
+      const data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('ApiKey set successfully');
     });
@@ -332,9 +333,7 @@ describe('CommandInterfaceService', () => {
         payload: configPayload
       });
       await commandTopic.$wait(offset);
-      should.not.exist(resp.error);
-      should.exist(resp.data);
-      const data = decodeMsg(resp.data);
+      const data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('Configuration updated successfully');
     });
@@ -372,9 +371,7 @@ describe('CommandInterfaceService', () => {
         resultKeys.length.should.be.equal(1);
       });
       await commandTopic.$wait(offset);
-      should.not.exist(resp.error);
-      should.exist(resp.data);
-      const data = decodeMsg(resp.data);
+      const data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('Successfully flushed cache pattern');
     });
@@ -399,9 +396,7 @@ describe('CommandInterfaceService', () => {
       stream.on('data', (resultKeys) => {
         resultKeys.length.should.be.equal(0);
       });
-      should.not.exist(resp.error);
-      should.exist(resp.data);
-      const data = decodeMsg(resp.data);
+      const data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('Successfully flushed cache with DB index 3');
     });
