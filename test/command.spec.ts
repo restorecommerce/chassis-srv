@@ -86,7 +86,7 @@ describe('CommandInterfaceService', () => {
     await server.bind('commandinterface', cis);
     await server.start();
 
-    const client = new GrpcClient(cfg.get('client:commandinterface'));
+    const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
     service = client.commandinterface;
   });
   after(async function teardown() {
