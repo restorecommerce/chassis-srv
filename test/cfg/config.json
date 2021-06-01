@@ -107,7 +107,7 @@
         "services": {
           "reflection": {
             "packageName": "grpc.reflection.v1alpha",
-            "serviceName": "grpc.reflection.v1alpha.ServerReflection"
+            "serviceName": "ServerReflection"
           }
         }
       }
