@@ -5,6 +5,7 @@ import * as sleep from 'sleep';
 import * as chassis from '../src';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { GrpcClient } from '@restorecommerce/grpc-client';
+import { Observable } from 'rxjs';
 
 const config = chassis.config;
 const Server = chassis.Server;
@@ -12,6 +13,7 @@ const grpc = chassis.grpc;
 const errors = chassis.errors;
 
 /* global describe context it before after*/
+/* eslint-disable */ 
 const service = {
   test(call, context) {
     const request = call.request;
@@ -25,10 +27,20 @@ const service = {
     return request;
   },
   throw(request, context) {
-    throw new Error('forced error');
+    return {
+      status: {
+        code: 500,
+        message: 'forced error'
+      }
+    }
   },
   notFound(request, context) {
-    throw new errors.NotFound('test not found');
+    return {
+      status: {
+        code: 404,
+        message: 'test not found'
+      }
+    }
   },
   notImplemented: null,
   async biStream(call, context) {
@@ -85,6 +97,20 @@ const service = {
     await call.end();
   },
 };
+
+const chunkSize = 1 << 10;
+
+const bufferToObservable = (buffer: Buffer): any => {
+  return new Observable((subscriber) => {
+    for (let i = 0; i < Math.ceil(buffer.length / chunkSize); i++) {
+      subscriber.next({
+        message: buffer.slice(i * chunkSize, (i + 1) * chunkSize)
+      })
+    }
+    subscriber.complete();
+  });
+}
+
 let cfg;
 describe('microservice.Server', () => {
   let server: chassis.Server;
@@ -160,18 +186,10 @@ describe('microservice.Server', () => {
         await server.start();
         sleep.sleep(1);
         serving.should.equal(true);
-        let grpcConfig = cfg.get('client:test:transports:grpc');
-        should.exist(grpcConfig);
-        should.exist(grpcConfig.service);
-        const logger = createLogger(cfg.get('logger'));
-        let client = new GrpcClient(grpcConfig);
-        let instance: string;
+        let client = new GrpcClient(cfg.get('client:test'));
         let result;
         should.exist(client);
         // --- 'test' endpoint ---
-        // const testCfgPath = 'client:test:endpoints:test:publisher:instances:0';
-        // instance = cfg.get(testCfgPath);
-        // const testF = client.makeEndpoint('test', instance);
         result = await client.test.test({
           value: 'hello',
         },
@@ -179,15 +197,10 @@ describe('microservice.Server', () => {
           test: true,
         });
         should.ifError(result.error);
-        should.exist(result.data);
-        should.exist(result.data.result);
-        result.data.result.should.be.equal('welcome');
+        should.exist(result.result);
+        result.result.should.be.equal('welcome');
 
         // --- 'testCreate' endpoint ---
-        // const testCreateCfgPath = 'client:test:endpoints:create:publisher:instances:0';
-        // instance = cfg.get(testCreateCfgPath);
-        // const testCreateF = client.makeEndpoint('create', instance);
-
         let msg: any = {
           testKey: 'testVal'
         };
@@ -200,139 +213,73 @@ describe('microservice.Server', () => {
             }]
           });
         should.ifError(result.error);
-        should.exist(result.data);
-        should.exist(result.data.items);
+        should.exist(result.items);
 
         // --- 'throw' endpoint ---
-        // const throwCfgPath = 'client:test:publisher:instances:0';
-        // instance = cfg.get(throwCfgPath);
-        // const throwF = client.makeEndpoint('throw', instance);
         result = await client.test.throw({
           value: 'hello',
         },
         {
           test: true,
         });
-        should.exist(result.error);
-        result.error.should.be.Error();
-        result.error.message.should.equal('internal');
-        result.error.details.should.containEql('forced error');
-        should.not.exist(result.data);
+        should.exist(result.status);
+        result.status[0].code.should.equal(500);
+        result.status[0].message.should.equal('forced error');
+        result.result.should.be.empty();
 
         // --- 'notFound' endpoint ---
-        // const notFoundCfgPath = 'client:test:publisher:instances:0';
-        // instance = cfg.get(notFoundCfgPath);
-        // const notFound = client.makeEndpoint('notFound', instance);
         result = await client.test.notFound({
           value: 'hello',
         },
         {
           test: true,
         });
-        should.exist(result.error);
-        result.error.should.be.Error();
-        result.error.message.should.equal('not found');
-        result.error.details.should.containEql('test not found');
-        should.not.exist(result.data);
+        should.exist(result.status);
+        result.status[0].code.should.equal(404);
+        result.status[0].message.should.equal('test not found');
+        result.result.should.be.empty();
 
         // --- 'notImplemented' endpoint ---
-        // const nIC = 'client:test:endpoints:notImplemented:publisher:instances:0';
-        // instance = cfg.get(nIC);
-        // const notImplementedF = client.makeEndpoint('notImplemented',
-        //   instance);
-        result = await client.test.notImplemented({
-          value: 'hello',
-        },
-        {
-          test: true,
-        });
-        should.exist(result.error);
-        result.error.should.be.Error();
-        result.error.message.should.equal('unimplemented');
-        should.not.exist(result.data);
+        try {
+          result = await client.test.notImplemented({
+            value: 'hello',
+          },
+          {
+            test: true,
+          });
+        } catch(err) {
+          err.message.should.equal('12 UNIMPLEMENTED: The server does not implement this method');
+        }
 
         // 'requestStream'
-        result = await client.stream.requestStream({
-          value: 'ping'
-        });
-        // const requestStreamCfgPath: String = 'client:stream:publisher:instances:0';
-        // instance = cfg.get(requestStreamCfgPath);
-        // const requestStream = client.makeEndpoint('requestStream', instance);
-        // let call = await requestStream();
-        // for (let i = 0; i < 3; i += 1) {
-        //   await call.write({ value: 'ping' });
-        // }
-        // result = await call.end();
-        // // Promisify the callback to get response
-        // result = await new Promise((resolve, reject) => {
-        //   result((err, response) => {
-        //     if (err) {
-        //       reject(err);
-        //     }
-        //     resolve(response);
-        //   });
-        // });
+        const streamClient = new GrpcClient(cfg.get('client:stream'));
+        let inputBuffer = Buffer.from(JSON.stringify({ value: 'ping'}));
+        result = await streamClient.stream.requestStream(bufferToObservable(inputBuffer));
         should.ifError(result.error);
         should.exist(result);
         should.exist(result.result);
         result.result.should.be.equal('pong');
 
         // 'responseStream'
-        result = await client.stream.responseStream({
+        result = await streamClient.stream.responseStream({
           value: 'ping'
         });
-        result.subscribe(data => {
-          console.log('Data response stream is...', data);
+        let concatDataResp = [];
+        let actualResp: any = await new Promise((resolve, reject) => {
+          result.subscribe(data => {
+            concatDataResp.push(data.result);
+            if (data.result === '2') {
+              resolve(concatDataResp);
+            }
+          });
         });
-        // const responseStreamCfgPath = 'client:stream:publisher:instances:0';
-        // instance = cfg.get(responseStreamCfgPath);
-        // const responseStream = client.makeEndpoint('responseStream', instance);
-        // call = await responseStream({ value: 'ping' });
-        // const clientRespStream = call.getResponseStream();
-        // await new Promise((resolve, reject) => {
-        //   clientRespStream.on('data', (data) => {
-        //     should.ifError(data.error);
-        //     should.exist(data);
-        //     should.exist(data.result);
-        //     const response = ['0','1','2'];
-        //     if (!response.includes(data.result)) {
-        //       reject();
-        //     }
-        //     resolve(data);
-        //   });
-        // });
+        actualResp.should.deepEqual(['0','1','2' ]);
 
         // 'biStream'
-        result = await client.stream.biStream({
-          value: 'ping'
-        });
+        result = await streamClient.stream.biStream(bufferToObservable(inputBuffer));
         result.subscribe(data => {
-          console.log('Data Bi directional stream is...', data);
+          data.result.should.be.equal('pong');
         });
-        // const biStreamCfgPath: String = 'client:stream:publisher:instances:0';
-        // instance = cfg.get(biStreamCfgPath);
-        // const biStream = client.makeEndpoint('biStream', instance);
-        // call = await biStream();
-        // for (let i = 0; i < 3; i += 1) {
-        //   await call.write({ value: 'ping' });
-        // }
-        // for (let i = 0; i < 3; i += 1) {
-        //   result = await call.read();
-        //   result = await new Promise((resolve, reject) => {
-        //     result((err, response) => {
-        //       if (err) {
-        //         reject(err);
-        //       }
-        //       resolve(response);
-        //     });
-        //   });
-        //   should.ifError(result.error);
-        //   should.exist(result);
-        //   should.exist(result.result);
-        //   result.result.should.be.equal('pong');
-        // }
-        // await call.end();
-        await client.end();
       });
   });
 
@@ -357,12 +304,8 @@ describe('microservice.Server', () => {
       for (let i = 0; i < resps.length; i += 1) {
         const result = await resps[i];
         should.ifError(result.error);
-        should.exist(result.data);
-        should.exist(result.data.result);
-        result.data.result.should.be.equal('welcome');
-      }
-      for (let i = 0; i < numClients; i += 1) {
-        await conns[i].end();
+        should.exist(result.result);
+        result.result.should.be.equal('welcome');
       }
     });
   });
