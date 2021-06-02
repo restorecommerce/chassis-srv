@@ -1,5 +1,7 @@
 import * as path from 'path';
-import * as grpc from 'grpc';
+// import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
+import * as protoLoader from '@grpc/proto-loader';
 import * as _ from 'lodash';
 import * as errors from '../../../errors';
 import { Logger } from 'winston';
@@ -245,10 +247,12 @@ export class Server {
 
     const proto = [];
     for (let i = 0; i < protos.length; i++) {
-      const filePath = { root: protoRoot, file: protos[i] };
-      this.proto = grpc.load(filePath, 'proto', {
-        longsAsStrings: false
-      });
+      const filePath = path.resolve(protoRoot, protos[i]);
+      const packageDefinition = protoLoader.loadSync(filePath, { includeDirs: [protoRoot], keepCase: true });
+      // this.proto = grpc.load(filePath, 'proto', {
+      //   longsAsStrings: false
+      // });
+      this.proto = grpc.loadPackageDefinition(packageDefinition);
       proto[i] = this.proto;
     }
 
@@ -313,17 +317,27 @@ export class Server {
   /**
    * start launches the gRPC server and provides the service endpoints.
    */
-  start(): void {
+  async start(): Promise<void> {
     if (!this.isBound) {
-      let credentials = grpc.ServerCredentials.createInsecure();
+      let credentials: any = grpc.ServerCredentials.createInsecure();
       if (_.has(this.config, 'credentials.ssl')) {
         credentials = grpc.credentials.createSsl(
           this.config.credentials.ssl.certs);
       }
-      this.server.bind(this.config.addr, credentials);
+      new Promise((resolve, reject) => {
+        this.server.bindAsync(this.config.addr, credentials, (err, addr) => {
+          if (err) {
+            this.logger.error('Error starting server', { message: err.message });
+            this.logger.error('Error stack', { stack: err.stack });
+            throw err;
+          } else {
+            resolve(this.server.start());
+          }
+        });
+      });
       this.isBound = true;
     }
-    this.server.start();
+    // this.server.start();
   }
 
   /**

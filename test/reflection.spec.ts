@@ -7,6 +7,7 @@ import { Server } from '../src/microservice/server';
 import { GrpcClient } from '@restorecommerce/grpc-client';
 import * as sleep from 'sleep';
 import { Observable } from 'rxjs';
+import { resolve } from 'dns';
 
 
 /* global describe it before after*/
@@ -75,12 +76,15 @@ describe('binding the grpc.ServerReflection service', () => {
           let buff = Buffer.from('test.proto');
           let result = await reflectionService.serverReflectionInfo(bufferToObservable(buff, 'file_by_filename'));
           let response;
-          result.subscribe(data => {
-            response = data;
-          }, undefined, () => {
-            should.exist(response.file_descriptor_response);
-            should.exist(response.file_descriptor_response.file_descriptor_proto);
-            response.file_descriptor_response.file_descriptor_proto.should.be.length(1);
+          await new Promise((resolve, reject) => {
+            result.subscribe(data => {
+              response = data;
+            }, undefined, () => {
+              should.exist(response.file_descriptor_response);
+              should.exist(response.file_descriptor_response.file_descriptor_proto);
+              response.file_descriptor_response.file_descriptor_proto.should.be.length(1);
+              resolve(response);
+            });
           });
         });
     });
@@ -90,17 +94,20 @@ describe('binding the grpc.ServerReflection service', () => {
           let buff = Buffer.from('test.Test');
           let result = await reflectionService.serverReflectionInfo(bufferToObservable(buff, 'file_containing_symbol'));
           let resp;
-          result.subscribe(data => {
-            resp = data;
-          }, undefined, () => {
-            should.exist(resp);
-            should.exist(resp.file_descriptor_response);
-            should.exist(resp.file_descriptor_response.file_descriptor_proto);
-            resp.file_descriptor_response.file_descriptor_proto.should.be.length(1);
+          await new Promise((resolve, reject) => {
+            result.subscribe(data => {
+              resp = data;
+            }, undefined, () => {
+              should.exist(resp);
+              should.exist(resp.file_descriptor_response);
+              should.exist(resp.file_descriptor_response.file_descriptor_proto);
+              resp.file_descriptor_response.file_descriptor_proto.should.be.length(1);
+              resolve(resp);
+            });
           });
         });
     });
-    // TODO - Error: .grpc.reflection.v1alpha.ServerReflectionResponse#originalRequest is not a field: undefined
+    // TODO - data not received on file_containing extension
     // describe('with fileContainingExtension request', () => {
     //   it('should return file extension response',
     //     async () => {
@@ -110,13 +117,16 @@ describe('binding the grpc.ServerReflection service', () => {
     //       }));
     //       let result = await reflectionService.serverReflectionInfo(bufferToObservable(buff, 'file_containing_extension'));
     //       let resp;
-    //       result.subscribe(data => {
-    //         resp = data;
-    //       }, undefined, () => {
-    //         // should.exist(resp);
-    //         // should.exist(resp.file_descriptor_response);
-    //         // should.exist(resp.file_descriptor_response.file_descriptor_proto);
-    //         // resp.file_descriptor_response.file_descriptor_proto.should.be.length(1);
+    //       await new Promise((resolve, reject) => {
+    //         result.subscribe(data => {
+    //           resp = data;
+    //         }, undefined, () => {
+    //           should.exist(resp);
+    //           should.exist(resp.file_descriptor_response);
+    //           should.exist(resp.file_descriptor_response.file_descriptor_proto);
+    //           resp.file_descriptor_response.file_descriptor_proto.should.be.length(1);
+    //           resolve(resp);
+    //         });
     //       });
     //     });
     // });
@@ -126,17 +136,20 @@ describe('binding the grpc.ServerReflection service', () => {
           let buff = Buffer.from('test.ExtendMe');
           let result = await reflectionService.serverReflectionInfo(bufferToObservable(buff, 'all_extension_numbers_of_type'));
           let resp;
-          result.subscribe(data => {
-            resp = data;
-          }, undefined, () => {
-            should.exist(resp);
-            should.exist(resp.all_extension_numbers_response);
-            should.exist(resp.all_extension_numbers_response.base_type_name);
-            // The response from the Reflection service for full name includes a leading dot.
-            resp.all_extension_numbers_response.base_type_name.should.equal('.test.ExtendMe');
-            should.exist(resp.all_extension_numbers_response.extension_number);
-            resp.all_extension_numbers_response.extension_number.should.be.length(1);
-            resp.all_extension_numbers_response.extension_number[0].should.equal(126);
+          await new Promise((resolve, reject) => {
+            result.subscribe(data => {
+              resp = data;
+            }, undefined, () => {
+              should.exist(resp);
+              should.exist(resp.all_extension_numbers_response);
+              should.exist(resp.all_extension_numbers_response.base_type_name);
+              // The response from the Reflection service for full name includes a leading dot.
+              resp.all_extension_numbers_response.base_type_name.should.equal('.test.ExtendMe');
+              should.exist(resp.all_extension_numbers_response.extension_number);
+              resp.all_extension_numbers_response.extension_number.should.be.length(1);
+              resp.all_extension_numbers_response.extension_number[0].should.equal(126);
+              resolve(resp);
+            });
           });
         });
     });
@@ -148,14 +161,17 @@ describe('binding the grpc.ServerReflection service', () => {
           let resp;
           const cfg = await chassis.config.get();
           const services = cfg.get('server:services');
-          result.subscribe(data => {
-            resp = data;
-          }, undefined, () => {
-            should.exist(resp);
-            should.exist(resp.list_services_response);
-            should.exist(resp.list_services_response.service);
-            // since the cfg includes 'not_bound' service which is not implemented
-            resp.list_services_response.service.should.be.length(_.size(services) - 1);
+          await new Promise((resolve, reject) => {
+            result.subscribe(data => {
+              resp = data;
+            }, undefined, () => {
+              should.exist(resp);
+              should.exist(resp.list_services_response);
+              should.exist(resp.list_services_response.service);
+              // since the cfg includes 'not_bound' service which is not implemented
+              resp.list_services_response.service.should.be.length(_.size(services) - 1);
+              resolve(resp);
+            });
           });
         });
     });

@@ -173,7 +173,7 @@ providers.forEach((provider) => {
               should.exist(endpoint);
               const result = await endpointThrow(request);
               result.status.error.code.should.equal(12);
-              result.status.error.message.should.equal('12 UNIMPLEMENTED: The server does not implement this method');
+              result.status.error.message.should.equal('12 UNIMPLEMENTED: The server does not implement the method NotImplemented');
             });
           it('should return an error when calling failing endpoint',
             async () => {

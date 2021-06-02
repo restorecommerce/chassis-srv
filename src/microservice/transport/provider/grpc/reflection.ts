@@ -1,6 +1,6 @@
 import * as protoBuf from 'protobufjs';
 import * as fs from 'fs';
-import * as grpc from 'grpc';
+import * as grpc from '@grpc/grpc-js';
 import * as _ from 'lodash';
 import * as path from 'path';
 
@@ -275,8 +275,11 @@ export class ServerReflection {
         logger.error('Error reading stream on serverReflectionInfo', error);
         continue;
       }
-      const methodName = req.message_request;
+      let methodName = req.message_request;
       delete req.message_request;
+      if (!methodName) {
+        methodName = Object.keys(req)[0];
+      }
       req = _.omitBy(req, isEmpty);
       if (_.isNil(methodName)) {
         logger.info('empty message_request', req);
@@ -294,7 +297,7 @@ export class ServerReflection {
       let method;
       switch (`${methodName}`) {
         case 'file_by_filename':
-          method = this.fileByFileName(methodArg, req);
+          method = this.fileByFilename(methodArg, req);
           break;
         case 'file_containing_symbol':
           method = this.findProtoFileByPath(methodArg, req);
@@ -339,7 +342,7 @@ export class ServerReflection {
   /**
    * Find a proto file by the file name.
    */
-  fileByFileName(fileName: string, req: any): any {
+  fileByFilename(fileName: string, req: any): any {
     const files = _.keys(this.root.files);
     const file = _.find(files, (path) => {
       return _.endsWith(this.root.files[path], fileName);
@@ -364,7 +367,7 @@ export class ServerReflection {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto: this.fileDescriptorProto.encode(fDescProto).finish()
+        file_descriptor_proto: [this.fileDescriptorProto.encode(fDescProto).finish()]
       },
     };
   }
@@ -397,7 +400,7 @@ export class ServerReflection {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto: this.fileDescriptorProto.encode(fDescProto).finish()
+        file_descriptor_proto: [this.fileDescriptorProto.encode(fDescProto).finish()]
       },
     };
   }
@@ -420,7 +423,6 @@ export class ServerReflection {
         },
       };
     }
-
     let ids = _.map(t.fields, (field) => {
       return field.id;
     });
@@ -448,7 +450,7 @@ export class ServerReflection {
       valid_host: req.host,
       original_request: req,
       file_descriptor_response: {
-        file_descriptor_proto: this.fileDescriptorProto.encode(fDescProto).finish()
+        file_descriptor_proto: [this.fileDescriptorProto.encode(fDescProto).finish()]
       },
     };
   }

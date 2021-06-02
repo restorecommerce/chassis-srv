@@ -28,18 +28,18 @@ const service = {
   },
   throw(request, context) {
     return {
-      status: {
+      status: [{
         code: 500,
         message: 'forced error'
-      }
+      }]
     }
   },
   notFound(request, context) {
     return {
-      status: {
+      status: [{
         code: 404,
         message: 'test not found'
-      }
+      }]
     }
   },
   notImplemented: null,
