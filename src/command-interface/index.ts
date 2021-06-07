@@ -255,11 +255,12 @@ export class CommandInterface implements ICommandInterface {
         const dbCfgName = dbCfgNames[i];
         const dbCfg = dbCfgs[dbCfgName];
         const collections = dbCfg.collections;
-        let graphName;
+        let graphName, edgeConfigDefs;
         if (this.config.get('graph')) {
           graphName = this.config.get('graph:graphName');
+          edgeConfigDefs = this.config.get('graph:edgeDefinitions');
         }
-        const db = await database.get(dbCfg, this.logger, graphName);
+        const db = await database.get(dbCfg, this.logger, graphName, edgeConfigDefs);
 
         if (_.isNil(collections)) {
           this.logger.warn('No collections found on DB config');
@@ -401,6 +402,7 @@ export class CommandInterface implements ICommandInterface {
         this.logger.debug('waiting until all messages are processed');
       }
     } catch (err) {
+      console.log('Err is...........', err);
       this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreResponse', {
         services: _.keys(this.service),
