@@ -219,6 +219,10 @@ describe('microservice.Server', () => {
         should.exist(result.status);
         result.status.should.be.empty();
         should.exist(result.items);
+        // verify decoded google.protobuf.any buffered response
+        result.items[0].value.should.equal('helloWorld123');
+        const decodedBuffResp = JSON.parse(result.items[0].data.value.toString());
+        decodedBuffResp.testKey.should.equal("testVal");
 
         // --- 'throw' endpoint ---
         result = await client.test.throw({
