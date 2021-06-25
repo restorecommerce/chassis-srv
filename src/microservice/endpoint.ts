@@ -213,7 +213,7 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
         const result = await chain(request, service[methodName].bind(service));
         let response = _.cloneDeep(result);
         response = removeBufferFileds(response, ctx);
-        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} result`, { clonedRequest, response });
+        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} response`, { clonedRequest, response });
         return result;
       } else {
         e = service[methodName].bind(service);
@@ -224,7 +224,7 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       const result = await e(request, ctx);
       let response = _.cloneDeep(result);
       response = removeBufferFileds(response, ctx);
-      logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} result`,
+      logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} response`,
         { clonedRequest, response });
       return result;
     } catch (err) {
