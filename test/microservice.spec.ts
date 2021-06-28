@@ -12,6 +12,11 @@ const Server = chassis.Server;
 const grpc = chassis.grpc;
 const errors = chassis.errors;
 
+const status = {
+  code: 200,
+  message: 'success'
+};
+
 /* global describe context it before after*/
 /* eslint-disable */
 const service = {
@@ -20,26 +25,37 @@ const service = {
     request.value.should.be.equal('hello');
     return {
       result: 'welcome',
+      status
     };
   },
   create(call, context) {
-    const request = call.request;
-    return request;
+    let payLoadList = [];
+    for (let item of call.request.items) {
+      payLoadList.push({
+        payload: item,
+        status
+      });
+    }
+    return {
+      items: payLoadList,
+      total_count: call.request.items.lenght,
+      status
+    };
   },
   throw(request, context) {
     return {
-      status: [{
+      status: {
         code: 500,
         message: 'forced error'
-      }]
+      }
     }
   },
   notFound(request, context) {
     return {
-      status: [{
+      status: {
         code: 404,
         message: 'test not found'
-      }]
+      }
     }
   },
   notImplemented: null,
@@ -72,21 +88,19 @@ const service = {
     }
   },
   async requestStream(call, context) {
-    let req;
-    let stream = true;
-    while (stream) {
-      try {
-        req = await call.read();
-        should.exist(req);
-        should.exist(req.value);
-        req.value.should.equal('ping');
-      } catch (e) {
-        stream = false;
-      }
-    }
-    return { result: 'pong' };
+    const streamRequest = await call.getServerRequestStream();
+    let result = '';
+    streamRequest.on('data', (data) => {
+      result += data.value;
+    });
+    return await new Promise((resolve, reject) => {
+      streamRequest.on('end', () => {
+        result.should.equal('ping');
+        resolve({ result: 'pong', status });
+      });
+    });
   },
-  async responseStream(call, context) {
+  async responseStream(call: any, context: any) {
     const req = call.request.request;
     should.exist(req);
     should.exist(req.value);
@@ -104,7 +118,7 @@ const bufferToObservable = (buffer: Buffer): any => {
   return new Observable((subscriber) => {
     for (let i = 0; i < Math.ceil(buffer.length / chunkSize); i++) {
       subscriber.next({
-        message: buffer.slice(i * chunkSize, (i + 1) * chunkSize)
+        value: buffer.slice(i * chunkSize, (i + 1) * chunkSize)
       })
     }
     subscriber.complete();
@@ -200,7 +214,8 @@ describe('microservice.Server', () => {
             test: true,
           });
         should.exist(result.status);
-        result.status.should.be.empty();
+        result.status.code.should.equal(200);
+        result.status.message.should.equal('success');
         should.exist(result.result);
         result.result.should.be.equal('welcome');
 
@@ -217,11 +232,12 @@ describe('microservice.Server', () => {
             }]
           });
         should.exist(result.status);
-        result.status.should.be.empty();
+        result.status.code.should.equal(200);
+        result.status.message.should.equal('success');
         should.exist(result.items);
         // verify decoded google.protobuf.any buffered response
-        result.items[0].value.should.equal('helloWorld123');
-        const decodedBuffResp = JSON.parse(result.items[0].data.value.toString());
+        result.items[0].payload.value.should.equal('helloWorld123');
+        const decodedBuffResp = JSON.parse(result.items[0].payload.data.value.toString());
         decodedBuffResp.testKey.should.equal("testVal");
 
         // --- 'throw' endpoint ---
@@ -232,8 +248,8 @@ describe('microservice.Server', () => {
             test: true,
           });
         should.exist(result.status);
-        result.status[0].code.should.equal(500);
-        result.status[0].message.should.equal('forced error');
+        result.status.code.should.equal(500);
+        result.status.message.should.equal('forced error');
         result.result.should.be.empty();
 
         // --- 'notFound' endpoint ---
@@ -244,8 +260,8 @@ describe('microservice.Server', () => {
             test: true,
           });
         should.exist(result.status);
-        result.status[0].code.should.equal(404);
-        result.status[0].message.should.equal('test not found');
+        result.status.code.should.equal(404);
+        result.status.message.should.equal('test not found');
         result.result.should.be.empty();
 
         // --- 'notImplemented' endpoint ---
@@ -262,10 +278,11 @@ describe('microservice.Server', () => {
 
         // 'requestStream'
         const streamClient = new GrpcClient(cfg.get('client:stream'), logger);
-        let inputBuffer = Buffer.from(JSON.stringify({ value: 'ping' }));
+        let inputBuffer = Buffer.from('ping');
         result = await streamClient.stream.requestStream(bufferToObservable(inputBuffer));
         should.exist(result.status);
-        result.status.should.be.empty();
+        result.status.code.should.equal(200);
+        result.status.message.should.equal('success');
         should.exist(result);
         should.exist(result.result);
         result.result.should.be.equal('pong');
@@ -287,8 +304,11 @@ describe('microservice.Server', () => {
 
         // 'biStream'
         result = await streamClient.stream.biStream(bufferToObservable(inputBuffer));
-        result.subscribe(data => {
-          data.result.should.be.equal('pong');
+        await new Promise((resolve, reject) => {
+          result.subscribe(data => {
+            data.result.should.be.equal('pong');
+            resolve(data);
+          });
         });
       });
   });
@@ -312,22 +332,21 @@ describe('microservice.Server', () => {
       }
       const resps = await reqs;
       for (let i = 0; i < resps.length; i += 1) {
-        const result = await resps[i];
-        should.exist(result.status);
-        result.status.should.be.empty();
-        should.exist(result.result);
-        result.result.should.be.equal('welcome');
+        const response = await resps[i];
+        should.exist(response.status);
+        response.status.code.should.equal(200);
+        response.status.message.should.equal('success');
+        should.exist(response.result);
+        response.result.should.be.equal('welcome');
       }
     });
   });
-  // TODO server.stop() - Uncaught Error: 14 UNAVAILABLE: Cancelling all calls
-  // Try this test after updating grpc-js on chassis-srv
-  // describe('calling end', () => {
-  //   it('should stop the server and no longer provide endpoints',
-  //     async () => {
-  //       await server.stop();
-  //     });
-  // });
+  describe('calling end', () => {
+    it('should stop the server and no longer provide endpoints',
+      async () => {
+        await server.stop();
+      });
+  });
 });
 
 describe('microservice.Client', () => {
@@ -387,7 +406,8 @@ describe('microservice.Client', () => {
           });
           should.exist(result);
           should.exist(result.status);
-          result.status.should.be.empty();
+          result.status.code.should.equal(200);
+          result.status.message.should.equal('success');
           should.exist(result.result);
           result.result.should.equal('welcome');
 
@@ -401,7 +421,8 @@ describe('microservice.Client', () => {
           });
           should.exist(result);
           should.exist(result.status);
-          result.status.should.be.empty();
+          result.status.code.should.equal(200);
+          result.status.message.should.equal('success');
           should.exist(result.result);
           result.result.should.equal('welcome');
         });

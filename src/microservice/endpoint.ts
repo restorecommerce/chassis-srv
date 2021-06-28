@@ -57,6 +57,9 @@ const iterate = (obj, oneOfNotUsed) => {
 
 const removeBufferFileds = (object, ctx) => {
   // Check if the cfg file contains any bufferFields and remove them
+  if (!object) {
+    object = {};
+  }
   if (ctx.config && ctx.config.services) {
     const service = ctx.config.services;
     const servicesKeys = Object.keys(ctx.config.services);
@@ -195,10 +198,10 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
 
     // deep clone the request
     const deepClone = _.cloneDeep(request);
-    let clonedRequest = deepClone.request;
+    let Request = deepClone.request;
     try {
-      clonedRequest = removeBufferFileds(clonedRequest, ctx);
-      logger.debug('invoking endpoint with request:', { request: clonedRequest });
+      Request = removeBufferFileds(Request, ctx);
+      logger.debug('invoking endpoint with request:', Request);
       if (request && request.request && request.request.headers
         && request.request.headers['x-request-id']) {
         rid = request.request.headers['x-request-id'];
@@ -208,24 +211,24 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       }
 
       if (middlewareChain.length > 0) {
-        logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, clonedRequest);
+        logger.verbose(`[rid: ${rid}] received request to method ${ctx.method} over transport ${ctx.transport}`, Request);
         const chain = chainMiddleware(middlewareChain);
         const result = await chain(request, service[methodName].bind(service));
         let response = _.cloneDeep(result);
         response = removeBufferFileds(response, ctx);
-        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} response`, { clonedRequest, response });
+        logger.verbose(`[rid: ${rid}] request to method ${ctx.method} over transport ${ctx.transport} response`, { Request, response });
         return result;
       } else {
         e = service[methodName].bind(service);
       }
 
       logger.verbose(`received request to method ${ctx.method} over transport ${ctx.transport}`,
-        clonedRequest);
+        Request);
       const result = await e(request, ctx);
       let response = _.cloneDeep(result);
       response = removeBufferFileds(response, ctx);
       logger.verbose(`request to method ${ctx.method} over transport ${ctx.transport} response`,
-        { clonedRequest, response });
+        { Request, response });
       return result;
     } catch (err) {
       if (rid) {
@@ -235,12 +238,12 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
         err instanceof ReferenceError || err instanceof TypeError) {
         logger.error(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
           {
-            clonedRequest,
+            Request,
             err: err.stack
           });
       } else {
         logger.info(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
-          { clonedRequest, err });
+          { Request, err });
       }
       throw err;
     }

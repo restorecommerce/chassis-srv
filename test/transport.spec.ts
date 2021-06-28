@@ -92,8 +92,12 @@ providers.forEach((provider) => {
       const methodName = 'test';
       let endpoint;
       const response = {
-        status: [],
         result: 'abcd',
+        status: {
+          id: '',
+          code: 200,
+          message: 'success'
+        }
       };
       const request = {
         value: 'hello',
@@ -126,7 +130,7 @@ providers.forEach((provider) => {
           it('should fail', async () => {
             endpoint = client.test[methodName];
             const result = await endpoint({});
-            result.status.error.message.should.equal('14 UNAVAILABLE: No connection established');
+            result.status.message.should.equal('14 UNAVAILABLE: No connection established');
           });
         });
         describe('with running server', () => {
@@ -172,16 +176,16 @@ providers.forEach((provider) => {
               const endpointThrow = client.test['notImplemented'];
               should.exist(endpoint);
               const result = await endpointThrow(request);
-              result.status.error.code.should.equal(12);
-              result.status.error.message.should.equal('12 UNIMPLEMENTED: The server does not implement the method NotImplemented');
+              result.status.code.should.equal(12);
+              result.status.message.should.equal('12 UNIMPLEMENTED: The server does not implement the method NotImplemented');
             });
           it('should return an error when calling failing endpoint',
             async () => {
               const endpointThrow = client.test['throw'];
               should.exist(endpoint);
               const result = await endpointThrow(request);
-              result.status.error.code.should.equal(13);
-              result.status.error.message.should.equal('13 INTERNAL: forced error');
+              result.status.code.should.equal(13);
+              result.status.message.should.equal('13 INTERNAL: forced error');
             });
         });
       });

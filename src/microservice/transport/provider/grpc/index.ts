@@ -67,27 +67,34 @@ const makeNormalServerEndpoint = (endpoint: any, logger: Logger): any => {
 const makeResponseStreamServerEndpoint = (endpoint: any,
   logger: Logger): any => {
   return async (call: any): Promise<any> => {
-    await endpoint({
-      request: call,
-      write: (response: any): any => {
-        return call.write(response);
-      },
-      end: (err?: any): any => {
-        if (err) {
-          logger.error('Error invoking endpoint for response stream', { err: err.message });
-          logger.error('Error stack', err);
-          err.code = grpc.status.INTERNAL;
-          errorMap.forEach((Err, key) => {
-            if (err.constructor.name === Err.name) {
-              err = new Err(err.details);
-              err.code = key;
-            }
-          }, errorMap);
-          call.emit('error', err);
+    try {
+      await endpoint({
+        request: call as any,
+        write: (response: any): any => {
+          return call.write(response);
+        },
+        end: (err?: any): any => {
+          if (err) {
+            logger.error('Error invoking endpoint for response stream', { err: err.message });
+            logger.error('Error stack', err);
+            err.code = grpc.status.INTERNAL;
+            errorMap.forEach((Err, key) => {
+              if (err.constructor.name === Err.name) {
+                err = new Err(err.details);
+                err.code = key;
+              }
+            }, errorMap);
+            call.emit('error', err);
+          }
+          call.end();
         }
-        call.end();
-      }
-    });
+      });
+    } catch(err) {
+      logger.error('Error invoking endpoint for streaming response', { err: err.message });
+      logger.error('Error stack', err);
+      call.emit('error', err);
+      call.end();
+    }
   };
 };
 
