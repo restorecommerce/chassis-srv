@@ -200,6 +200,9 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
     const deepClone = _.cloneDeep(request);
     let Request = deepClone.request;
     try {
+      if (Request && Request.request) {
+        Request = Request.request;
+      }
       Request = removeBufferFileds(Request, ctx);
       logger.debug('invoking endpoint with request:', Request);
       if (request && request.request && request.request.headers
