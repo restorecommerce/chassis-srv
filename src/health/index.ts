@@ -35,20 +35,18 @@ export class Health {
             throw new Error('Dependency "' + dependency + '" not provided in client config!');
           }
 
+          let dependencyCfg = {
+            packageName: 'grpc.health.v1',
+            serviceName: 'Health'
+          };
           const serviceConfig = {
             ...clientCfg[dependency],
-            transports: {
-              ...clientCfg[dependency]['transports'],
-              grpc: {
-                ...clientCfg[dependency]['transports']['grpc'],
-                service: 'grpc.health.v1.Health',
-                protos: [
-                  'grpc/health/v1/health.proto'
-                ]
+            proto: {
+              ...clientCfg[dependency]['proto'],
+              protoPath: 'grpc/health/v1/health.proto',
+              services: {
+                ['dependency']: dependencyCfg
               }
-            },
-            endpoints: {
-              check: {}
             }
           };
 
