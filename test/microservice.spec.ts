@@ -39,7 +39,7 @@ const service = {
     return {
       items: payLoadList,
       total_count: call.request.items.lenght,
-      status
+      operation_status: status
     };
   },
   throw(request, context) {
@@ -231,9 +231,9 @@ describe('microservice.Server', () => {
               data: { value: msgBuffer }
             }]
           });
-        should.exist(result.status);
-        result.status.code.should.equal(200);
-        result.status.message.should.equal('success');
+        should.exist(result.operation_status);
+        result.operation_status.code.should.equal(200);
+        result.operation_status.message.should.equal('success');
         should.exist(result.items);
         // verify decoded google.protobuf.any buffered response
         result.items[0].payload.value.should.equal('helloWorld123');
