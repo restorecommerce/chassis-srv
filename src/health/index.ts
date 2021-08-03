@@ -51,12 +51,7 @@ export class Health {
           };
 
           const client = new GrpcClient(serviceConfig, this.opts.logger);
-          new Promise(async () => {
-            this.endpoints[dependency] = await client.dependency.check().catch(err => {
-              this.opts.logger.error('error connecting to service ' + dependency + ': ', err);
-              throw err;
-            });
-          });
+          this.endpoints[dependency] = client.dependency;
         }
       }
     }
