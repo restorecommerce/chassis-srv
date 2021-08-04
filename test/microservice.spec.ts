@@ -374,7 +374,7 @@ describe('microservice.Client', () => {
         const invalidClientConfig = { address: 'localhost:50051' };
         (() => {
           client = new GrpcClient(invalidClientConfig, null);
-        }).should.throw('proto configuration definition missing');
+        }).should.throw('missing logger configuration');
       });
   });
   context('with running server', () => {

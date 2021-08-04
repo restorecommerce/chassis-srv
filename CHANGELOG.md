@@ -1,3 +1,10 @@
+### 0.3.0 (August 4th, 2021 )
+
+- updated grpc-client, arangojs
+- fix command interface to not to throw errors and send error response back, fixed command interface tests and updated arangojs in package.json
+- migrated from grpc to grpc-js and fixed the tests.
+- included error array changes
+
 ### 0.2.3 (May 18th, 2021)
 
 - improved error logging
