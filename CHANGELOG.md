@@ -1,3 +1,7 @@
+### 0.3.1 (August 9th, 2021 )
+
+- fix options for protoLoader.loadSync to restore enums as strings
+
 ### 0.3.0 (August 4th, 2021 )
 
 - updated grpc-client, arangojs

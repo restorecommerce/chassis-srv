@@ -89,7 +89,7 @@ const makeResponseStreamServerEndpoint = (endpoint: any,
           call.end();
         }
       });
-    } catch(err) {
+    } catch (err) {
       logger.error('Error invoking endpoint for streaming response', { err: err.message });
       logger.error('Error stack', err);
       call.emit('error', err);
@@ -255,7 +255,15 @@ export class Server {
     const proto = [];
     for (let i = 0; i < protos.length; i++) {
       const filePath = path.resolve(protoRoot, protos[i]);
-      const packageDefinition = protoLoader.loadSync(filePath, { includeDirs: [protoRoot], keepCase: true });
+      const packageDefinition = protoLoader.loadSync(filePath,
+        {
+          includeDirs: [protoRoot],
+          keepCase: true,
+          longs: String,
+          enums: String,
+          defaults: true,
+          oneofs: true
+        });
       // this.proto = grpc.load(filePath, 'proto', {
       //   longsAsStrings: false
       // });
