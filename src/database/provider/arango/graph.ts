@@ -129,10 +129,11 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     const collection = this.graph.vertexCollection(collectionName);
     let removedVertexList = [];
     for (let documentHandle of documentHandles) {
-      removedVertexList.push(await collection.remove(documentHandle));
-    }
-    if (removedVertexList.length === 1) {
-      return removedVertexList[0];
+      const id = documentHandle.split('/')[1];
+      let removed: any = await collection.remove(documentHandle);
+      if (!removed.error) {
+        removedVertexList.push({ _id: documentHandle, _key: id, _rev: id });
+      }
     }
     return removedVertexList;
   }
