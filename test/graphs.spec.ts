@@ -133,8 +133,8 @@ const testProvider = (providerCfg) => {
     it('should remove a vertice given the document handle', async () => {
       const removedDoc = await db.removeVertex(vertexCollectionName, `person/${result[2].id}`);
       should.exist(removedDoc);
-      removedDoc.error.should.equal(false);
-      removedDoc.code.should.equal(202);
+      removedDoc[0]._id.should.equal('person/c');
+      removedDoc[0]._key.should.equal('c');
     });
     it('should remove edge given the document handle', async () => {
       const removedDoc = await db.removeEdge(edgeCollectionName, edgeResult._id);
