@@ -1,8 +1,12 @@
-### 0.3.1 (August 9th, 2021 )
+### 0.3.2 (September 6th, 2021)
+
+- fix removeVertex response
+
+### 0.3.1 (August 9th, 2021)
 
 - fix options for protoLoader.loadSync to restore enums as strings
 
-### 0.3.0 (August 4th, 2021 )
+### 0.3.0 (August 4th, 2021)
 
 - updated grpc-client, arangojs
 - fix command interface to not to throw errors and send error response back, fixed command interface tests and updated arangojs in package.json
