@@ -444,6 +444,11 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       opts.direction = 'outbound';
     }
 
+    if (opts.uniqueness && _.isEmpty(opts.uniqueness.vertices)
+      && _.isEmpty(opts.uniqueness.edges)) {
+      delete opts.uniqueness;
+    }
+
     try {
       if (collectionName) {
         collection = this.graph.edgeCollection(collectionName);

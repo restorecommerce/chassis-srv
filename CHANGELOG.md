@@ -1,3 +1,7 @@
+### 0.3.3 (December 2nd, 2021)
+
+- fix empty uniqueness vertices check
+
 ### 0.3.2 (September 6th, 2021)
 
 - fix removeVertex response
