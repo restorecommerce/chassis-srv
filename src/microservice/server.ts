@@ -82,7 +82,12 @@ export class Server extends EventEmitter {
       if (_.isNil(this.config.logger)) {
         this.logger = createLogger();
       } else {
-        this.logger = createLogger(this.config.logger);
+        const loggerCfg = this.config.logger;
+        loggerCfg.esTransformer = (msg) => {
+          msg.fields = JSON.stringify(msg.fields);
+          return msg;
+        };
+        this.logger = createLogger(loggerCfg);
       }
     } else {
       this.logger = logger;

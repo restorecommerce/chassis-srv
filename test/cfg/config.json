@@ -97,7 +97,8 @@
             "serviceName": "Stream"
           }
         }
-      }
+      },
+      "observable": true
     },
     "reflection": {
       "address": "localhost:50051",
