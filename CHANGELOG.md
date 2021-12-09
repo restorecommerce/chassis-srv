@@ -1,3 +1,7 @@
+### 0.3.4 (December 9th, 2021)
+
+- updated dependencies
+
 ### 0.3.3 (December 2nd, 2021)
 
 - fix empty uniqueness vertices check
