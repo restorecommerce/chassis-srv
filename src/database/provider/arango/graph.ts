@@ -10,8 +10,8 @@ import { ArangoCollection, Collection } from 'arangojs/collection';
 export interface TraversalOptions {
   include_vertex?: string[];
   exclude_vertex?: string[];
-  include_edges?: string[];
-  exclude_edges?: string[];
+  include_edge?: string[];
+  exclude_edge?: string[];
   direction?: string;
 };
 
@@ -370,10 +370,10 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     if (!opts) {
       opts = {};
-      // make outbound traversal by default if not provided
-      if (!opts.direction || _.isEmpty(opts.direction)) {
-        opts.direction = 'outbound';
-      }
+    }
+    // make outbound traversal by default if not provided
+    if (!opts.direction || _.isEmpty(opts.direction)) {
+      opts.direction = 'outbound';
     }
 
     // default options
@@ -385,8 +385,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
 
     // include edges in options if specified
-    if (opts.include_edges) {
-      defaultOptions.edgeCollections = opts.include_edges;
+    if (opts.include_edge) {
+      defaultOptions.edgeCollections = opts.include_edge;
     }
 
     // exclude vertices
@@ -397,8 +397,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
 
     // exclude edges
-    if (opts.exclude_edges) {
-      for (let excludeEdge of opts.exclude_edges) {
+    if (opts.exclude_edge) {
+      for (let excludeEdge of opts.exclude_edge) {
         filter = filter + `FILTER e._id NOT LIKE "${excludeEdge}%"`;
       }
     }
@@ -413,7 +413,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           FOR v, e, p IN 1..100 ${opts.direction} collection GRAPH "${this.graph.name}"
           OPTIONS ${defaultOptions}
           ${filter}
-          RETURN v`;
+          RETURN { v, e, p }`;
         const queryResult = await this.db.query(traversalQuery);
         traversalData = await queryResult.all();
         for (let data of traversalData) {
@@ -460,12 +460,12 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     // to do validate result and check paths
     if (path_flag && traversalData.length > 0) {
-      let travelledPaths = [];
+      let traversedPaths = [];
       for (let data of traversalData) {
-        travelledPaths.push(data.p);
+        traversedPaths.push(data.p);
       }
-      travelledPaths = this.arrUnique(travelledPaths);
-      response.paths.value = encodeMessage(travelledPaths);
+      traversedPaths = this.arrUnique(traversedPaths);
+      response.paths.value = encodeMessage(traversedPaths);
     }
 
     return response;

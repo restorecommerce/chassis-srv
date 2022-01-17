@@ -23,15 +23,19 @@ const providers = [
 
 const testProvider = (providerCfg) => {
   let db;
-  let vertexCollectionName = 'person';
-  let edgeCollectionName = 'knows';
+  const personCollectionName = 'person';
+  const hasEdgeCollectionName = 'has';
+  const carsCollectionName = 'car';
+  const belongsEdgeCollectionName = 'belongs';
+  const placeCollectionName = 'place';
+
   before(async () => {
     db = await providerCfg.init();
     // create person vertex collection
-    await db.addVertexCollection(vertexCollectionName);
-    // create edge definition edgeCollectionName, fromVerticeCollection,
-    // toVerticeCollection
-    await db.addEdgeDefinition(edgeCollectionName, vertexCollectionName, vertexCollectionName);
+    await db.addVertexCollection(personCollectionName);
+    // create edge definition edgeCollectionName, fromVerticeCollection, toVerticeCollection
+    await db.addEdgeDefinition(hasEdgeCollectionName, personCollectionName, carsCollectionName);
+    await db.addEdgeDefinition(belongsEdgeCollectionName, carsCollectionName, placeCollectionName);
     should.exist(db);
   });
   after(async () => {
@@ -49,54 +53,110 @@ const testProvider = (providerCfg) => {
   describe('Graphs Collection API', () => {
     let result;
     let edgeResult;
-    it('should create a vertex collection and insert data into it', async () => {
-      const vertices = [
+    it('should create a vertex Person, Car and Place collection and insert data into it', async () => {
+      // persons
+      const personVertices = [
         { name: 'Alice', id: 'a' },
         { name: 'Bob', id: 'b' },
         { name: 'Charlie', id: 'c' },
         { name: 'Dave', id: 'd' },
         { name: 'Eve', id: 'e' }
       ];
-      result = await db.createVertex(vertexCollectionName, vertices);
+      result = await db.createVertex(personCollectionName, personVertices);
       // verify the data from DB
       let insertedVertices = await db.find('person');
       insertedVertices = _.sortBy(insertedVertices, [(o) => { return o.name; }]);
       should.exist(insertedVertices);
-      insertedVertices.should.deepEqual(vertices);
-    });
-    it('should create an edge collection and insert data into it', async () => {
-      let edges: any = [
-        { info: 'Alice knows Bob', _from: `person/${result[0].id}`, _to: `person/${result[1].id}`, id: 'e1' },
-        { info: 'Bob knows Charlie', _from: `person/${result[1].id}`, _to: `person/${result[2].id}`, id: 'e2' },
-        { info: 'Bob knows Dave', _from: `person/${result[1].id}`, _to: `person/${result[3].id}`, id: 'e3' },
-        { info: 'Eve knows Alice', _from: `person/${result[4].id}`, _to: `person/${result[0].id}`, id: 'e4' },
-        { info: 'Eve knows Bob', _from: `person/${result[4].id}`, _to: `person/${result[1].id}`, id: 'e5' }
+      insertedVertices.should.deepEqual(personVertices);
+      // cars
+      const carVertices = [
+        { name: 'carA', id: 'c1' },
+        { name: 'carB', id: 'c2' },
+        { name: 'carC', id: 'c3' },
+        { name: 'carD', id: 'c4' },
+        { name: 'carE', id: 'c5' }
       ];
-      await db.createEdge(edgeCollectionName, edges[0]);
-      await db.createEdge(edgeCollectionName, edges[1]);
-      await db.createEdge(edgeCollectionName, edges[2]);
-      await db.createEdge(edgeCollectionName, edges[3]);
-      edgeResult = await db.createEdge(edgeCollectionName, edges[4]);
-      let insertedEdges: any = await db.find('knows');
-      edges = _.sortBy(edges, [(o) => { return o.info; }]);
+      result = await db.createVertex(carsCollectionName, carVertices);
+      // verify the data from DB
+      insertedVertices = await db.find('car');
+      insertedVertices = _.sortBy(insertedVertices, [(o) => { return o.name; }]);
+      should.exist(insertedVertices);
+      insertedVertices.should.deepEqual(carVertices);
+       // cars
+       const placeVertices = [
+        { name: 'placeA', id: 'p1' },
+        { name: 'placeB', id: 'p2' },
+        { name: 'placeC', id: 'p3' },
+        { name: 'placeD', id: 'p4' },
+        { name: 'placeE', id: 'p5' }
+      ];
+      result = await db.createVertex(placeCollectionName, placeVertices);
+      // verify the data from DB
+      insertedVertices = await db.find('place');
+      insertedVertices = _.sortBy(insertedVertices, [(o) => { return o.name; }]);
+      should.exist(insertedVertices);
+      insertedVertices.should.deepEqual(placeVertices);
+    });
+    it('should create "person has car" and "car belongs to place" edge collections and insert data into it', async () => {
+      let personCarEdges: any = [
+        { info: 'Alice has Car A', _from: `person/a`, _to: `car/c1`, id: 'e1' },
+        { info: 'Bob has Car B', _from: `person/b`, _to: `car/c2`, id: 'e2' },
+        { info: 'Charlie has Car C', _from: `person/c`, _to: `car/c3`, id: 'e3' },
+        { info: 'Dave has Car D', _from: `person/d`, _to: `car/c4`, id: 'e4' },
+        { info: 'Eve has Car E', _from: `person/e`, _to: `car/c5`, id: 'e5' }
+      ];
+      for (let personCarEdge of personCarEdges) {
+        edgeResult = await db.createEdge(hasEdgeCollectionName, personCarEdge);
+      }
+      let insertedEdges: any = await db.find('has');
+      personCarEdges = _.sortBy(personCarEdges, [(o) => { return o.info; }]);
       insertedEdges = _.sortBy(insertedEdges, [(o) => { return o.info; }]);
       should.exist(insertedEdges);
-      insertedEdges.should.deepEqual(edges);
+      insertedEdges.should.deepEqual(personCarEdges);
+
+      let carPlaceEdges: any = [
+        { info: 'Car A belongs to place P1', _from: `car/c1`, _to: `place/p1`, id: 'e6' },
+        { info: 'Car B belongs to place P2', _from: `car/c2`, _to: `place/p2`, id: 'e7' },
+        { info: 'Car C belongs to place P3', _from: `car/c3`, _to: `place/p3`, id: 'e8' },
+        { info: 'Car D belongs to place P4', _from: `car/c4`, _to: `place/p4`, id: 'e9' },
+        { info: 'Car E belongs to place P5', _from: `car/c5`, _to: `place/p5`, id: 'e10' }
+      ];
+      for (let carPlaceEdge of carPlaceEdges) {
+        await db.createEdge(belongsEdgeCollectionName, carPlaceEdge);
+      }
+      insertedEdges = await db.find('belongs');
+      carPlaceEdges = _.sortBy(carPlaceEdges, [(o) => { return o.info; }]);
+      insertedEdges = _.sortBy(insertedEdges, [(o) => { return o.info; }]);
+      should.exist(insertedEdges);
+      insertedEdges.should.deepEqual(carPlaceEdges);
     });
     it('should verify incoming and outgoing edges', async () => {
-      // get incoming edges for Vertice Alice
-      const incomingEdges = await db.getInEdges(edgeCollectionName, `person/${result[0].id}`);
+      // get incoming edges for Car C1
+      const incomingEdges = await db.getInEdges(hasEdgeCollectionName, `car/c1`);
       should.exist(incomingEdges);
-      incomingEdges.edges[0].info.should.equal('Eve knows Alice');
+      incomingEdges.edges[0].info.should.equal('Alice has Car A');
 
-      // get outgoing edges for Vertice Alice
-      let outgoingEdges = await db.getOutEdges(edgeCollectionName, `person/${result[0].id}`);
+      // get outgoing edges for Car C1
+      let outgoingEdges = await db.getOutEdges(belongsEdgeCollectionName, `car/c1`);
       should.exist(outgoingEdges);
-      outgoingEdges.edges[0].info.should.equal('Alice knows Bob');
+      outgoingEdges.edges[0].info.should.equal('Car A belongs to place P1');
     });
-    it('should traverse the graph', async () => {
+    it('should traverse the graph and return only vertices for Person A', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/${result[0].id}`, null, null, true);
+      let traversalResponse = await db.traversal(`person/a`, null, null);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      traversalResponse.paths.should.be.empty();
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(3);
+    });
+    it('should traverse the graph and return both vertices and paths when paths flag is set to true', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(`person/a`, null, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -109,58 +169,144 @@ const testProvider = (providerCfg) => {
       should.exist(traversalResponse);
       should.exist(traversalResponse.data);
       should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(4);
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(3);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(3);
+      traversalResponse.data[0].name.should.equal('carA');
+      traversalResponse.data[1].name.should.equal('placeA');
+      traversalResponse.data[2].name.should.equal('Alice');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(2);
+    });
+    // include vertices
+    it('should traverse the graph with included vertices options and return only the included vertices', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(`person/a`, null, { include_vertex: ['car'] }, true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      traversalResponse.data[0].name.should.equal('carA');
+      traversalResponse.data[1].name.should.equal('Alice');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+    });
+    // exclude vertices
+    it('should traverse the graph with excluded vertices options and return only traversed data with excluded vertices', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(`person/a`, null, { exclude_vertex: ['car'] }, true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      traversalResponse.data[0].name.should.equal('placeA');
+      traversalResponse.data[1].name.should.equal('Alice');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+    });
+    // include edges
+    it('should traverse the graph with included edges options and return vertices from included edges', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(`person/a`, null, { include_edge: ['has'] }, true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      traversalResponse.data[0].name.should.equal('carA');
+      traversalResponse.data[1].name.should.equal('Alice');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+    });
+    // exclude edges
+    it('should traverse the graph with exclude edges options and return vertices from excluded edges', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(`person/a`, null, { exclude_edge: ['belongs'] }, true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      traversalResponse.data[0].name.should.equal('carA');
+      traversalResponse.data[1].name.should.equal('Alice');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+    });
+    // collection traversal
+    it('should traverse the entire collection and return data from all traversed entities', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(null, 'person', null, true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      console.log('Traversal Response data is...', JSON.stringify(traversalResponse.data));
+      console.log('Traversal Response path is...', JSON.stringify(traversalResponse.paths));
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(15); // 5 person, 5 cars and 5 place entities
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(10); // 10 edges
     });
     it('should update a vertice given the document handle', async () => {
-      const doc = await db.getVertex(vertexCollectionName, `person/${result[4].id}`);
+      const doc = await db.getVertex(personCollectionName, `person/e`);
       // doc with updated name
       doc.name = 'test';
-      await db.update(vertexCollectionName, [doc]);
-      const newdoc = await db.getEdge(vertexCollectionName, `person/${result[4].id}`);
-      doc.name.should.equal('test');
+      await db.update(personCollectionName, [doc]);
+      const newdoc = await db.getEdge(personCollectionName, `person/e`);
+      newdoc.name.should.equal('test');
     });
     it('should update a edge given the document handle', async () => {
-      const doc = await db.getEdge(edgeCollectionName, edgeResult._id);
+      const doc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
       // doc with updated name
-      doc.info = 'test knows Bob';
-      await db.update(edgeCollectionName, [doc]);
-      const newdoc = await db.getEdge(edgeCollectionName, edgeResult._id);
-      doc.info.should.equal('test knows Bob');
+      doc.info = 'test has Car E';
+      await db.update(hasEdgeCollectionName, [doc]);
+      const newdoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
+      newdoc.info.should.equal('test has Car E');
     });
-    it('should remove a vertice given the document handle', async () => {
-      const removedDoc = await db.removeVertex(vertexCollectionName, `person/${result[2].id}`);
+    it('should remove a vertice given the document handle for Person B', async () => {
+      const removedDoc = await db.removeVertex(personCollectionName, `person/b`);
       should.exist(removedDoc);
-      removedDoc[0]._id.should.equal('person/c');
-      removedDoc[0]._key.should.equal('c');
+      removedDoc[0]._id.should.equal('person/b');
+      removedDoc[0]._key.should.equal('b');
     });
     it('should remove edge given the document handle', async () => {
-      const removedDoc = await db.removeEdge(edgeCollectionName, edgeResult._id);
+      const removedDoc = await db.removeEdge(hasEdgeCollectionName, edgeResult._id);
       should.exist(removedDoc);
       removedDoc.error.should.equal(false);
       removedDoc.code.should.equal(202);
-    });
-  });
-  describe('testing special functions', async () => {
-    let vertices: any[];
-    before(async () => {
-      await db.addVertexCollection('organizations');
-      await db.addEdgeDefinition('org_has_parent_org', 'organizations', 'organizations');
-
-      vertices = [
-        { name: 'OrgA', id: 'A' },
-        { name: 'OrgB', id: 'B' },
-        { name: 'OrgC', id: 'C' },
-        { name: 'OrgD', id: 'D' }
-      ];
-      const result = await db.createVertex('organizations', vertices);
-
-      const edges = [
-        { info: 'OrgB has parent OrgA', _from: `organizations/${result[1].id}`, _to: `organizations/${result[0].id}`, id: 'OrgE1' },
-        { info: 'OrgC has parent OrgA', _from: `organizations/${result[2].id}`, _to: `organizations/${result[0].id}`, id: 'OrgE2' },
-      ];
-      await db.createEdge('org_has_parent_org', edges[0]);
-      await db.createEdge('org_has_parent_org', edges[1]);
     });
   });
 };
