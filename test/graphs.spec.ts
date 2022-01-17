@@ -272,8 +272,6 @@ const testProvider = (providerCfg) => {
         const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
         traversalResponse.paths = decodedPath;
       }
-      console.log('Traversal Response data is...', JSON.stringify(traversalResponse.data));
-      console.log('Traversal Response path is...', JSON.stringify(traversalResponse.paths));
       should.exist(traversalResponse);
       should.exist(traversalResponse.data);
       should.exist(traversalResponse.paths);
