@@ -1,4 +1,5 @@
 import { Logger } from 'winston';
+import { TraversalOptions } from './provider/arango/graph';
 
 /**
  * A key, value map containing database providers.
@@ -27,7 +28,7 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export const get = async(config: any, logger: Logger, graphName?: string, edgeConfig?: any): Promise<DatabaseProvider> => {
+export const get = async (config: any, logger: Logger, graphName?: string, edgeConfig?: any): Promise<DatabaseProvider> => {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
@@ -67,11 +68,8 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   getAllEdgesForVertice(collectionName: string, documentHandle: string): any;
   getInEdges(collectionName: string, documentHandle: string): any;
   getOutEdges(collectionName: string, documentHandle: string): any;
-  traversalFilter(filterObj: any): string;
-  traversalExpander(expanderObj: any): string;
-  traversal(startVertex: string | string[], opts: any, collectionName?: string,
-    edgeName?: string, data?: boolean, path?: boolean, aql?: boolean): any;
-  findTreesCommonAncestor(nodes: string[], collectionName: string, edgeName: string): any;
+  traversal(startVertex: string, collectionName: string, opts: TraversalOptions,
+    path_flag?: boolean): any;
   addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
     toVertice: Object | [Object]): any;
   removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;

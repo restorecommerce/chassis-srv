@@ -7,6 +7,14 @@ import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
 import { ArangoCollection, Collection } from 'arangojs/collection';
 
+export interface TraversalOptions {
+  include_vertex?: string[];
+  exclude_vertex?: string[];
+  include_edges?: string[];
+  exclude_edges?: string[];
+  direction?: string;
+};
+
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   graph: Graph;
 
@@ -336,50 +344,6 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     return collection.outEdges(documentHandle);
   }
 
-  traversalFilter(filterObj: any): string {
-    let stringFilter;
-    // there could be multiple vertices
-    let condition = '';
-    for (let i = 0; i < filterObj.length; i++) {
-      // check if its last element in array
-      if (i === (filterObj.length - 1)) {
-        condition = condition + ` (vertex._id.indexOf("${filterObj[i].vertex}") > -1)`;
-      } else {
-        condition = condition + ` (vertex._id.indexOf("${filterObj[i].vertex}") > -1)  ||`;
-      }
-    }
-    stringFilter = `if (${condition}) { return \"exclude\";} return;`;
-    return stringFilter;
-  }
-
-  traversalExpander(expanderObj: any): string {
-    let expanderFilter;
-    // there could be multiple edges
-    let condition = '';
-    let directionVar;
-    for (let i = 0; i < expanderObj.length; i++) {
-      // check if its last element in array
-      if (i === (expanderObj.length - 1)) {
-        condition = condition + ` (e._id.indexOf("${expanderObj[i].edge}") > -1)`;
-      } else {
-        condition = condition + ` (e._id.indexOf("${expanderObj[i].edge}") > -1)  ||`;
-      }
-    }
-    if ((expanderObj[0].direction).toLowerCase() == 'inbound') {
-      directionVar = 'getInEdges(vertex)';
-    } else {
-      directionVar = 'getOutEdges(vertex)';
-    }
-    expanderFilter = `var connections = [];
-    config.datasource.${directionVar}.forEach(function (e) {
-      if( ${condition} ) {
-        connections.push({ vertex: require(\"internal\").db._document(e._to), edge: e});
-      }
-    });
-    return connections;`;
-    return expanderFilter;
-  }
-
   /**
   * collection traversal - Performs a traversal starting from the given
   * startVertex and following edges contained in this edge collection.
@@ -393,90 +357,115 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * opts.init, opts.expander, opts.sort
   * @return  {[Object]} edge traversal path
   */
-  async traversal(startVertex: string | string[], opts: any, collectionName?: string,
-    edgeName?: string, data_flag?: boolean, path_flag?: boolean,
-    aql?: boolean): Promise<Object> {
-    let collection;
-    let traversedData;
-    if (_.isNil(startVertex)) {
-      throw new Error('missing start vertex name');
-    }
-    if (opts.lowest_common_ancestor) {
-      return this.findTreesCommonAncestor(startVertex as string[],
-        collectionName, edgeName);
+  async traversal(startVertex: string, collectionName: string, opts: TraversalOptions,
+    path_flag?: boolean): Promise<Object> {
+    if (_.isEmpty(startVertex) && _.isEmpty(collectionName)) {
+      throw new Error('missing start vertex or collection name');
     }
 
     let response: any = {
-      vertex_fields: [],
       data: {},
       paths: {}
     };
-    if (aql && aql == true) {
-      // get all the first level childrens for the start vertex
-      let result = await this.getAllChildrenNodes(startVertex as string, edgeName);
-      let finalResponse = [];
-      for (let item of result._result) {
-        finalResponse.push(_.omit(item, ['_key', '_id', '_rev']));
-      }
-      response.data.value = Buffer.from(JSON.stringify(finalResponse));
-      return response;
-    }
-
-    const vertex = startVertex as string;
-    if (_.isArray(vertex)) {
-      throw new Error('Invalid number of starting vertices for traversal: ' + vertex.length);
-    }
-    for (let key in opts) {
-      if (_.isEmpty(opts[key])) {
-        delete opts[key];
-      }
-    }
-
-    if (opts && opts.filter) {
-      opts.filter = this.traversalFilter(opts.filter);
-    } else if (opts && opts.expander) {
-      opts.expander = this.traversalExpander(opts.expander);
-    }
 
     if (!opts) {
-      // make outbound traversal by default if not provided
       opts = {};
-      opts.direction = 'outbound';
+      // make outbound traversal by default if not provided
+      if (!opts.direction || _.isEmpty(opts.direction)) {
+        opts.direction = 'outbound';
+      }
     }
 
-    if (opts.uniqueness && _.isEmpty(opts.uniqueness.vertices)
-      && _.isEmpty(opts.uniqueness.edges)) {
-      delete opts.uniqueness;
+    // default options
+    let defaultOptions: any = { uniqueVertices: 'global', bfs: true, uniqueEdges: 'path' };
+    let filter = '';
+    // include vertices in options if specified
+    if (opts.include_vertex) {
+      defaultOptions.vertexCollections = opts.include_vertex;
     }
 
+    // include edges in options if specified
+    if (opts.include_edges) {
+      defaultOptions.edgeCollections = opts.include_edges;
+    }
+
+    // exclude vertices
+    if (opts.exclude_vertex) {
+      for (let excludeVertex of opts.exclude_vertex) {
+        filter = filter + `FILTER v._id NOT LIKE "${excludeVertex}%"`;
+      }
+    }
+
+    // exclude edges
+    if (opts.exclude_edges) {
+      for (let excludeEdge of opts.exclude_edges) {
+        filter = filter + `FILTER e._id NOT LIKE "${excludeEdge}%"`;
+      }
+    }
+
+    let result = [];
+    let traversalData = [];
     try {
+      defaultOptions = JSON.stringify(defaultOptions);
       if (collectionName) {
-        collection = this.graph.edgeCollection(collectionName);
-        traversedData = await collection.traversal(vertex, opts);
-      } else {
-        traversedData = await this.graph.traversal(vertex, opts);
+        // traversal data
+        const traversalQuery = `For collection IN ${collectionName}
+          FOR v, e, p IN 1..100 ${opts.direction} collection GRAPH "${this.graph.name}"
+          OPTIONS ${defaultOptions}
+          ${filter}
+          RETURN v`;
+        const queryResult = await this.db.query(traversalQuery);
+        traversalData = await queryResult.all();
+        for (let data of traversalData) {
+          result.push(data.v); // extract only vertices data from above query
+        }
+        // get all collection data
+        const collectionQuery = `FOR j in ${collectionName} return j`;
+        const collectionQueryResult = await this.db.query(collectionQuery);
+        const collectionResult = await collectionQueryResult.all();
+        result = result.concat(collectionResult);
+      } else if (startVertex) {
+        // traversal data
+        const traversalQuery = `
+          FOR v, e, p IN 1..100 ${opts.direction} "${startVertex}" GRAPH "${this.graph.name}"
+          OPTIONS ${defaultOptions}
+          ${filter}
+          RETURN { v, e, p }`;
+        const queryResult = await this.db.query(traversalQuery);
+        traversalData = await queryResult.all();
+        for (let data of traversalData) {
+          result.push(data.v); // extract only vertices data from above query
+        }
+        // get start vertex data
+        const collectionName = startVertex.substring(0, startVertex.indexOf('/'));
+        const id = startVertex.substring(startVertex.indexOf('/') + 1, startVertex.length);
+        const idQuery = `FOR j in ${collectionName} FILTER j.id == '${id}' return j`;
+        const idQueryResult = await this.db.query(idQuery);
+        const idResult = await idQueryResult.all();
+        result = result.concat(idResult);
       }
     } catch (err) {
       throw { code: err.code, message: err.message };
     }
-    let encodedData = new Set<Object>();
-    if (data_flag) {
-      if (traversedData.visited && traversedData.visited.vertices) {
-        traversedData.visited.vertices = this.arrUnique(traversedData.visited.vertices);
-        for (let vertice of traversedData.visited.vertices) {
-          response.vertex_fields.push(_.pick(vertice, ['_id', '_key', '_rev', 'id']));
-          encodedData.add(_.omit(vertice, ['_key', '_rev']));
-        }
-        response.data.value = encodeMessage(Array.from(encodedData));
+
+    if (result && result.length > 0) {
+      // delete _key and _rev properties from object
+      for (let item of result) {
+        delete item['_key'];
+        delete item['_rev'];
       }
+      const encodedData = encodeMessage(result);
+      response.data = { value: encodedData };
     }
 
-    if (path_flag) {
-      if (traversedData.visited && traversedData.visited.paths) {
-        traversedData.visited.paths = this.arrUnique(traversedData.visited.paths);
-        const encodedPaths = encodeMessage(traversedData.visited.paths);
-        response.paths.value = encodedPaths;
+    // to do validate result and check paths
+    if (path_flag && traversalData.length > 0) {
+      let travelledPaths = [];
+      for (let data of traversalData) {
+        travelledPaths.push(data.p);
       }
+      travelledPaths = this.arrUnique(travelledPaths);
+      response.paths.value = encodeMessage(travelledPaths);
     }
 
     return response;
@@ -504,95 +493,6 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     return cleaned;
   }
 
-  /**
-   * Finds the lowest common ancestor between two nodes of a tree-shaped graph and returns the subtree in that node.
-   */
-  async findTreesCommonAncestor(nodes: string[], collectionName: string,
-    edgeName: string): Promise<any> {
-    // preprocessing to get all the roots
-    const collection = this.graph.edgeCollection(edgeName).collection;
-    const roots = {};
-    for (let node of nodes) {
-      node = `${collectionName}/${node}`;
-      const result = await collection.traversal(node, {
-        direction: 'outbound'
-      });
-      // const result = await this.db.query(`FOR v IN 1..10000 OUTBOUND @vertex GRAPH @graph FILTER "${rawFilter}" RETURN v`, { graph: this.graph.name, vertex: node });
-
-      if (_.isEmpty(result.visited) || _.isEmpty(result.visited.vertices)) {
-        if (!roots[node]) {
-          roots[node] = [node];
-        }
-
-        continue;
-      }
-      const items = result.visited.vertices;
-      const root = _.isArray(items) ? items[items.length - 1] : items;
-      if (!roots[root._id]) {
-        roots[root._id] = [node];
-      } else {
-        roots[root._id].push(node);
-      }
-    }
-
-    const that = this;
-    const findCommonAncestor = async (nodeA, nodeB) => {
-      const queryTpl = `LET firstPath = (FOR v IN 1..10000
-      OUTBOUND @vertex1 GRAPH @graph RETURN v)
-        FOR v,e,p IN 1..10000 OUTBOUND @vertex2 GRAPH @graph
-          LET pos = POSITION(firstPath, v, true)
-          FILTER pos != -1
-          LIMIT 1
-          let endPath = REVERSE(p.vertices)
-          return endPath`;
-      const result = await that.db.query(queryTpl, {
-        vertex1: nodeA,
-        vertex2: nodeB,
-        graph: that.graph.name
-      });
-      if (result.count == 0) {
-        throw new Error('Unimplemented: hierarchical resources do not share the same root');
-      }
-      const item = await result.next();
-      return item[0];
-    };
-
-    const lca = async (nodeA, nodeList: string[]) => {
-      if (nodeList.length > 1) {
-        const slices = nodeList.slice(1, nodeList.length);
-        return lca(nodeA, lca(nodes[0], slices));
-      } else {
-        const result = [await findCommonAncestor(nodeA, nodeList[0])];
-        return result;
-      }
-    };
-
-    let paths = []; // the edges allow us to build the tree
-    for (let root in roots) {
-      let ancestor: string;
-      if (roots[root].length == 1) {
-        ancestor = root;
-      } else {
-        const list = roots[root];
-        let vertex = await lca(list[0], list.slice(1, list.length));
-        if (_.isArray(vertex)) {
-          vertex = vertex[0];
-        }
-        ancestor = vertex._id;
-      }
-      const traversal = await collection.traversal(ancestor, {
-        direction: 'inbound',
-      });
-      const visited = traversal.visited;
-      paths = paths.concat(visited.paths);
-    }
-
-    return {
-      paths: {
-        value: encodeMessage(paths)
-      }
-    };
-  }
   /**
   * Adds the given edge definition to the graph.
   *

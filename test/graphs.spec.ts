@@ -96,8 +96,7 @@ const testProvider = (providerCfg) => {
     });
     it('should traverse the graph', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/${result[0].id}`,
-        { direction: 'outbound' }, null, null, true, true);
+      let traversalResponse = await db.traversal(`person/${result[0].id}`, null, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -108,11 +107,10 @@ const testProvider = (providerCfg) => {
         traversalResponse.paths = decodedPath;
       }
       should.exist(traversalResponse);
-      should.exist(traversalResponse.vertex_fields);
       should.exist(traversalResponse.data);
       should.exist(traversalResponse.paths);
       traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(4);
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(4);
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(3);
     });
     it('should update a vertice given the document handle', async () => {
       const doc = await db.getVertex(vertexCollectionName, `person/${result[4].id}`);
@@ -163,23 +161,6 @@ const testProvider = (providerCfg) => {
       ];
       await db.createEdge('org_has_parent_org', edges[0]);
       await db.createEdge('org_has_parent_org', edges[1]);
-    });
-    it('should return a tree with the lowest common ancestor as root', async () => {
-      const result = await db.traversal([`${vertices[1].id}`, `${vertices[2].id}`, `${vertices[3].id}`],
-        { lowest_common_ancestor: true }, 'organizations', 'org_has_parent_org');
-      should.exist(result);
-      should.exist(result.paths);
-      should.exist(result.paths.value);
-      const paths = JSON.parse(result.paths.value.toString());
-      paths.should.not.have.length(0);
-
-      const roots = [`organizations/${vertices[0].id}`, `organizations/${vertices[3].id}`];
-      for (let path of paths) {
-        if (_.isEmpty(path.edges)) {
-          const vertex = path.vertices[0];
-          roots.should.containEql(vertex._id);
-        }
-      }
     });
   });
 };
