@@ -5,7 +5,8 @@ import { Arango } from './base';
 import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from './common';
 import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
-import { ArangoCollection, Collection } from 'arangojs/collection';
+import { ArangoCollection } from 'arangojs/collection';
+import { toTraversalFilterObject, buildFilter } from './utils';
 
 export interface TraversalOptions {
   include_vertex?: string[];
@@ -358,7 +359,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @return  {[Object]} edge traversal path
   */
   async traversal(startVertex: string, collectionName: string, opts: TraversalOptions,
-    path_flag?: boolean): Promise<Object> {
+    filters?: any, path_flag?: boolean): Promise<Object> {
     if (_.isEmpty(startVertex) && _.isEmpty(collectionName)) {
       throw new Error('missing start vertex or collection name');
     }
@@ -392,14 +393,43 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     // exclude vertices
     if (opts.exclude_vertex) {
       for (let excludeVertex of opts.exclude_vertex) {
-        filter = filter + `FILTER v._id NOT LIKE "${excludeVertex}%"`;
+        filter = filter + ` FILTER v._id NOT LIKE "${excludeVertex}%" `;
       }
     }
 
     // exclude edges
     if (opts.exclude_edge) {
       for (let excludeEdge of opts.exclude_edge) {
-        filter = filter + `FILTER e._id NOT LIKE "${excludeEdge}%"`;
+        filter = filter + ` FILTER e._id NOT LIKE "${excludeEdge}%" `;
+      }
+    }
+
+    let filterObj = [];
+    // convert the filter from proto structure (field, operation, value and operand) to {field: value } mapping
+    if (filters && !_.isEmpty(filters)) {
+      if (_.isArray(filters)) {
+        for (let eachFilter of filters) {
+          filterObj.push(toTraversalFilterObject(eachFilter));
+        }
+      } else {
+        filterObj.push(toTraversalFilterObject(filters));
+      }
+    }
+
+    // convert filterObj to AQL filter
+    if (!_.isArray(filterObj)) {
+      filterObj = [filterObj];
+    }
+
+    let customFilter = '';
+    if (filterObj && filterObj.length > 0) {
+      for (let i=0; i < filterObj.length; i++) {
+        const filterString = buildFilter([filterObj[i]]).q;
+        if (i === filterObj.length - 1) {
+          customFilter = customFilter + filterString;
+        } else {
+          customFilter = customFilter + filterString + ' || ';
+        }
       }
     }
 

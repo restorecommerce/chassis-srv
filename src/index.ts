@@ -33,3 +33,6 @@ export { OffsetStore };
 
 import { Health } from './health';
 export { Health };
+
+import { toTraversalFilterObject } from './database/provider/arango/utils';
+export { toTraversalFilterObject };

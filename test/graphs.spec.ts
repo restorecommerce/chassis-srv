@@ -82,8 +82,8 @@ const testProvider = (providerCfg) => {
       insertedVertices = _.sortBy(insertedVertices, [(o) => { return o.name; }]);
       should.exist(insertedVertices);
       insertedVertices.should.deepEqual(carVertices);
-       // cars
-       const placeVertices = [
+      // cars
+      const placeVertices = [
         { name: 'placeA', id: 'p1' },
         { name: 'placeB', id: 'p2' },
         { name: 'placeC', id: 'p3' },
@@ -156,7 +156,7 @@ const testProvider = (providerCfg) => {
     });
     it('should traverse the graph and return both vertices and paths when paths flag is set to true', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, null, true);
+      let traversalResponse = await db.traversal(`person/a`, null, null, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -178,7 +178,7 @@ const testProvider = (providerCfg) => {
     // include vertices
     it('should traverse the graph with included vertices options and return only the included vertices', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { include_vertex: ['car'] }, true);
+      let traversalResponse = await db.traversal(`person/a`, null, { include_vertex: ['car'] }, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -199,7 +199,7 @@ const testProvider = (providerCfg) => {
     // exclude vertices
     it('should traverse the graph with excluded vertices options and return only traversed data with excluded vertices', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { exclude_vertex: ['car'] }, true);
+      let traversalResponse = await db.traversal(`person/a`, null, { exclude_vertex: ['car'] }, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -220,7 +220,7 @@ const testProvider = (providerCfg) => {
     // include edges
     it('should traverse the graph with included edges options and return vertices from included edges', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { include_edge: ['has'] }, true);
+      let traversalResponse = await db.traversal(`person/a`, null, { include_edge: ['has'] }, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -241,7 +241,7 @@ const testProvider = (providerCfg) => {
     // exclude edges
     it('should traverse the graph with exclude edges options and return vertices from excluded edges', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { exclude_edge: ['belongs'] }, true);
+      let traversalResponse = await db.traversal(`person/a`, null, { exclude_edge: ['belongs'] }, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
@@ -262,7 +262,7 @@ const testProvider = (providerCfg) => {
     // collection traversal
     it('should traverse the entire collection and return data from all traversed entities', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(null, 'person', null, true);
+      let traversalResponse = await db.traversal(null, 'person', null, null, true);
       // decode the paths and data
       if (traversalResponse && traversalResponse.data) {
         const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());

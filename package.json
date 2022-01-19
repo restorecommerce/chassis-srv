@@ -64,7 +64,7 @@
   },
   "scripts": {
     "lint": "eslint './src/**/*.ts' ",
-    "pretest": "npm run build && npm run createtopics",
+    "pretest": "npm run build",
     "test": "npm run lint && nyc npm run mocha",
     "mochadebug": "cross-env NODE_ENV=test; mocha --full-trace --inspect-brk",
     "mocha": "cross-env NODE_ENV=test; mocha --full-trace --exit --trace-warnings;",
