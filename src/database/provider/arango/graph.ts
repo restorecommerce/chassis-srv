@@ -407,12 +407,17 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     let filterObj = [];
     // convert the filter from proto structure (field, operation, value and operand) to {field: value } mapping
     if (filters && !_.isEmpty(filters)) {
-      if (_.isArray(filters)) {
-        for (let eachFilter of filters) {
-          filterObj.push(toTraversalFilterObject(eachFilter));
+      if (!_.isArray(filters)) {
+        filters = [filters];
+      }
+      for (let eachFilter of filters) {
+        const traversalFilterObj = toTraversalFilterObject(eachFilter);
+        if (eachFilter.entity) {
+          traversalFilterObj.entity = eachFilter.entity;
+        } else if (eachFilter.edge) {
+          traversalFilterObj.edge = eachFilter.edge;
         }
-      } else {
-        filterObj.push(toTraversalFilterObject(filters));
+        filterObj.push(traversalFilterObj);
       }
     }
 
@@ -421,16 +426,38 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       filterObj = [filterObj];
     }
 
+    // construct final custom filter based on filterObj using buildFilter
     let customFilter = '';
     if (filterObj && filterObj.length > 0) {
-      for (let i=0; i < filterObj.length; i++) {
-        const filterString = buildFilter([filterObj[i]]).q;
+      for (let i = 0; i < filterObj.length; i++) {
+        let entity = '';
+        let edge = '';
+        if (filterObj[i].entity) {
+          entity = filterObj[i].entity;
+          delete filterObj[i].entity;
+        } else if (filterObj[i].edge) {
+          edge = filterObj[i].edge;
+          delete filterObj[i].edge;
+        }
+        let filterString = buildFilter([filterObj[i]]).q;
+        if (typeof filterString === 'string' &&
+          filterString.startsWith('(') && filterString.endsWith(')')) {
+          if (entity) {
+            filterString = filterString.substring(0, 1) + ` v._id LIKE "${entity}%" && ` + filterString.substring(1);
+          } else if (edge) {
+            filterString = filterString.substring(0, 1) + ` e._id LIKE "${edge}%" && ` + filterString.substring(1);
+          }
+        }
         if (i === filterObj.length - 1) {
           customFilter = customFilter + filterString;
         } else {
           customFilter = customFilter + filterString + ' || ';
         }
       }
+    }
+
+    if (customFilter) {
+      filter = filter + ` FILTER ${customFilter}`;
     }
 
     let result = [];
