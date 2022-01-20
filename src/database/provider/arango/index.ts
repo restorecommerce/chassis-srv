@@ -109,7 +109,7 @@ export const create = async (conf: any, logger: any, graphName?: string, edgeDef
       }
     }
 
-    db = new ArangoGraph(conn, graph);
+    db = new ArangoGraph(conn, graph, edgeDefConfig);
   } else {
     db = new Arango(conn);
   }

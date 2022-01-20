@@ -53,9 +53,14 @@
     "graphName": "chassis-graph-test",
     "edgeDefinitions": [
       {
-        "edgeName": "knows",
+        "collection": "has",
         "from": "person",
-        "to": "person"
+        "to": "car"
+      },
+      {
+        "collection": "belongs",
+        "from": "car",
+        "to": "place"
       }
     ]
   },

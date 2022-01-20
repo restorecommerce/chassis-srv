@@ -18,10 +18,12 @@ export interface TraversalOptions {
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   graph: Graph;
+  edgeDefConfig: any;
 
-  constructor(conn: Database, graph: Graph) {
+  constructor(conn: Database, graph: Graph, edgeDefConfig: any) {
     super(conn);
     this.graph = graph;
+    this.edgeDefConfig = edgeDefConfig; // edge definition config
   }
 
   /**
