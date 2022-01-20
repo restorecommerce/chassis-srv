@@ -323,6 +323,27 @@ const testProvider = (providerCfg) => {
       traversalResponse.data[3].name.should.equal('Alice');
       traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(3);
     });
+    // exclude one edge and include another edge of same entity
+    it('for 2 entities should exclude one entity edge and include another entity edge', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(`person/a`, null, { exclude_edge: ['resides'], include_edge: ['lives'] }, null, true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      traversalResponse.data[0].name.should.equal('stateAA');
+      traversalResponse.data[1].name.should.equal('Alice');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+    });
     // collection traversal
     it('should traverse the entire collection and return data from all traversed entities', async () => {
       // traverse graph
@@ -397,6 +418,110 @@ const testProvider = (providerCfg) => {
       filteredData.should.be.length(2);
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateA');
+    });
+    // filters with include vertices
+    it('should traverse the graph with filters and included vertices options and return only the filtered and included vertices', async () => {
+      // traverse graph with 1 included vertex
+      let traversalResponse = await db.traversal(null, 'person', { include_vertex: ['car'], direction: 'OUTBOUND' },
+        [{
+          filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
+          operator: 'or', // Default is AND operation
+          entity: 'car'
+        }],
+        true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(7); // 5 person 2 cars
+      traversalResponse.data[0].name.should.equal('carA');
+      traversalResponse.data[1].name.should.equal('carB');
+      traversalResponse.data[2].name.should.equal('Alice');
+      traversalResponse.data[3].name.should.equal('Bob');
+      traversalResponse.data[4].name.should.equal('Charlie');
+      traversalResponse.data[5].name.should.equal('Dave');
+      traversalResponse.data[6].name.should.equal('Eve');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(2);
+
+      // traverse graph with 2 included vertex
+      traversalResponse = await db.traversal(null, 'person', { include_vertex: ['car', 'state'], direction: 'OUTBOUND' },
+        [{
+          filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
+          operator: 'or', // Default is AND operation
+          entity: 'car'
+        }, {
+          filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
+          operator: 'or', // Default is AND operation
+          entity: 'state'
+        }],
+        true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(9); // 5 person 2 cars 2 states
+      traversalResponse.data[0].name.should.equal('carA');
+      traversalResponse.data[1].name.should.equal('stateAA');
+      traversalResponse.data[2].name.should.equal('carB');
+      traversalResponse.data[3].name.should.equal('stateBB');
+      traversalResponse.data[4].name.should.equal('Alice');
+      traversalResponse.data[5].name.should.equal('Bob');
+      traversalResponse.data[6].name.should.equal('Charlie');
+      traversalResponse.data[7].name.should.equal('Dave');
+      traversalResponse.data[8].name.should.equal('Eve');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(4);
+    });
+    // filter with exclude vertices
+    it('should traverse the graph with filters and excluded vertices options and return only the filtered and excluded vertices', async () => {
+      // traverse graph
+      let traversalResponse = await db.traversal(null, 'person', { exclude_vertex: ['car'] },
+        [{
+          filter: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateB' }],
+          operator: 'or', // Default is AND operation
+          entity: 'state'
+        }], true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(12); // 5 persons, 5 places, 2 satates
+      traversalResponse.data[0].name.should.equal('placeA');
+      traversalResponse.data[1].name.should.equal('stateA');
+      traversalResponse.data[2].name.should.equal('placeB');
+      traversalResponse.data[3].name.should.equal('stateB');
+      traversalResponse.data[4].name.should.equal('placeC');
+      traversalResponse.data[5].name.should.equal('placeD');
+      traversalResponse.data[6].name.should.equal('placeE');
+      traversalResponse.data[7].name.should.equal('Alice');
+      traversalResponse.data[8].name.should.equal('Bob');
+      traversalResponse.data[9].name.should.equal('Charlie');
+      traversalResponse.data[10].name.should.equal('Dave');
+      traversalResponse.data[11].name.should.equal('Eve');
+      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(7);
     });
     it('should update a vertice given the document handle', async () => {
       const doc = await db.getVertex(personCollectionName, `person/e`);
