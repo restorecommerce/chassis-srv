@@ -16,6 +16,46 @@ export interface TraversalOptions {
   direction?: string;
 };
 
+export enum FilterOperation {
+  eq = 0,
+  lt = 1,
+  lte = 2,
+  gt = 3,
+  gte = 4,
+  isEmpty = 5,
+  iLike = 6,
+  in = 7,
+  neq = 8
+};
+
+export enum FilterValueType {
+  STRING = 0,
+  NUMBER = 1,
+  BOOLEAN = 2,
+  DATE = 3,
+  ARRAY = 4,
+};
+
+export enum OperatorType {
+  and = 0,
+  or = 1,
+};
+
+export interface GraphFilter {
+  field: string;
+  operation: FilterOperation;
+  value: string;
+  type?: FilterValueType; // defaults to string data type if not provided
+  filters?: GraphFilters [];
+}
+
+export interface GraphFilters {
+  entity?: string;
+  edge?: string;
+  filter?: GraphFilter[];
+  operator?: OperatorType;
+}
+
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   graph: Graph;
   edgeDefConfig: any;
@@ -361,7 +401,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @return  {[Object]} edge traversal path
   */
   async traversal(startVertex: string, collectionName: string, opts: TraversalOptions,
-    filters?: any, path_flag?: boolean): Promise<Object> {
+    filters?: GraphFilters[], path_flag?: boolean): Promise<Object> {
     if (_.isEmpty(startVertex) && _.isEmpty(collectionName)) {
       throw new Error('missing start vertex or collection name');
     }

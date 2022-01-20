@@ -1,5 +1,5 @@
 import { Logger } from 'winston';
-import { TraversalOptions } from './provider/arango/graph';
+import { TraversalOptions, GraphFilters } from './provider/arango/graph';
 
 /**
  * A key, value map containing database providers.
@@ -69,7 +69,7 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   getInEdges(collectionName: string, documentHandle: string): any;
   getOutEdges(collectionName: string, documentHandle: string): any;
   traversal(startVertex: string, collectionName: string, opts: TraversalOptions,
-    path_flag?: boolean): any;
+    filters?: GraphFilters[], path_flag?: boolean): any;
   addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
     toVertice: Object | [Object]): any;
   removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;
