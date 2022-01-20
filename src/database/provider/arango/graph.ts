@@ -487,7 +487,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       // AQL query for missing entities
       if (completeEntities && completeEntities.length > 0) {
         for (let missingEntity of completeEntities) {
-          filter = filter + ` || ( v._id LIKE "${missingEntity}%" )`
+          filter = filter + ` || ( v._id LIKE "${missingEntity}%" )`;
         }
       }
     }

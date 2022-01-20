@@ -61,6 +61,16 @@
         "collection": "belongs",
         "from": "car",
         "to": "place"
+      },
+      {
+        "collection": "resides",
+        "from": "place",
+        "to": "state"
+      },
+      {
+        "collection": "lives",
+        "from": "person",
+        "to": "state"
       }
     ]
   },
