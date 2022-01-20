@@ -191,7 +191,6 @@ export const autoCastValue = (value: any): any => {
     return value.map(value => value.toString());
   }
   if (_.isString(value)) { // String
-    console.log('Value is........', value);
     return JSON.stringify(value);
   }
   if (_.isBoolean(value)) { // Boolean
@@ -306,7 +305,6 @@ export const buildFilter = (filter: any): any => {
     let q: any = '';
     let multipleFilters = false;
     for (let eachFilter of filter) {
-      console.log('Each FIlter Object is...', eachFilter);
       _.forEach(eachFilter, (value, key) => {
         switch (key) {
           case '$or':
@@ -350,4 +348,33 @@ export const buildFilter = (filter: any): any => {
     }
     return { q };
   }
+};
+
+/**
+ * Find's the list of entities from edge definition config depending on the direction
+ * recursively
+ * @param collection - root collection / start vertex
+ * @param edgeDefConfig - edge definition cofnig
+ * @param direction - direction OUTBOUND / INBOUND
+ * @param entitiesList - result of entities in the graph of edge definition config
+ */
+export const recursiveFindEntities = (collection, edgeDefConfig, direction, entitiesList) => {
+  if(entitiesList.includes(collection)) {
+    return;
+  }
+  entitiesList.push(collection);
+  let items = [];
+  if (direction === 'OUTBOUND') {
+    items = edgeDefConfig.filter(col => col.from === collection);
+  } else if (direction === 'INBOUND') {
+    items = edgeDefConfig.filter(col => col.to === collection);
+  }
+  for (let item of items) {
+    if (direction === 'OUTBOUND') {
+      recursiveFindEntities(item.to, edgeDefConfig, direction, entitiesList);
+    } else if (direction === 'INBOUND') {
+      recursiveFindEntities(item.from, edgeDefConfig, direction, entitiesList);
+    }
+  }
+  return entitiesList;
 };

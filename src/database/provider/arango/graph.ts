@@ -6,7 +6,7 @@ import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from './comm
 import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
-import { toTraversalFilterObject, buildFilter } from './utils';
+import { toTraversalFilterObject, buildFilter, recursiveFindEntities } from './utils';
 
 export interface TraversalOptions {
   include_vertex?: string[];
@@ -376,7 +376,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
     // make outbound traversal by default if not provided
     if (!opts.direction || _.isEmpty(opts.direction)) {
-      opts.direction = 'outbound';
+      opts.direction = 'OUTBOUND';
     }
 
     // default options
@@ -407,6 +407,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
 
     let filterObj = [];
+    let filteredEntities = []; // used to find difference from graph edgeDefConfig and add missing entities to custom filter
+    let completeEntities = [];
     // convert the filter from proto structure (field, operation, value and operand) to {field: value } mapping
     if (filters && !_.isEmpty(filters)) {
       if (!_.isArray(filters)) {
@@ -415,6 +417,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       for (let eachFilter of filters) {
         const traversalFilterObj = toTraversalFilterObject(eachFilter);
         if (eachFilter.entity) {
+          filteredEntities.push(eachFilter.entity);
           traversalFilterObj.entity = eachFilter.entity;
         } else if (eachFilter.edge) {
           traversalFilterObj.edge = eachFilter.edge;
@@ -423,12 +426,21 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
     }
 
-    // convert filterObj to AQL filter
     if (!_.isArray(filterObj)) {
       filterObj = [filterObj];
     }
 
-    // construct final custom filter based on filterObj using buildFilter
+    if (filterObj?.length > 0) {
+      let startVertexCollectionName;
+      if (collectionName) {
+        startVertexCollectionName = collectionName;
+      } else if (startVertex) {
+        startVertexCollectionName = startVertex.substring(0, startVertex.indexOf('/'));
+      }
+      completeEntities = recursiveFindEntities(startVertexCollectionName, this.edgeDefConfig, opts.direction, []);
+    }
+
+    // construct AQL custom filter based on filterObj using buildFilter api
     let customFilter = '';
     let rootCollectionFilter = '';
     if (filterObj && filterObj.length > 0) {
@@ -447,7 +459,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           filterString.startsWith('(') && filterString.endsWith(')')) {
           if (entity) {
             filterString = filterString.substring(0, 1) + ` v._id LIKE "${entity}%" && ` + filterString.substring(1);
-            if(collectionName && entity === collectionName) {
+            if (collectionName && entity === collectionName) {
               rootCollectionFilter = filterString;
             }
           } else if (edge) {
@@ -464,6 +476,20 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     if (customFilter) {
       filter = filter + ` FILTER ${customFilter}`;
+      // add missing entities to FILTER query
+      filteredEntities = filteredEntities.sort();
+      completeEntities = completeEntities.sort();
+      if (!_.isEqual(filteredEntities, completeEntities)) {
+        for (let removeEntity of _.intersection(filteredEntities, completeEntities)) {
+          completeEntities.splice(completeEntities.indexOf(removeEntity), 1);
+        }
+      }
+      // AQL query for missing entities
+      if (completeEntities && completeEntities.length > 0) {
+        for (let missingEntity of completeEntities) {
+          filter = filter + ` || ( v._id LIKE "${missingEntity}%" )`
+        }
+      }
     }
 
     let result = [];
@@ -483,7 +509,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           result.push(data.v); // extract only vertices data from above query
         }
         // get all collection data
-        if(rootCollectionFilter && !_.isEmpty(rootCollectionFilter)) {
+        if (rootCollectionFilter && !_.isEmpty(rootCollectionFilter)) {
           rootCollectionFilter = ` FILTER ${rootCollectionFilter}`;
         }
         const collectionQuery = `FOR j in ${collectionName} ${rootCollectionFilter} return j`;
