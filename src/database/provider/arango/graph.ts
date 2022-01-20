@@ -428,6 +428,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     // construct final custom filter based on filterObj using buildFilter
     let customFilter = '';
+    let rootCollectionFilter = '';
     if (filterObj && filterObj.length > 0) {
       for (let i = 0; i < filterObj.length; i++) {
         let entity = '';
@@ -444,6 +445,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           filterString.startsWith('(') && filterString.endsWith(')')) {
           if (entity) {
             filterString = filterString.substring(0, 1) + ` v._id LIKE "${entity}%" && ` + filterString.substring(1);
+            if(collectionName && entity === collectionName) {
+              rootCollectionFilter = filterString;
+            }
           } else if (edge) {
             filterString = filterString.substring(0, 1) + ` e._id LIKE "${edge}%" && ` + filterString.substring(1);
           }
@@ -477,7 +481,10 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           result.push(data.v); // extract only vertices data from above query
         }
         // get all collection data
-        const collectionQuery = `FOR j in ${collectionName} return j`;
+        if(rootCollectionFilter && !_.isEmpty(rootCollectionFilter)) {
+          rootCollectionFilter = ` FILTER ${rootCollectionFilter}`;
+        }
+        const collectionQuery = `FOR j in ${collectionName} ${rootCollectionFilter} return j`;
         const collectionQueryResult = await this.db.query(collectionQuery);
         const collectionResult = await collectionQueryResult.all();
         result = result.concat(collectionResult);
