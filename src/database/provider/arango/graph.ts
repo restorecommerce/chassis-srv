@@ -420,6 +420,15 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           filteredEntities.push(eachFilter.entity);
           traversalFilterObj.entity = eachFilter.entity;
         } else if (eachFilter.edge) {
+          // depending on direction
+          const entityConnectedToEdge = this.edgeDefConfig.filter(e => e.collection === eachFilter.edge);
+          if (entityConnectedToEdge?.length === 1) {
+            if(opts.direction === 'OUTBOUND') {
+              filteredEntities.push(entityConnectedToEdge[0].to);
+            } else if (opts.direction === 'INBOUND') {
+              filteredEntities.push(entityConnectedToEdge[0].from);
+            }
+          }
           traversalFilterObj.edge = eachFilter.edge;
         }
         filterObj.push(traversalFilterObj);
@@ -503,6 +512,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           OPTIONS ${defaultOptions}
           ${filter}
           RETURN { v, e, p }`;
+        console.log('Traversal Query is...', traversalQuery);
         const queryResult = await this.db.query(traversalQuery);
         traversalData = await queryResult.all();
         for (let data of traversalData) {
