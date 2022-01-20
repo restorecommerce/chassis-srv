@@ -526,7 +526,7 @@ const testProvider = (providerCfg) => {
     // filter with exclude edges
     it('for 2 entities should exclude one entity edge and include another entity edge with filtering enabled on second edge entity', async () => {
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      const traversalResponse = await db.traversal(null, 'person', { exclude_edge: ['resides'] },
+      let traversalResponse = await db.traversal(null, 'person', { exclude_edge: ['resides'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
@@ -546,7 +546,64 @@ const testProvider = (providerCfg) => {
       should.exist(traversalResponse.data);
       should.exist(traversalResponse.paths);
       traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 2 states, 5 cars, 5 place entities
-      const filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      let filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      filteredData.should.be.length(2);
+      filteredData[0].name.should.equal('stateAA');
+      filteredData[1].name.should.equal('stateBB');
+
+      // with iLike traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
+      traversalResponse = await db.traversal(null, 'person', { exclude_edge: ['resides'] },
+        [{
+          filter: [{ field: 'name', operation: 'iLike', value: 'StaTe%' }],
+          operator: 'or', // Default is AND operation
+          edge: 'lives'
+        }],
+        true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(20); // 5 person, 5 states, 5 cars, 5 place entities
+      filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      filteredData.should.be.length(5);
+      filteredData[0].name.should.equal('stateAA');
+      filteredData[1].name.should.equal('stateBB');
+      filteredData[2].name.should.equal('stateCC');
+      filteredData[3].name.should.equal('stateDD');
+      filteredData[4].name.should.equal('stateEE');
+    });
+     // filter with include edges
+     it('should traverse the graph with filters and included edges and return only the filtered and included edge vertices data', async () => {
+      // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
+      let traversalResponse = await db.traversal(null, 'person', { include_edge: ['has', 'lives'] },
+        [{
+          filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
+          operator: 'or', // Default is AND operation
+          edge: 'lives'
+        }],
+        true);
+      // decode the paths and data
+      if (traversalResponse && traversalResponse.data) {
+        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
+        traversalResponse.data = decodedData;
+      }
+      if (traversalResponse && traversalResponse.paths) {
+        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
+        traversalResponse.paths = decodedPath;
+      }
+      should.exist(traversalResponse);
+      should.exist(traversalResponse.data);
+      should.exist(traversalResponse.paths);
+      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(12); // 5 person, 2 states, 5 cars
+      let filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
       filteredData.should.be.length(2);
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateBB');

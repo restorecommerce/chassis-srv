@@ -282,7 +282,7 @@ export const buildField = (key: any, value: any): string => {
   }
   if (value.$iLike) {
     // @param 'true' is for case insensitive
-    return ' LIKE (' + autoCastKey(key, value) + ',' + autoCastValue(value.$iLike) + ', true)';
+    return 'LOWER(' +autoCastKey(key, value) + ') LIKE ' + autoCastValue(value.$iLike.toLowerCase());
   }
   if (!_.isNil(value.$not)) {
     const temp = buildField(key, value.$not);

@@ -512,7 +512,6 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           OPTIONS ${defaultOptions}
           ${filter}
           RETURN { v, e, p }`;
-        console.log('Traversal Query is...', traversalQuery);
         const queryResult = await this.db.query(traversalQuery);
         traversalData = await queryResult.all();
         for (let data of traversalData) {
