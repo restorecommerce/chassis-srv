@@ -5,7 +5,7 @@ import { GrpcClient } from '@restorecommerce/grpc-client';
 import { Events } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createLogger } from '@restorecommerce/logger'
-import * as Redis from 'ioredis';
+import Redis from 'ioredis';
 
 
 /**

@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import * as Redis from 'ioredis';
+import Redis from 'ioredis';
 import { Logger } from 'winston';
 
 /**

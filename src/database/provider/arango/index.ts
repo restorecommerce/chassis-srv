@@ -1,7 +1,7 @@
 import { Arango } from './base';
 import { ArangoGraph } from './graph';
 
-import * as retry from 'async-retry';
+import retry from 'async-retry';
 import * as fs from 'fs';
 import { Database } from 'arangojs';
 import { Logger } from 'winston';

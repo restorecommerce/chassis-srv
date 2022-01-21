@@ -1,4 +1,4 @@
-import * as Datastore from 'nedb';
+import Datastore from 'nedb';
 import * as _ from 'lodash';
 import { Logger } from 'winston';
 
