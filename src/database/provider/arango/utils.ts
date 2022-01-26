@@ -220,7 +220,7 @@ export const buildComparison = (filter: any, op: String): any => {
     if (!_.isArray(e)) {
       e = [e];
     }
-    e = buildFilter(e); // eslint-disable-line
+    e = buildGraphFilter(e); // eslint-disable-line
     return e.q;
   });
 
@@ -243,7 +243,7 @@ export const buildComparison = (filter: any, op: String): any => {
  * @param {string|boolean|number|date|object} value
  * @return {String} query template string
  */
-export const buildField = (key: any, value: any): string => {
+export const buildGraphField = (key: any, value: any): string => {
   if (_.isString(value) || _.isBoolean(value) || _.isNumber(value || _.isDate(value))) {
     return autoCastKey(key, value) + ' == ' + autoCastValue(value);
   }
@@ -285,7 +285,7 @@ export const buildField = (key: any, value: any): string => {
     return 'LOWER(' +autoCastKey(key, value) + ') LIKE ' + autoCastValue(value.$iLike.toLowerCase());
   }
   if (!_.isNil(value.$not)) {
-    const temp = buildField(key, value.$not);
+    const temp = buildGraphField(key, value.$not);
     return `!(${temp})`;
   }
   if (_.has(value, '$isEmpty')) {
@@ -300,7 +300,7 @@ export const buildField = (key: any, value: any): string => {
  * @param {Object} filter key, value tree object
  * @return {any} query template string and bind variables
  */
-export const buildFilter = (filter: any): any => {
+export const buildGraphFilter = (filter: any): any => {
   if (filter.length > 0) {
     let q: any = '';
     let multipleFilters = false;
@@ -337,10 +337,10 @@ export const buildFilter = (filter: any): any => {
               throw new Error(`unsupported query operator ${key}`);
             }
             if (!multipleFilters) {
-              q = buildField(key, value);
+              q = buildGraphField(key, value);
               multipleFilters = true;
             } else {
-              q = q + ' && ' + buildField(key, value);
+              q = q + ' && ' + buildGraphField(key, value);
             }
             break;
         }
@@ -377,4 +377,67 @@ export const recursiveFindEntities = (collection, edgeDefConfig, direction, enti
     }
   }
   return entitiesList;
+};
+
+/**
+ * Build limit and offset filters.
+ * @param {limit} limit
+ * @param {offset} offset
+ * @return {String}  string limit filter
+ */
+export const buildGraphLimiter = (limit?: number, offset?: number): string => {
+  // LIMIT count
+  // LIMIT offset, count
+  if (!limit) {
+    limit = 1000;
+  }
+  if (!_.isNil(limit)) {
+    if (!_.isNil(offset)) {
+      return `LIMIT ${offset}, ${limit}`;
+    }
+    return `LIMIT ${limit}`;
+  }
+  return '';
+};
+
+/**
+ * Auto-casting reference value by using native function of arangoDB
+ *
+ * @param {string} key
+ * @param {object} value - raw value optional
+ * @return {object} interpreted value
+ */
+export const autoCastRootKey = (key: any, value?: any): any => {
+  if (_.isDate(value)) { // Date
+    return `DATE_TIMESTAMP(obj.${key})`;
+  }
+  return 'obj.' + key;
+};
+
+/**
+ * Build sort filter.
+ * @param {Object} sort sort options
+ * @return {any} template sort string
+ */
+export const buildGraphSorter = (sortList: any): any => {
+  if (_.isNil(sortList) || _.isEmpty(sortList)) {
+    return '';
+  }
+
+  const sort = _.mapKeys(sortList, (value, key) => {
+    return autoCastRootKey(key);
+  });
+  let sortKeysOrder = '';
+  let i = 1;
+  let objLength = Object.keys(sort).length;
+  for (let key in sort) {
+    if (objLength == i) {
+      // Do not append ',' for the last element
+      sortKeysOrder = `${sortKeysOrder} ${key} ${sort[key]} `;
+    } else {
+      sortKeysOrder = `${sortKeysOrder} ${key} ${sort[key]},`;
+    }
+    i += 1;
+  }
+  return 'SORT ' + sortKeysOrder;
 };

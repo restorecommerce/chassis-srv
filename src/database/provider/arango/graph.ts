@@ -6,7 +6,30 @@ import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from './comm
 import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
-import { toTraversalFilterObject, buildFilter, recursiveFindEntities } from './utils';
+import { toTraversalFilterObject, buildGraphFilter, recursiveFindEntities, buildGraphLimiter, buildGraphSorter } from './utils';
+
+export interface Vertices {
+  collection_name: string;
+  start_vertex_id: string[];
+}
+
+export enum SortOrder {
+  UNSORTED = 0,
+  ASCENDING = 1,
+  DESCENDING = 2,
+};
+
+export interface Sort {
+  field: string;
+  order: SortOrder;
+}
+
+export interface Collection {
+  collection_name: string;
+  limit?: number;
+  offset?: number;
+  sort?: Sort[];
+}
 
 export interface TraversalOptions {
   include_vertex?: string[];
@@ -46,7 +69,7 @@ export interface GraphFilter {
   operation: FilterOperation;
   value: string;
   type?: FilterValueType; // defaults to string data type if not provided
-  filters?: GraphFilters [];
+  filters?: GraphFilters[];
 }
 
 export interface GraphFilters {
@@ -400,16 +423,39 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * opts.init, opts.expander, opts.sort
   * @return  {[Object]} edge traversal path
   */
-  async traversal(startVertex: string, collectionName: string, opts: TraversalOptions,
+  async traversal(vertices: Vertices, collection: Collection, opts: TraversalOptions,
     filters?: GraphFilters[], path_flag?: boolean): Promise<Object> {
-    if (_.isEmpty(startVertex) && _.isEmpty(collectionName)) {
-      throw new Error('missing start vertex or collection name');
+    if (vertices) {
+      if (_.isEmpty(vertices.collection_name) && !_.isEmpty(vertices.start_vertex_id)) {
+        throw new Error(`missing collection name for vertex id ${vertices.start_vertex_id}`);
+      } else if (!_.isEmpty(vertices.collection_name) && _.isEmpty(vertices.start_vertex_id)) {
+        throw new Error(`missing vertex id for collection_name ${vertices.collection_name}`);
+      }
     }
 
-    let response: any = {
-      data: {},
-      paths: {}
-    };
+    // vertices data
+    let vertexCollectionName, startVertexIds;
+    if (vertices) {
+      vertexCollectionName = vertices.collection_name;
+      startVertexIds = vertices.start_vertex_id;
+    }
+
+    // collection data
+    let collectionName, limit, offset, sort;
+    if (collection) {
+      collectionName = collection.collection_name;
+      limit = collection.limit;
+      offset = collection.offset;
+      sort = collection.sort;
+    }
+
+    if ((_.isUndefined(startVertexIds) || _.isNil(startVertexIds)) &&
+      (_.isUndefined(collectionName) || _.isNil(collectionName))) {
+      throw new Error('One of the Vertices or Collection should be defined');
+    }
+
+    // from either vertices or collections
+    const traversalCollectionName = collectionName && _.isEmpty(collectionName) ? collectionName : vertexCollectionName;
 
     if (!opts) {
       opts = {};
@@ -422,6 +468,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     // default options
     let defaultOptions: any = { uniqueVertices: 'global', bfs: true, uniqueEdges: 'path' };
     let filter = '';
+    let rootFilter = '';
+    let limitFilter = '';
+    let sortFilter = '';
     // include vertices in options if specified
     if (opts.include_vertex) {
       defaultOptions.vertexCollections = opts.include_vertex;
@@ -446,24 +495,30 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
     }
 
+    // TODO move all this filter part to separate utils
     let filterObj = [];
     let filteredEntities = []; // used to find difference from graph edgeDefConfig and add missing entities to custom filter
     let completeEntities = [];
+    let rootEntityFilter;
     // convert the filter from proto structure (field, operation, value and operand) to {field: value } mapping
     if (filters && !_.isEmpty(filters)) {
       if (!_.isArray(filters)) {
         filters = [filters];
       }
       for (let eachFilter of filters) {
+        if (eachFilter.entity && eachFilter.entity === traversalCollectionName) {
+          rootEntityFilter = toTraversalFilterObject(eachFilter);
+          continue;
+        }
         const traversalFilterObj = toTraversalFilterObject(eachFilter);
-        if (eachFilter.entity) {
+        if (eachFilter.entity && eachFilter.entity != traversalCollectionName) {
           filteredEntities.push(eachFilter.entity);
           traversalFilterObj.entity = eachFilter.entity;
         } else if (eachFilter.edge) {
           // depending on direction
           const entityConnectedToEdge = this.edgeDefConfig.filter(e => e.collection === eachFilter.edge);
           if (entityConnectedToEdge?.length === 1) {
-            if(opts.direction === 'OUTBOUND') {
+            if (opts.direction === 'OUTBOUND') {
               filteredEntities.push(entityConnectedToEdge[0].to);
             } else if (opts.direction === 'INBOUND') {
               filteredEntities.push(entityConnectedToEdge[0].from);
@@ -480,13 +535,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
 
     if (filterObj?.length > 0) {
-      let startVertexCollectionName;
-      if (collectionName) {
-        startVertexCollectionName = collectionName;
-      } else if (startVertex) {
-        startVertexCollectionName = startVertex.substring(0, startVertex.indexOf('/'));
-      }
-      completeEntities = recursiveFindEntities(startVertexCollectionName, this.edgeDefConfig, opts.direction, []);
+      completeEntities = recursiveFindEntities(traversalCollectionName, this.edgeDefConfig, opts.direction, []);
     }
 
     // construct AQL custom filter based on filterObj using buildFilter api
@@ -503,7 +552,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           edge = filterObj[i].edge;
           delete filterObj[i].edge;
         }
-        let filterString = buildFilter([filterObj[i]]).q;
+        let filterString = buildGraphFilter([filterObj[i]]).q;
         if (typeof filterString === 'string' &&
           filterString.startsWith('(') && filterString.endsWith(')')) {
           if (entity) {
@@ -541,75 +590,47 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
     }
 
-    let result = [];
-    let traversalData = [];
+    if (rootEntityFilter) {
+      rootFilter = buildGraphFilter([rootEntityFilter]).q;
+    }
+
+    if (startVertexIds && startVertexIds.length > 0) {
+      if (rootFilter && !_.isEmpty(rootFilter)) {
+        rootFilter = ` obj.id IN [${startVertexIds}] || ${rootFilter}`;
+      } else {
+        rootFilter = ` obj.id IN [${startVertexIds}] `;
+      }
+    }
+
+    // combined root filter
+    if (rootFilter && !_.isEmpty(rootFilter)) {
+      rootFilter = `FILTER ${rootFilter}`;
+    }
+
+    limitFilter = buildGraphLimiter(limit, offset);
+
+    if (sort) {
+      sortFilter = buildGraphSorter(sort);
+    }
+
+    let rootCursor, associationCursor;
     try {
       defaultOptions = JSON.stringify(defaultOptions);
-      if (collectionName) {
-        // traversal data
-        const traversalQuery = `For collection IN ${collectionName}
-          FOR v, e, p IN 1..100 ${opts.direction} collection GRAPH "${this.graph.name}"
+      // traversal data
+      const traversalQuery = `For obj IN ${traversalCollectionName} ${rootFilter} ${limitFilter} ${sortFilter}
+          FOR v, e, p IN 1..100 ${opts.direction} obj GRAPH "${this.graph.name}"
           OPTIONS ${defaultOptions}
           ${filter}
           RETURN { v, e, p }`;
-        const queryResult = await this.db.query(traversalQuery);
-        traversalData = await queryResult.all();
-        for (let data of traversalData) {
-          result.push(data.v); // extract only vertices data from above query
-        }
-        // get all collection data
-        if (rootCollectionFilter && !_.isEmpty(rootCollectionFilter)) {
-          rootCollectionFilter = ` FILTER ${rootCollectionFilter}`;
-        }
-        const collectionQuery = `FOR j in ${collectionName} ${rootCollectionFilter} return j`;
-        const collectionQueryResult = await this.db.query(collectionQuery);
-        const collectionResult = await collectionQueryResult.all();
-        result = result.concat(collectionResult);
-      } else if (startVertex) {
-        // traversal data
-        const traversalQuery = `
-          FOR v, e, p IN 1..100 ${opts.direction} "${startVertex}" GRAPH "${this.graph.name}"
-          OPTIONS ${defaultOptions}
-          ${filter}
-          RETURN { v, e, p }`;
-        const queryResult = await this.db.query(traversalQuery);
-        traversalData = await queryResult.all();
-        for (let data of traversalData) {
-          result.push(data.v); // extract only vertices data from above query
-        }
-        // get start vertex data
-        const collectionName = startVertex.substring(0, startVertex.indexOf('/'));
-        const id = startVertex.substring(startVertex.indexOf('/') + 1, startVertex.length);
-        const idQuery = `FOR j in ${collectionName} FILTER j.id == '${id}' return j`;
-        const idQueryResult = await this.db.query(idQuery);
-        const idResult = await idQueryResult.all();
-        result = result.concat(idResult);
-      }
+      console.log('Traversal Query is............', traversalQuery);
+      associationCursor = await this.db.query(traversalQuery);
+      const rootEntityQuery = `For j IN ${traversalCollectionName} ${rootFilter} ${limitFilter} ${sortFilter} return j`;
+      rootCursor = await this.db.query(rootEntityQuery);
     } catch (err) {
       throw { code: err.code, message: err.message };
     }
 
-    if (result && result.length > 0) {
-      // delete _key and _rev properties from object
-      for (let item of result) {
-        delete item['_key'];
-        delete item['_rev'];
-      }
-      const encodedData = encodeMessage(result);
-      response.data = { value: encodedData };
-    }
-
-    // to do validate result and check paths
-    if (path_flag && traversalData.length > 0) {
-      let traversedPaths = [];
-      for (let data of traversalData) {
-        traversedPaths.push(data.p);
-      }
-      traversedPaths = this.arrUnique(traversedPaths);
-      response.paths.value = encodeMessage(traversedPaths);
-    }
-
-    return response;
+    return { rootCursor, associationCursor };
   }
 
   async getAllChildrenNodes(startVertex: string,
