@@ -449,8 +449,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       sort = collection.sort;
     }
 
-    if ((_.isUndefined(startVertexIds) || _.isNil(startVertexIds)) &&
-      (_.isUndefined(collectionName) || _.isNil(collectionName))) {
+    if ((_.isUndefined(startVertexIds) || _.isNil(startVertexIds) || _.isEmpty(startVertexIds)) &&
+      (_.isUndefined(collectionName) || _.isNil(collectionName) || _.isEmpty(collectionName))) {
       throw new Error('One of the Vertices or Collection should be defined');
     }
 

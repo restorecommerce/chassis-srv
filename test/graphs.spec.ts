@@ -211,6 +211,33 @@ const testProvider = (providerCfg) => {
       should.exist(outgoingEdges);
       outgoingEdges.edges[0].info.should.equal('Car A belongs to place P1');
     });
+    it('should throw an error for graph traversal for missing collection name / start_vertex', async () => {
+      // traverse graph
+      let errMessage = '';
+      // missing collection name in vertices
+      try {
+        await db.traversal({ start_vertex_id: ['a'] }, null, null, null, false);
+      } catch (err) {
+        errMessage = err.message;
+      }
+      // validate error message
+      errMessage.should.equal('missing collection name for vertex id a');
+      // missing start vertices in vertices
+      try {
+        await db.traversal({ collection_name: 'person' }, null, null, null, false);
+      } catch (err) {
+        errMessage = err.message;
+      }
+      // validate error message
+      errMessage.should.equal('missing vertex id for collection_name person');
+      // empty collection name for collections
+      try {
+        await db.traversal(null, { collection_name: '' }, null, null, false);
+      } catch (err) {
+        errMessage = err.message;
+      }
+      errMessage.should.equal('One of the Vertices or Collection should be defined');
+    });
     it('should traverse the graph and return only vertices for Person A', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
@@ -652,34 +679,34 @@ const testProvider = (providerCfg) => {
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateBB');
     });
-    // it('should update a vertice given the document handle', async () => {
-    //   const doc = await db.getVertex(personCollectionName, `person/e`);
-    //   // doc with updated name
-    //   doc.name = 'test';
-    //   await db.update(personCollectionName, [doc]);
-    //   const newdoc = await db.getEdge(personCollectionName, `person/e`);
-    //   newdoc.name.should.equal('test');
-    // });
-    // it('should update a edge given the document handle', async () => {
-    //   const doc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
-    //   // doc with updated name
-    //   doc.info = 'test has Car E';
-    //   await db.update(hasEdgeCollectionName, [doc]);
-    //   const newdoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
-    //   newdoc.info.should.equal('test has Car E');
-    // });
-    // it('should remove a vertice given the document handle for Person B', async () => {
-    //   const removedDoc = await db.removeVertex(personCollectionName, `person/b`);
-    //   should.exist(removedDoc);
-    //   removedDoc[0]._id.should.equal('person/b');
-    //   removedDoc[0]._key.should.equal('b');
-    // });
-    // it('should remove edge given the document handle', async () => {
-    //   const removedDoc = await db.removeEdge(hasEdgeCollectionName, edgeResult._id);
-    //   should.exist(removedDoc);
-    //   removedDoc.error.should.equal(false);
-    //   removedDoc.code.should.equal(202);
-    // });
+    it('should update a vertice given the document handle', async () => {
+      const doc = await db.getVertex(personCollectionName, `person/e`);
+      // doc with updated name
+      doc.name = 'test';
+      await db.update(personCollectionName, [doc]);
+      const newdoc = await db.getEdge(personCollectionName, `person/e`);
+      newdoc.name.should.equal('test');
+    });
+    it('should update a edge given the document handle', async () => {
+      const doc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
+      // doc with updated name
+      doc.info = 'test has Car E';
+      await db.update(hasEdgeCollectionName, [doc]);
+      const newdoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
+      newdoc.info.should.equal('test has Car E');
+    });
+    it('should remove a vertice given the document handle for Person B', async () => {
+      const removedDoc = await db.removeVertex(personCollectionName, `person/b`);
+      should.exist(removedDoc);
+      removedDoc[0]._id.should.equal('person/b');
+      removedDoc[0]._key.should.equal('b');
+    });
+    it('should remove edge given the document handle', async () => {
+      const removedDoc = await db.removeEdge(hasEdgeCollectionName, edgeResult._id);
+      should.exist(removedDoc);
+      removedDoc.error.should.equal(false);
+      removedDoc.code.should.equal(202);
+    });
   });
 };
 
