@@ -596,9 +596,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     if (startVertexIds && startVertexIds.length > 0) {
       if (rootFilter && !_.isEmpty(rootFilter)) {
-        rootFilter = ` obj.id IN [${startVertexIds}] || ${rootFilter}`;
+        rootFilter = ` obj.id IN ${JSON.stringify(startVertexIds)} || ${rootFilter}`;
       } else {
-        rootFilter = ` obj.id IN [${startVertexIds}] `;
+        rootFilter = ` obj.id IN ${JSON.stringify(startVertexIds)} `;
       }
     }
 
@@ -622,9 +622,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
           OPTIONS ${defaultOptions}
           ${filter}
           RETURN { v, e, p }`;
-      console.log('Traversal Query is............', traversalQuery);
       associationCursor = await this.db.query(traversalQuery);
-      const rootEntityQuery = `For j IN ${traversalCollectionName} ${rootFilter} ${limitFilter} ${sortFilter} return j`;
+      const rootEntityQuery = `For obj IN ${traversalCollectionName} ${rootFilter} ${limitFilter} ${sortFilter} return obj`;
       rootCursor = await this.db.query(rootEntityQuery);
     } catch (err) {
       throw { code: err.code, message: err.message };
