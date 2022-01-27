@@ -72,7 +72,7 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   getInEdges(collectionName: string, documentHandle: string): any;
   getOutEdges(collectionName: string, documentHandle: string): any;
   traversal(startVertex: Vertices, collectionName: Collection, opts: TraversalOptions,
-    filters?: GraphFilters[], path_flag?: boolean): Promise<TraversalResponse>;
+    filters?: GraphFilters[]): Promise<TraversalResponse>;
   addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
     toVertice: Object | [Object]): any;
   removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;

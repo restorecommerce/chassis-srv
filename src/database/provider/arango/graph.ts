@@ -354,7 +354,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @return  {[Object]} edge traversal path
   */
   async traversal(vertices: Vertices, collection: Collection, opts: TraversalOptions,
-    filters?: GraphFilters[], path_flag?: boolean): Promise<TraversalResponse> {
+    filters?: GraphFilters[]): Promise<TraversalResponse> {
     if (vertices) {
       if (_.isEmpty(vertices.collection_name) && !_.isEmpty(vertices.start_vertex_id)) {
         throw new Error(`missing collection name for vertex id ${vertices.start_vertex_id}`);
