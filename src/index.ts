@@ -36,3 +36,6 @@ export { Health };
 
 import { toTraversalFilterObject } from './database/provider/arango/utils';
 export { toTraversalFilterObject };
+
+import { Vertices, Collection, GraphFilters, TraversalOptions, TraversalResponse } from './database/provider/arango/interface';
+export { Vertices, Collection, GraphFilters, TraversalOptions, TraversalResponse };
