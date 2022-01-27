@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as Long from 'long';
-import { GraphFilters } from './interface';
+import { GraphFilters, Direction } from './interface';
 
 const filterOperationMap = new Map([
   [0, 'eq'],
@@ -444,7 +444,7 @@ export const buildGraphSorter = (sortList: any): any => {
 };
 
 export const createGraphsAssociationFilter = (filters: GraphFilters[],
-  direction: string, traversalCollectionName: string, edgeDefConfig: any, filter: string): any => {
+  direction: Direction, traversalCollectionName: string, edgeDefConfig: any, filter: string): any => {
   let filterObj = [];
   let filteredEntities = []; // used to find difference from graph edgeDefConfig and add missing entities to custom filter
   let completeEntities = [];

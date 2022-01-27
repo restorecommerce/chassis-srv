@@ -7,7 +7,7 @@ import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
 import { buildGraphFilter, buildGraphLimiter, buildGraphSorter, createGraphsAssociationFilter } from './utils';
-import { Vertices, Collection, TraversalOptions, GraphFilters, TraversalResponse } from './interface';
+import { Vertices, Collection, TraversalOptions, GraphFilters, TraversalResponse, Direction } from './interface';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   graph: Graph;
@@ -392,7 +392,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
     // make outbound traversal by default if not provided
     if (!opts.direction || _.isEmpty(opts.direction)) {
-      opts.direction = 'OUTBOUND';
+      opts.direction = Direction.OUTBOUND;
     }
 
     // default options

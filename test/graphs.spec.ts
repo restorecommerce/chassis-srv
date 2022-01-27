@@ -2,6 +2,7 @@ import * as should from 'should';
 import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
 import { Database } from 'arangojs';
+import { Direction } from '../lib/database/provider/arango/interface'
 import * as chassis from '../src';
 const config = chassis.config;
 const database = chassis.database;
@@ -482,7 +483,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with filters and included vertices options and return only the filtered and included vertices', async () => {
       // traverse graph with 1 included vertex
       let result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car'], direction: 'OUTBOUND' },
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car'], direction: Direction.OUTBOUND },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
@@ -514,7 +515,7 @@ const testProvider = (providerCfg) => {
 
       // traverse graph with 2 included vertex
       result = { data: [], paths: [] };
-      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car', 'state'], direction: 'OUTBOUND' },
+      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car', 'state'], direction: Direction.OUTBOUND },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
@@ -812,7 +813,7 @@ const testProvider = (providerCfg) => {
     it('inbound traversal - should traverse the graph from Place vertice in inbound direction and return list of traversed entities from Place entity', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'place', start_vertex_id: ['p1'] }, null, { direction: 'INBOUND' }, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'place', start_vertex_id: ['p1'] }, null, { direction: Direction.INBOUND }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -836,7 +837,7 @@ const testProvider = (providerCfg) => {
     it('inbound traversal - should traverse the graph from Place collection in inbound direction and return list of all traversed entities from Place entity', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal(null, { collection_name: 'place' }, { direction: 'INBOUND' }, null, true);
+      const traversalResponse = await db.traversal(null, { collection_name: 'place' }, { direction: Direction.INBOUND }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {

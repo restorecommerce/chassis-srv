@@ -23,12 +23,17 @@ export interface Collection {
   sort?: Sort[];
 }
 
+export enum Direction {
+  OUTBOUND = 'OUTBOUND',
+  INBOUND = 'INBOUND'
+};
+
 export interface TraversalOptions {
   include_vertex?: string[];
   exclude_vertex?: string[];
   include_edge?: string[];
   exclude_edge?: string[];
-  direction?: string;
+  direction?: Direction;
 };
 
 export enum FilterOperation {
