@@ -21,6 +21,18 @@ const providers = [
   }
 ];
 
+const arrUnique = (arr) => {
+  let cleaned = [];
+  arr.forEach((itm) => {
+    let unique = true;
+    cleaned.forEach((itm2) => {
+      if (_.isEqual(itm, itm2)) unique = false;
+    });
+    if (unique) cleaned.push(itm);
+  });
+  return cleaned;
+};
+
 const testProvider = (providerCfg) => {
   let db;
   //  STATE <-- lives PERSON has --> CAR belongsto --> PLACE resides --> STATE
@@ -201,172 +213,189 @@ const testProvider = (providerCfg) => {
     });
     it('should traverse the graph and return only vertices for Person A', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, null);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      let result = { data: [], paths: [] };
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, null, null, false);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      result.data = rootEntityData;
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      traversalResponse.paths.should.be.empty();
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(5);
+      should.exist(result);
+      should.exist(result.data);
+      result.paths.should.be.empty();
+      result.data.should.be.instanceof(Array).and.have.lengthOf(5);
     });
     it('should traverse the graph and return both vertices and paths when paths flag is set to true', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, null, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, null, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(5);
-      traversalResponse.data[0].name.should.equal('carA');
-      traversalResponse.data[1].name.should.equal('stateAA');
-      traversalResponse.data[2].name.should.equal('placeA');
-      traversalResponse.data[3].name.should.equal('stateA');
-      traversalResponse.data[4].name.should.equal('Alice');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(4);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(5);
+      result.data[0].name.should.equal('carA');
+      result.data[1].name.should.equal('stateAA');
+      result.data[2].name.should.equal('placeA');
+      result.data[3].name.should.equal('stateA');
+      result.data[4].name.should.equal('Alice');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(4);
     });
     // include vertices
     it('should traverse the graph with included vertices options and return only the included vertices', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { include_vertex: ['car'] }, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { include_vertex: ['car'] }, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
-      traversalResponse.data[0].name.should.equal('carA');
-      traversalResponse.data[1].name.should.equal('Alice');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      result.data[0].name.should.equal('carA');
+      result.data[1].name.should.equal('Alice');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(1);
     });
     // exclude vertices
     it('should traverse the graph with excluded vertices options and return only traversed data with excluded vertices', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { exclude_vertex: ['car'] }, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { exclude_vertex: ['car'] }, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(4);
-      traversalResponse.data[0].name.should.equal('stateAA');
-      traversalResponse.data[1].name.should.equal('placeA');
-      traversalResponse.data[2].name.should.equal('stateA');
-      traversalResponse.data[3].name.should.equal('Alice');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(3);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(4);
+      result.data[0].name.should.equal('stateAA');
+      result.data[1].name.should.equal('placeA');
+      result.data[2].name.should.equal('stateA');
+      result.data[3].name.should.equal('Alice');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(3);
     });
     // include edges
     it('should traverse the graph with included edges options and return vertices from included edges', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { include_edge: ['has'] }, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { include_edge: ['has'] }, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
-      traversalResponse.data[0].name.should.equal('carA');
-      traversalResponse.data[1].name.should.equal('Alice');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      result.data[0].name.should.equal('carA');
+      result.data[1].name.should.equal('Alice');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(1);
     });
     // exclude edges
     it('should traverse the graph with exclude edges options and return vertices from excluded edges', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { exclude_edge: ['belongs'] }, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { exclude_edge: ['belongs'] }, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(4);
-      traversalResponse.data[0].name.should.equal('carA');
-      traversalResponse.data[1].name.should.equal('stateAA');
-      traversalResponse.data[2].name.should.equal('stateA');
-      traversalResponse.data[3].name.should.equal('Alice');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(3);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(4);
+      result.data[0].name.should.equal('carA');
+      result.data[1].name.should.equal('stateAA');
+      result.data[2].name.should.equal('stateA');
+      result.data[3].name.should.equal('Alice');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(3);
     });
     // exclude one edge and include another edge of same entity
     it('for 2 entities should exclude one entity edge and include another entity edge', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(`person/a`, null, { exclude_edge: ['resides'], include_edge: ['lives'] }, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { exclude_edge: ['resides'], include_edge: ['lives'] }, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(2);
-      traversalResponse.data[0].name.should.equal('stateAA');
-      traversalResponse.data[1].name.should.equal('Alice');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(1);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(2);
+      result.data[0].name.should.equal('stateAA');
+      result.data[1].name.should.equal('Alice');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(1);
     });
     // collection traversal
     it('should traverse the entire collection and return data from all traversed entities', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(null, 'person', null, null, true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, null, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(25); // 5 person, 5 states, 5 cars, 5 place and 5 state entities
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(20); // 20 edges
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(25); // 5 person, 5 states, 5 cars, 5 place and 5 state entities
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(20); // 20 edges
     });
     // Filter tests for collection traversal
     it('with filters should traverse the collection and return data with filtering applied on respective entities', async () => {
       // traverse graph with filtering for car and place entities
-      let traversalResponse = await db.traversal(null, 'person', null,
+      let result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, null,
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }],
           entity: 'car'
@@ -375,46 +404,49 @@ const testProvider = (providerCfg) => {
           entity: 'place'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      let rootEntityData = await traversalResponse.rootCursor.all();
+      let associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 5 states, 1 cars, 1 place and 5 state entities
-      let filteredData = traversalResponse.data.filter(e => e._id.startsWith('car/') || e._id.startsWith('place/'));
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 5 states, 1 cars, 1 place and 5 state entities
+      let filteredData = result.data.filter(e => e._id.startsWith('car/') || e._id.startsWith('place/'));
       filteredData.should.be.length(2);
       filteredData[0].name.should.equal('carA');
       filteredData[1].name.should.equal('placeA');
 
       // traverse graph with filtering for state entities
-      traversalResponse = await db.traversal(null, 'person', null,
+      result = { data: [], paths: [] };
+      traversalResponse = await db.traversal(null, { collection_name: 'person' }, null,
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateAA' }],
           operator: 'or', // Default is AND operation
           entity: 'state'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      rootEntityData = await traversalResponse.rootCursor.all();
+      associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 2 states, 5 cars, 5 place entities
-      filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 2 states, 5 cars, 5 place entities
+      filteredData = result.data.filter(e => e._id.startsWith('state/'));
       filteredData.should.be.length(2);
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateA');
@@ -422,37 +454,40 @@ const testProvider = (providerCfg) => {
     // filters with include vertices
     it('should traverse the graph with filters and included vertices options and return only the filtered and included vertices', async () => {
       // traverse graph with 1 included vertex
-      let traversalResponse = await db.traversal(null, 'person', { include_vertex: ['car'], direction: 'OUTBOUND' },
+      let result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car'], direction: 'OUTBOUND' },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
           entity: 'car'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      let rootEntityData = await traversalResponse.rootCursor.all();
+      let associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(7); // 5 person 2 cars
-      traversalResponse.data[0].name.should.equal('carA');
-      traversalResponse.data[1].name.should.equal('carB');
-      traversalResponse.data[2].name.should.equal('Alice');
-      traversalResponse.data[3].name.should.equal('Bob');
-      traversalResponse.data[4].name.should.equal('Charlie');
-      traversalResponse.data[5].name.should.equal('Dave');
-      traversalResponse.data[6].name.should.equal('Eve');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(2);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(7); // 5 person 2 cars
+      result.data[0].name.should.equal('carA');
+      result.data[1].name.should.equal('carB');
+      result.data[2].name.should.equal('Alice');
+      result.data[3].name.should.equal('Bob');
+      result.data[4].name.should.equal('Charlie');
+      result.data[5].name.should.equal('Dave');
+      result.data[6].name.should.equal('Eve');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(2);
 
       // traverse graph with 2 included vertex
-      traversalResponse = await db.traversal(null, 'person', { include_vertex: ['car', 'state'], direction: 'OUTBOUND' },
+      result = { data: [], paths: [] };
+      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car', 'state'], direction: 'OUTBOUND' },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
@@ -463,116 +498,123 @@ const testProvider = (providerCfg) => {
           entity: 'state'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      rootEntityData = await traversalResponse.rootCursor.all();
+      associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(9); // 5 person 2 cars 2 states
-      traversalResponse.data[0].name.should.equal('carA');
-      traversalResponse.data[1].name.should.equal('stateAA');
-      traversalResponse.data[2].name.should.equal('carB');
-      traversalResponse.data[3].name.should.equal('stateBB');
-      traversalResponse.data[4].name.should.equal('Alice');
-      traversalResponse.data[5].name.should.equal('Bob');
-      traversalResponse.data[6].name.should.equal('Charlie');
-      traversalResponse.data[7].name.should.equal('Dave');
-      traversalResponse.data[8].name.should.equal('Eve');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(4);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(9); // 5 person 2 cars 2 states
+      result.data[0].name.should.equal('carA');
+      result.data[1].name.should.equal('stateAA');
+      result.data[2].name.should.equal('carB');
+      result.data[3].name.should.equal('stateBB');
+      result.data[4].name.should.equal('Alice');
+      result.data[5].name.should.equal('Bob');
+      result.data[6].name.should.equal('Charlie');
+      result.data[7].name.should.equal('Dave');
+      result.data[8].name.should.equal('Eve');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(4);
     });
     // filter with exclude vertices
     it('should traverse the graph with filters and excluded vertices options and return only the filtered and excluded vertices', async () => {
       // traverse graph
-      let traversalResponse = await db.traversal(null, 'person', { exclude_vertex: ['car'] },
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal({ collection_name: '', start_vertex_id: [] }, { collection_name: 'person' }, { exclude_vertex: ['car'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateB' }],
           operator: 'or', // Default is AND operation
           entity: 'state'
         }], true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      let rootEntityData = await traversalResponse.rootCursor.all();
+      let associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(12); // 5 persons, 5 places, 2 satates
-      traversalResponse.data[0].name.should.equal('placeA');
-      traversalResponse.data[1].name.should.equal('stateA');
-      traversalResponse.data[2].name.should.equal('placeB');
-      traversalResponse.data[3].name.should.equal('stateB');
-      traversalResponse.data[4].name.should.equal('placeC');
-      traversalResponse.data[5].name.should.equal('placeD');
-      traversalResponse.data[6].name.should.equal('placeE');
-      traversalResponse.data[7].name.should.equal('Alice');
-      traversalResponse.data[8].name.should.equal('Bob');
-      traversalResponse.data[9].name.should.equal('Charlie');
-      traversalResponse.data[10].name.should.equal('Dave');
-      traversalResponse.data[11].name.should.equal('Eve');
-      traversalResponse.paths.should.be.instanceof(Array).and.have.lengthOf(7);
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(12); // 5 persons, 5 places, 2 satates
+      result.data[0].name.should.equal('placeA');
+      result.data[1].name.should.equal('stateA');
+      result.data[2].name.should.equal('placeB');
+      result.data[3].name.should.equal('stateB');
+      result.data[4].name.should.equal('placeC');
+      result.data[5].name.should.equal('placeD');
+      result.data[6].name.should.equal('placeE');
+      result.data[7].name.should.equal('Alice');
+      result.data[8].name.should.equal('Bob');
+      result.data[9].name.should.equal('Charlie');
+      result.data[10].name.should.equal('Dave');
+      result.data[11].name.should.equal('Eve');
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(7);
     });
     // filter with exclude edges
     it('for 2 entities should exclude one entity edge and include another entity edge with filtering enabled on second edge entity', async () => {
+      let result = { data: [], paths: [] };
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      let traversalResponse = await db.traversal(null, 'person', { exclude_edge: ['resides'] },
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edge: ['resides'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
           edge: 'lives'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      let rootEntityData = await traversalResponse.rootCursor.all();
+      let associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 2 states, 5 cars, 5 place entities
-      let filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(17); // 5 person, 2 states, 5 cars, 5 place entities
+      let filteredData = result.data.filter(e => e._id.startsWith('state/'));
       filteredData.should.be.length(2);
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateBB');
 
+      result = { data: [], paths: [] };
       // with iLike traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      traversalResponse = await db.traversal(null, 'person', { exclude_edge: ['resides'] },
+      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edge: ['resides'] },
         [{
           filter: [{ field: 'name', operation: 'iLike', value: 'StaTe%' }],
           operator: 'or', // Default is AND operation
           edge: 'lives'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      rootEntityData = await traversalResponse.rootCursor.all();
+      associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(20); // 5 person, 5 states, 5 cars, 5 place entities
-      filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(20); // 5 person, 5 states, 5 cars, 5 place entities
+      filteredData = result.data.filter(e => e._id.startsWith('state/'));
       filteredData.should.be.length(5);
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateBB');
@@ -580,62 +622,64 @@ const testProvider = (providerCfg) => {
       filteredData[3].name.should.equal('stateDD');
       filteredData[4].name.should.equal('stateEE');
     });
-     // filter with include edges
-     it('should traverse the graph with filters and included edges and return only the filtered and included edge vertices data', async () => {
+    // filter with include edges
+    it('should traverse the graph with filters and included edges and return only the filtered and included edge vertices data', async () => {
+      const result = { data: [], paths: [] };
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      let traversalResponse = await db.traversal(null, 'person', { include_edge: ['has', 'lives'] },
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_edge: ['has', 'lives'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
           edge: 'lives'
         }],
         true);
-      // decode the paths and data
-      if (traversalResponse && traversalResponse.data) {
-        const decodedData = JSON.parse(Buffer.from(traversalResponse.data.value).toString());
-        traversalResponse.data = decodedData;
+      let rootEntityData = await traversalResponse.rootCursor.all();
+      let associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
       }
-      if (traversalResponse && traversalResponse.paths) {
-        const decodedPath = JSON.parse(Buffer.from(traversalResponse.paths.value).toString());
-        traversalResponse.paths = decodedPath;
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
       }
-      should.exist(traversalResponse);
-      should.exist(traversalResponse.data);
-      should.exist(traversalResponse.paths);
-      traversalResponse.data.should.be.instanceof(Array).and.have.lengthOf(12); // 5 person, 2 states, 5 cars
-      let filteredData = traversalResponse.data.filter(e => e._id.startsWith('state/'));
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(12); // 5 person, 2 states, 5 cars
+      let filteredData = result.data.filter(e => e._id.startsWith('state/'));
       filteredData.should.be.length(2);
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateBB');
     });
-    it('should update a vertice given the document handle', async () => {
-      const doc = await db.getVertex(personCollectionName, `person/e`);
-      // doc with updated name
-      doc.name = 'test';
-      await db.update(personCollectionName, [doc]);
-      const newdoc = await db.getEdge(personCollectionName, `person/e`);
-      newdoc.name.should.equal('test');
-    });
-    it('should update a edge given the document handle', async () => {
-      const doc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
-      // doc with updated name
-      doc.info = 'test has Car E';
-      await db.update(hasEdgeCollectionName, [doc]);
-      const newdoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
-      newdoc.info.should.equal('test has Car E');
-    });
-    it('should remove a vertice given the document handle for Person B', async () => {
-      const removedDoc = await db.removeVertex(personCollectionName, `person/b`);
-      should.exist(removedDoc);
-      removedDoc[0]._id.should.equal('person/b');
-      removedDoc[0]._key.should.equal('b');
-    });
-    it('should remove edge given the document handle', async () => {
-      const removedDoc = await db.removeEdge(hasEdgeCollectionName, edgeResult._id);
-      should.exist(removedDoc);
-      removedDoc.error.should.equal(false);
-      removedDoc.code.should.equal(202);
-    });
+    // it('should update a vertice given the document handle', async () => {
+    //   const doc = await db.getVertex(personCollectionName, `person/e`);
+    //   // doc with updated name
+    //   doc.name = 'test';
+    //   await db.update(personCollectionName, [doc]);
+    //   const newdoc = await db.getEdge(personCollectionName, `person/e`);
+    //   newdoc.name.should.equal('test');
+    // });
+    // it('should update a edge given the document handle', async () => {
+    //   const doc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
+    //   // doc with updated name
+    //   doc.info = 'test has Car E';
+    //   await db.update(hasEdgeCollectionName, [doc]);
+    //   const newdoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
+    //   newdoc.info.should.equal('test has Car E');
+    // });
+    // it('should remove a vertice given the document handle for Person B', async () => {
+    //   const removedDoc = await db.removeVertex(personCollectionName, `person/b`);
+    //   should.exist(removedDoc);
+    //   removedDoc[0]._id.should.equal('person/b');
+    //   removedDoc[0]._key.should.equal('b');
+    // });
+    // it('should remove edge given the document handle', async () => {
+    //   const removedDoc = await db.removeEdge(hasEdgeCollectionName, edgeResult._id);
+    //   should.exist(removedDoc);
+    //   removedDoc.error.should.equal(false);
+    //   removedDoc.code.should.equal(202);
+    // });
   });
 };
 

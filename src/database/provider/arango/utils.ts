@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import * as Long from 'long';
+import { GraphFilters } from './graph';
 
 const filterOperationMap = new Map([
   [0, 'eq'],
@@ -282,7 +283,7 @@ export const buildGraphField = (key: any, value: any): string => {
   }
   if (value.$iLike) {
     // @param 'true' is for case insensitive
-    return 'LOWER(' +autoCastKey(key, value) + ') LIKE ' + autoCastValue(value.$iLike.toLowerCase());
+    return 'LOWER(' + autoCastKey(key, value) + ') LIKE ' + autoCastValue(value.$iLike.toLowerCase());
   }
   if (!_.isNil(value.$not)) {
     const temp = buildGraphField(key, value.$not);
@@ -359,7 +360,7 @@ export const buildGraphFilter = (filter: any): any => {
  * @param entitiesList - result of entities in the graph of edge definition config
  */
 export const recursiveFindEntities = (collection, edgeDefConfig, direction, entitiesList) => {
-  if(entitiesList.includes(collection)) {
+  if (entitiesList.includes(collection)) {
     return;
   }
   entitiesList.push(collection);
@@ -440,4 +441,102 @@ export const buildGraphSorter = (sortList: any): any => {
     i += 1;
   }
   return 'SORT ' + sortKeysOrder;
+};
+
+export const createGraphsAssociationFilter = (filters: GraphFilters[],
+  direction: string, traversalCollectionName: string, edgeDefConfig: any, filter: string): any => {
+  let filterObj = [];
+  let filteredEntities = []; // used to find difference from graph edgeDefConfig and add missing entities to custom filter
+  let completeEntities = [];
+  let rootEntityFilter;
+  // convert the filter from proto structure (field, operation, value and operand) to {field: value } mapping
+  if (filters && !_.isEmpty(filters)) {
+    if (!_.isArray(filters)) {
+      filters = [filters];
+    }
+    for (let eachFilter of filters) {
+      if (eachFilter.entity && eachFilter.entity === traversalCollectionName) {
+        rootEntityFilter = toTraversalFilterObject(eachFilter);
+        continue;
+      }
+      const traversalFilterObj = toTraversalFilterObject(eachFilter);
+      if (eachFilter.entity && eachFilter.entity != traversalCollectionName) {
+        filteredEntities.push(eachFilter.entity);
+        traversalFilterObj.entity = eachFilter.entity;
+      } else if (eachFilter.edge) {
+        // depending on direction
+        const entityConnectedToEdge = edgeDefConfig.filter(e => e.collection === eachFilter.edge);
+        if (entityConnectedToEdge?.length === 1) {
+          if (direction === 'OUTBOUND') {
+            filteredEntities.push(entityConnectedToEdge[0].to);
+          } else if (direction === 'INBOUND') {
+            filteredEntities.push(entityConnectedToEdge[0].from);
+          }
+        }
+        traversalFilterObj.edge = eachFilter.edge;
+      }
+      filterObj.push(traversalFilterObj);
+    }
+  }
+
+  if (!_.isArray(filterObj)) {
+    filterObj = [filterObj];
+  }
+
+  if (filterObj?.length > 0) {
+    completeEntities = recursiveFindEntities(traversalCollectionName, edgeDefConfig, direction, []);
+  }
+
+  // construct AQL custom filter based on filterObj using buildFilter api
+  let customFilter = '';
+  let rootCollectionFilter = '';
+  if (filterObj && filterObj.length > 0) {
+    for (let i = 0; i < filterObj.length; i++) {
+      let entity = '';
+      let edge = '';
+      if (filterObj[i].entity) {
+        entity = filterObj[i].entity;
+        delete filterObj[i].entity;
+      } else if (filterObj[i].edge) {
+        edge = filterObj[i].edge;
+        delete filterObj[i].edge;
+      }
+      let filterString = buildGraphFilter([filterObj[i]]).q;
+      if (typeof filterString === 'string' &&
+        filterString.startsWith('(') && filterString.endsWith(')')) {
+        if (entity) {
+          filterString = filterString.substring(0, 1) + ` v._id LIKE "${entity}%" && ` + filterString.substring(1);
+          if (traversalCollectionName && entity === traversalCollectionName) {
+            rootCollectionFilter = filterString;
+          }
+        } else if (edge) {
+          filterString = filterString.substring(0, 1) + ` e._id LIKE "${edge}%" && ` + filterString.substring(1);
+        }
+      }
+      if (i === filterObj.length - 1) {
+        customFilter = customFilter + filterString;
+      } else {
+        customFilter = customFilter + filterString + ' || ';
+      }
+    }
+  }
+
+  if (customFilter) {
+    filter = filter + ` FILTER ${customFilter}`;
+    // add missing entities to FILTER query
+    filteredEntities = filteredEntities.sort();
+    completeEntities = completeEntities.sort();
+    if (!_.isEqual(filteredEntities, completeEntities)) {
+      for (let removeEntity of _.intersection(filteredEntities, completeEntities)) {
+        completeEntities.splice(completeEntities.indexOf(removeEntity), 1);
+      }
+    }
+    // AQL query for missing entities
+    if (completeEntities && completeEntities.length > 0) {
+      for (let missingEntity of completeEntities) {
+        filter = filter + ` || ( v._id LIKE "${missingEntity}%" )`;
+      }
+    }
+  }
+  return { rootEntityFilter, associationFilter: filter };
 };

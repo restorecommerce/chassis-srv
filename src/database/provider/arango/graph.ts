@@ -6,7 +6,7 @@ import { sanitizeInputFields, sanitizeOutputFields, encodeMessage } from './comm
 import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
-import { toTraversalFilterObject, buildGraphFilter, recursiveFindEntities, buildGraphLimiter, buildGraphSorter } from './utils';
+import { toTraversalFilterObject, buildGraphFilter, recursiveFindEntities, buildGraphLimiter, buildGraphSorter, createGraphsAssociationFilter } from './utils';
 
 export interface Vertices {
   collection_name: string;
@@ -455,7 +455,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     }
 
     // from either vertices or collections
-    const traversalCollectionName = collectionName && _.isEmpty(collectionName) ? collectionName : vertexCollectionName;
+    const traversalCollectionName = collectionName && !_.isEmpty(collectionName) ? collectionName : vertexCollectionName;
 
     if (!opts) {
       opts = {};
@@ -495,101 +495,12 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       }
     }
 
-    // TODO move all this filter part to separate utils
-    let filterObj = [];
-    let filteredEntities = []; // used to find difference from graph edgeDefConfig and add missing entities to custom filter
-    let completeEntities = [];
-    let rootEntityFilter;
-    // convert the filter from proto structure (field, operation, value and operand) to {field: value } mapping
-    if (filters && !_.isEmpty(filters)) {
-      if (!_.isArray(filters)) {
-        filters = [filters];
-      }
-      for (let eachFilter of filters) {
-        if (eachFilter.entity && eachFilter.entity === traversalCollectionName) {
-          rootEntityFilter = toTraversalFilterObject(eachFilter);
-          continue;
-        }
-        const traversalFilterObj = toTraversalFilterObject(eachFilter);
-        if (eachFilter.entity && eachFilter.entity != traversalCollectionName) {
-          filteredEntities.push(eachFilter.entity);
-          traversalFilterObj.entity = eachFilter.entity;
-        } else if (eachFilter.edge) {
-          // depending on direction
-          const entityConnectedToEdge = this.edgeDefConfig.filter(e => e.collection === eachFilter.edge);
-          if (entityConnectedToEdge?.length === 1) {
-            if (opts.direction === 'OUTBOUND') {
-              filteredEntities.push(entityConnectedToEdge[0].to);
-            } else if (opts.direction === 'INBOUND') {
-              filteredEntities.push(entityConnectedToEdge[0].from);
-            }
-          }
-          traversalFilterObj.edge = eachFilter.edge;
-        }
-        filterObj.push(traversalFilterObj);
-      }
-    }
-
-    if (!_.isArray(filterObj)) {
-      filterObj = [filterObj];
-    }
-
-    if (filterObj?.length > 0) {
-      completeEntities = recursiveFindEntities(traversalCollectionName, this.edgeDefConfig, opts.direction, []);
-    }
-
-    // construct AQL custom filter based on filterObj using buildFilter api
-    let customFilter = '';
-    let rootCollectionFilter = '';
-    if (filterObj && filterObj.length > 0) {
-      for (let i = 0; i < filterObj.length; i++) {
-        let entity = '';
-        let edge = '';
-        if (filterObj[i].entity) {
-          entity = filterObj[i].entity;
-          delete filterObj[i].entity;
-        } else if (filterObj[i].edge) {
-          edge = filterObj[i].edge;
-          delete filterObj[i].edge;
-        }
-        let filterString = buildGraphFilter([filterObj[i]]).q;
-        if (typeof filterString === 'string' &&
-          filterString.startsWith('(') && filterString.endsWith(')')) {
-          if (entity) {
-            filterString = filterString.substring(0, 1) + ` v._id LIKE "${entity}%" && ` + filterString.substring(1);
-            if (collectionName && entity === collectionName) {
-              rootCollectionFilter = filterString;
-            }
-          } else if (edge) {
-            filterString = filterString.substring(0, 1) + ` e._id LIKE "${edge}%" && ` + filterString.substring(1);
-          }
-        }
-        if (i === filterObj.length - 1) {
-          customFilter = customFilter + filterString;
-        } else {
-          customFilter = customFilter + filterString + ' || ';
-        }
-      }
-    }
-
-    if (customFilter) {
-      filter = filter + ` FILTER ${customFilter}`;
-      // add missing entities to FILTER query
-      filteredEntities = filteredEntities.sort();
-      completeEntities = completeEntities.sort();
-      if (!_.isEqual(filteredEntities, completeEntities)) {
-        for (let removeEntity of _.intersection(filteredEntities, completeEntities)) {
-          completeEntities.splice(completeEntities.indexOf(removeEntity), 1);
-        }
-      }
-      // AQL query for missing entities
-      if (completeEntities && completeEntities.length > 0) {
-        for (let missingEntity of completeEntities) {
-          filter = filter + ` || ( v._id LIKE "${missingEntity}%" )`;
-        }
-      }
-    }
-
+    const rootAndAssociationFilter = createGraphsAssociationFilter(filters,
+      opts.direction, traversalCollectionName, this.edgeDefConfig, filter);
+    // association fitler
+    filter = rootAndAssociationFilter.associationFilter;
+    // root filter
+    const rootEntityFilter = rootAndAssociationFilter.rootEntityFilter;
     if (rootEntityFilter) {
       rootFilter = buildGraphFilter([rootEntityFilter]).q;
     }
