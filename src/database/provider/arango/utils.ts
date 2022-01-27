@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as Long from 'long';
-import { GraphFilters } from './graph';
+import { GraphFilters } from './interface';
 
 const filterOperationMap = new Map([
   [0, 'eq'],
