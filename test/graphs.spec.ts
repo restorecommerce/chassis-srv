@@ -679,6 +679,80 @@ const testProvider = (providerCfg) => {
       filteredData[0].name.should.equal('stateAA');
       filteredData[1].name.should.equal('stateBB');
     });
+    // with limit should traverse along only the limit entities
+    it('pagination - should traverse the graph through only first two limited entities when limit filter is specified for root entity', async () => {
+      // traverse graph
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal(null, { collection_name: 'person', limit: 2 }, null, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
+      }
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
+      }
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(10); // 2 person, 2 states, 2 cars, 2 place and 2 state entities
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(8); // 8 edges
+      const filteredData = result.data.filter(e => e._id.startsWith('person/'));
+      filteredData.should.be.length(2);
+      filteredData[0].name.should.equal('Alice');
+      filteredData[1].name.should.equal('Bob');
+    });
+    it('pagination - should traverse the graph through only last two limited entities when limit and offset filter is specified for root entity', async () => {
+      // traverse graph
+      const result = { data: [], paths: [] };
+      let traversalResponse = await db.traversal(null, { collection_name: 'person', limit: 2, offset: 3 }, null, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
+      }
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
+      }
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(10); // 2 person, 2 states, 2 cars, 2 place and 2 state entities
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(8); // 8 edges
+      const filteredData = result.data.filter(e => e._id.startsWith('person/'));
+      filteredData.should.be.length(2);
+      filteredData[0].name.should.equal('Dave');
+      filteredData[1].name.should.equal('Eve');
+    });
+    it('should traverse the graph through list of specified start vertices', async () => {
+      // traverse graph
+      let result = { data: [], paths: [] };
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a', 'b', 'c'] }, null, null, null, true);
+      const rootEntityData = await traversalResponse.rootCursor.all();
+      const associationEntityData = await traversalResponse.associationCursor.all();
+      for (let data of associationEntityData) {
+        result.data.push(data.v); // extract only vertices data from associattion entity as it contains v, e, p
+        result.paths.push(data.p);
+      }
+      for (let rootEntity of rootEntityData) {
+        result.data.push(rootEntity);
+      }
+      result.paths = arrUnique(result.paths);
+      should.exist(result);
+      should.exist(result.data);
+      should.exist(result.paths);
+      result.data.should.be.instanceof(Array).and.have.lengthOf(15); // 3 persons, 3 state, 3 cars, 3 place, 3 states
+      result.paths.should.be.instanceof(Array).and.have.lengthOf(12); // 12 edges (4 from each vertex)
+      const filteredData = result.data.filter(e => e._id.startsWith('person/'));
+      filteredData.should.be.length(3);
+      filteredData[0].name.should.equal('Alice');
+      filteredData[1].name.should.equal('Bob');
+      filteredData[2].name.should.equal('Charlie');
+    });
     it('should update a vertice given the document handle', async () => {
       const doc = await db.getVertex(personCollectionName, `person/e`);
       // doc with updated name
