@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import * as Long from 'long';
+import Long from 'long';
 
 /**
  * Ensure that the collection exists and process the query

@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import * as Long from 'long';
+import Long from 'long';
 import { GraphFilters, Direction } from './interface';
 
 const filterOperationMap = new Map([
