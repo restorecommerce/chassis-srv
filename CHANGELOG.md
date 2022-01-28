@@ -1,3 +1,8 @@
+### 0.3.5 (Jnuary 28th, 2022)
+
+- restructured graph traversal api
+- updated dependencies
+
 ### 0.3.5 (December 12th, 2021)
 
 - updated RC dependencies
