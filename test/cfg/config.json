@@ -248,7 +248,6 @@
           "events": [
             "resetResponse",
             "restoreResponse",
-            "healthCheckResponse",
             "versionResponse",
             "configUpdateResponse",
             "setApiKeyResponse",

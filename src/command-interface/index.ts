@@ -518,12 +518,6 @@ export class CommandInterface implements ICommandInterface {
     const serviceName = payload.service;
 
     if (_.isNil(serviceName) || _.size(serviceName) === 0) {
-      await this.commandTopic.emit('healthCheckResponse', {
-        services: _.keys(this.service),
-        payload: this.encodeMsg({
-          status: this.health.status,
-        })
-      });
       return {
         status: this.health.status,
       };
@@ -545,12 +539,6 @@ export class CommandInterface implements ICommandInterface {
       if (transportStatus === ServingStatus.SERVING) {
         status = transportStatus;
       }
-    });
-    await this.commandTopic.emit('healthCheckResponse', {
-      services: [serviceName],
-      payload: this.encodeMsg({
-        status,
-      })
     });
     return {
       status,

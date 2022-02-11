@@ -105,23 +105,8 @@ describe('CommandInterfaceService', () => {
         payload: cmdPayload
       };
 
-      // validator called by the event listener
-      validate = (msg: any, eventName: string): void => {
-        eventName.should.equal('healthCheckResponse');
-        should.exist(msg.services);
-        msg.services.should.containEql('commandinterface');
-        should.exist(msg.payload);
-        const payload = decodeMsg(msg.payload);
-        should.not.exist(payload.error);
-        should.exist(payload.status);
-        payload.status.should.equal('SERVING');
-      };
-
-      let offset = await commandTopic.$offset(-1);
       // check commandinterface service, should serve
       let resp = await service.command(msg);
-      await commandTopic.$wait(offset); // wait for response on both Kafka & gRPC
-
       should.exist(resp);
       should.not.exist(resp.error);
       let data = decodeMsg(resp);
@@ -152,7 +137,6 @@ describe('CommandInterfaceService', () => {
         name: 'health_check',
         payload: cmdPayload
       });
-      await commandTopic.$wait(offset); // wait for response on both Kafka & gRPC
       should.not.exist(resp.error);
       should.exist(resp);
       data = decodeMsg(resp);
