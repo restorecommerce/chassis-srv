@@ -1,4 +1,10 @@
-### 0.3.5 (Jnuary 28th, 2022)
+### 0.3.7 (February 11th, 2022)
+
+- updated dependencies
+- removed emitting healthcheck resposne to kafka
+- migrate from ioredis to redis
+
+### 0.3.6 (January 28th, 2022)
 
 - restructured graph traversal api
 - updated dependencies
