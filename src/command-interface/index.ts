@@ -6,7 +6,7 @@ import { Events, Topic } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
 import * as async from 'async';
 import { Logger } from 'winston';
-import Redis from 'ioredis';
+import { RedisClientType } from 'redis';
 import { Kafka as KafkaJS } from 'kafkajs';
 
 // For some reason this is required
@@ -58,8 +58,8 @@ export class CommandInterface implements ICommandInterface {
   commands: any;
   commandTopic: Topic;
   bufferedCollection: Map<string, string>;
-  redisClient: Redis;
-  constructor(server: Server, config: any, logger: Logger, events: Events, redisClient: Redis) {
+  redisClient: RedisClientType<any, any>;
+  constructor(server: Server, config: any, logger: Logger, events: Events, redisClient: RedisClientType<any, any>) {
     if (_.isNil(events)) {
       if (logger.error) {
         logger.error('No Kafka client was provided. Disabling all commands.');
@@ -402,7 +402,6 @@ export class CommandInterface implements ICommandInterface {
         this.logger.debug('waiting until all messages are processed');
       }
     } catch (err) {
-      console.log('Err is...........', err);
       this.logger.error('Error occurred while restoring the system', err.message);
       await this.commandTopic.emit('restoreResponse', {
         services: _.keys(this.service),
@@ -653,79 +652,37 @@ export class CommandInterface implements ICommandInterface {
       if (pattern != undefined) {
         let flushPattern = '*' + pattern + '*';
         this.logger.debug('Flushing cache wiht pattern', { dbIndex, flushPattern });
-        let stream, pipeline;
+        let scanIterator;
         try {
-          stream = this.redisClient.scanStream({ match: flushPattern, count: 100 });
-          pipeline = this.redisClient.pipeline();
+          scanIterator = this.redisClient.scanIterator({ MATCH: flushPattern, COUNT: 100 });
+          for await (const key of scanIterator) {
+            await this.redisClient.del(key);
+          }
+          this.logger.debug(`Successfully flushed cache pattern ${flushPattern}`);
+          response = {
+            status: 'Successfully flushed cache pattern'
+          };
         } catch (err) {
           this.logger.error('Error creating stream / pipeline in Redis', { message: err.message });
           response = err.message;
         }
-        let localKeys = [];
-        if (stream && pipeline) {
-          await new Promise((resolve, reject) => {
-            stream.on('data', (resultKeys) => {
-              this.logger.info('Data Received:', localKeys.length);
-              for (let i = 0; i < resultKeys.length; i++) {
-                localKeys.push(resultKeys[i]);
-                pipeline.del(resultKeys[i]);
-              }
-              if (localKeys.length > 100) {
-                pipeline.exec(() => { this.logger.info('one batch delete complete'); });
-                localKeys = [];
-                pipeline = this.redisClient.pipeline();
-              }
-            });
-            stream.on('end', () => {
-              pipeline.exec(() => { this.logger.info('final batch delete complete'); });
-              response = {
-                status: 'Successfully flushed cache pattern'
-              };
-              resolve(response);
-            });
-            stream.on('error', (err) => {
-              this.logger.error('error', err);
-              response = err.message;
-              resolve(err);
-            });
-          });
-        }
       } else {
         this.logger.debug('Flushing cache', { dbIndex });
-        await new Promise((resolve, reject) => {
-          if (dbIndex || dbIndex === 0) {
-            // Flush all keys in the given dbIndex (flushDB)
-            this.redisClient.flushdb(async (err, reply) => {
-              if (err) {
-                this.logger.error('Failed flushing cache with DB index', { err, dbIndex });
-                return reject();
-              }
-
-              if (reply) {
-                this.logger.debug('Successfully flushed cache with DB index', { dbIndex });
-                response = {
-                  status: `Successfully flushed cache with DB index ${dbIndex}`
-                };
-                return resolve(response);
-              }
-            });
-          } else {
-            // Flush Complete Redis Cache (flushAll)
-            this.redisClient.flushall(async (err, reply) => {
-              if (err) {
-                this.logger.error('Failed flushing complete cache', { err });
-                return reject();
-              }
-              if (reply) {
-                this.logger.debug('Successfully flushed complete cache');
-                response = {
-                  status: 'Successfully flushed complete cache'
-                };
-                return resolve(response);
-              }
-            });
-          }
-        });
+        if (dbIndex || dbIndex === 0) {
+          // Flush all keys in the given dbIndex (flushDB)
+          await this.redisClient.flushDb();
+          response = {
+            status: `Successfully flushed cache with DB index ${dbIndex}`
+          };
+          this.logger.debug('Successfully flushed cache with DB index', { dbIndex });
+        } else {
+          // Flush Complete Redis Cache (flushAll)
+          await this.redisClient.flushAll();
+          response = {
+            status: 'Successfully flushed complete cache'
+          };
+          this.logger.debug('Successfully flushed complete cache');
+        }
       }
     } catch (err) {
       response = err.message;

@@ -30,7 +30,7 @@
     "cache-manager": "^3.6.0",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^2.6.0",
-    "ioredis": "^4.28.5",
+    "redis": "^4.0.3",
     "kafkajs": "^1.16.0",
     "lodash": "^4.17.21",
     "long": "^5.2.0",

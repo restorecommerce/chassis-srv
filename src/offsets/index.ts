@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { Events, Topic } from '@restorecommerce/kafka-client';
-import Redis from 'ioredis';
+import { createClient, RedisClientType } from 'redis';
 import { Logger } from 'winston';
 
 /**
@@ -10,7 +10,7 @@ export class OffsetStore {
   logger: Logger;
   config: any;
   kafkaEvents: Events;
-  redisClient: Redis;
+  redisClient: RedisClientType<any, any>;
   topics: any;
   timerID: any;
 
@@ -36,9 +36,11 @@ export class OffsetStore {
     if (this.config.get('redis')) {
       const redisConfig = this.config.get('redis');
       if (_.has(redisConfig, 'db-indexes.db-offsetStore')) {
-        redisConfig.db = _.get(redisConfig, 'db-indexes.db-offsetStore');
+        redisConfig.database = _.get(redisConfig, 'db-indexes.db-offsetStore');
       }
-      this.redisClient = new Redis(redisConfig);
+      this.redisClient = createClient(redisConfig);
+      this.redisClient.on('error', (err) => logger.error('Redis Client Error in offsetstore', err));
+      this.redisClient.connect().then((val) => logger.info('Redis client connection successful for offsetstore'));
     }
     this.topics = {};
     this.timerID = [];
@@ -86,17 +88,10 @@ export class OffsetStore {
    */
   async getOffset(topicName: string): Promise<number> {
     const redisKey = this.config.get('events:kafka:clientId') + ':' + topicName;
-    const offsetValue = await new Promise<number>((resolve, reject) => {
-      this.redisClient.get(redisKey, (err, response) => {
-        if (err) {
-          reject(err);
-        }
-        resolve(response);
-      });
-    });
+    const offsetValue = await this.redisClient.get(redisKey);
     this.logger.info('The offset value retreived from redis for topic is:',
       { topicName, offsetValue });
-    return offsetValue;
+    return Number(offsetValue);
   }
 
   /**

@@ -5,7 +5,7 @@ import { GrpcClient } from '@restorecommerce/grpc-client';
 import { Events } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createLogger } from '@restorecommerce/logger'
-import Redis from 'ioredis';
+import { createClient } from 'redis';
 
 
 /**
@@ -80,7 +80,8 @@ describe('CommandInterfaceService', () => {
     // init redis client for subject index
     const redisConfig = cfg.get('redis');
     redisConfig.db = cfg.get('redis:db-indexes:db-subject');
-    redisClient = new Redis(redisConfig);
+    redisClient = createClient(redisConfig);
+    await redisClient.connect();
 
     const cis = new CommandInterface(server, cfg, logger, events, redisClient);
     await server.bind('commandinterface', cis);
@@ -331,12 +332,16 @@ describe('CommandInterfaceService', () => {
         should.exist(payload.status);
         payload.status.should.equal('Successfully flushed cache pattern');
       };
-      // store 3 keys to redis db index 3
-      const redis: any = new Redis({ db: 3 });
-      redis.set('user1', 'user1');
-      redis.set('user2', 'user2');
-      redis.set('user3', 'user3');
+      // store 120 keys to redis db index 3
+      const redis = createClient({ database: 3 });
+      await redis.connect();
+      for (let i=0; i< 120; i++) {
+        let key = 'user' + i;
+        // set key and value as same
+        redis.set(key, key);
+      }
       redis.set('testKey', 'testValue');
+      let allKeys = await redis.keys('*');
       const offset = await commandTopic.$offset(-1);
       const flushCachePayload = encodeMsg({
         data:
@@ -349,11 +354,9 @@ describe('CommandInterfaceService', () => {
         name: 'flush_cache',
         payload: flushCachePayload
       });
-      const stream = redis.scanStream({ match: '*' });
-      // after flushing user pattern keys testKey should still be existing
-      stream.on('data', (resultKeys) => {
-        resultKeys.length.should.be.equal(1);
-      });
+      allKeys = await redis.keys('*');
+      allKeys.length.should.equal(1);
+      allKeys[0].should.equal('testKey');
       await commandTopic.$wait(offset);
       const data = decodeMsg(resp);
       should.exist(data.status);
@@ -361,7 +364,8 @@ describe('CommandInterfaceService', () => {
     });
     it('flushdb should flush all keys in specific db_index when no pattern is specified', async () => {
       // store 3 keys to redis db index 3
-      const redis: any = new Redis({ db: 3 });
+      const redis = createClient({ database: 3 });
+      await redis.connect();
       await redis.set('user1', 'user1');
       await redis.set('user2', 'user2');
       await redis.set('testKey2', 'testValue2');
@@ -375,11 +379,8 @@ describe('CommandInterfaceService', () => {
         name: 'flush_cache',
         payload: flushCachePayload
       });
-      const stream = redis.scanStream({ match: '*' });
-      // after flushing DB
-      stream.on('data', (resultKeys) => {
-        resultKeys.length.should.be.equal(0);
-      });
+      const keys = redis.keys('*');
+      keys.should.be.empty();
       const data = decodeMsg(resp);
       should.exist(data.status);
       data.status.should.equal('Successfully flushed cache with DB index 3');
