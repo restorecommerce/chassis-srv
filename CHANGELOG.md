@@ -1,3 +1,7 @@
+### 0.3.8 (February 18th, 2022)
+
+- fixed offset store config
+
 ### 0.3.7 (February 11th, 2022)
 
 - updated dependencies
