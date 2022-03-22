@@ -432,12 +432,12 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     // root filter
     const rootEntityFilter = rootAndAssociationFilter.rootEntityFilter;
     if (rootEntityFilter) {
-      rootFilter = buildGraphFilter([rootEntityFilter]).q;
+      rootFilter = buildGraphFilter([rootEntityFilter], true).q;
     }
 
     if (startVertexIds && startVertexIds.length > 0) {
       if (rootFilter && !_.isEmpty(rootFilter)) {
-        rootFilter = ` obj.id IN ${JSON.stringify(startVertexIds)} || ${rootFilter}`;
+        rootFilter = ` obj.id IN ${JSON.stringify(startVertexIds)} && ${rootFilter}`;
       } else {
         rootFilter = ` obj.id IN ${JSON.stringify(startVertexIds)} `;
       }

@@ -160,7 +160,7 @@ export const toTraversalFilterObject = (input: any, obj?: any, operatorList?: st
     for (let filterObj of filters) {
       toTraversalFilterObject(filterObj, obj, operatorList);
     }
-  } else if (filters.field && (filters.operation || filters.operation === 0) && filters.value) {
+  } else if (filters.field && (filters.operation || filters.operation === 0) && filters.value != undefined) {
     // object contains field, operation and value, update it on obj using convertFilterToObject()
     obj = convertFilterToObject(filters, obj, operatorList);
   }
@@ -216,12 +216,12 @@ export const autoCastValue = (value: any): any => {
  * @param {string} op comparision operator
  * @return {any} query template string and bind variables
  */
-export const buildComparison = (filter: any, op: String): any => {
+export const buildComparison = (filter: any, op: String, root?: boolean): any => {
   const ele = _.map(filter, (e) => {
     if (!_.isArray(e)) {
       e = [e];
     }
-    e = buildGraphFilter(e); // eslint-disable-line
+    e = buildGraphFilter(e, root); // eslint-disable-line
     return e.q;
   });
 
@@ -237,6 +237,20 @@ export const buildComparison = (filter: any, op: String): any => {
 };
 
 /**
+ * Auto-casting reference value by using native function of arangoDB
+ *
+ * @param {string} key
+ * @param {object} value - raw value optional
+ * @return {object} interpreted value
+ */
+export const autoCastRootKey = (key: any, value?: any): any => {
+  if (_.isDate(value)) { // Date
+    return `DATE_TIMESTAMP(obj.${key})`;
+  }
+  return 'obj.' + key;
+};
+
+/**
  * Creates a filter key, value.
  * When the value is a string, boolean, number or date a equal comparision is created.
  * Otherwise if the key corresponds to a known operator, the operator is constructed.
@@ -244,54 +258,60 @@ export const buildComparison = (filter: any, op: String): any => {
  * @param {string|boolean|number|date|object} value
  * @return {String} query template string
  */
-export const buildGraphField = (key: any, value: any): string => {
+export const buildGraphField = (key: any, value: any, root?: boolean): string => {
+  let autoCastKeyFunction;
+  if (!root) {
+    autoCastKeyFunction = autoCastKey;
+  } else {
+    autoCastKeyFunction = autoCastRootKey;
+  }
   if (_.isString(value) || _.isBoolean(value) || _.isNumber(value || _.isDate(value))) {
-    return autoCastKey(key, value) + ' == ' + autoCastValue(value);
+    return autoCastKeyFunction(key, value) + ' == ' + autoCastValue(value);
   }
   if (!_.isNil(value.$eq)) {
-    return autoCastKey(key, value) + ' == ' + autoCastValue(value.$eq);
+    return autoCastKeyFunction(key, value) + ' == ' + autoCastValue(value.$eq);
   }
   if (value.$gt) {
-    return autoCastKey(key, value) + ' > ' + autoCastValue(value.$gt);
+    return autoCastKeyFunction(key, value) + ' > ' + autoCastValue(value.$gt);
   }
   if (value.$gte) {
-    return autoCastKey(key, value) + ' >= ' + autoCastValue(value.$gte);
+    return autoCastKeyFunction(key, value) + ' >= ' + autoCastValue(value.$gte);
   }
   if (value.$lt) {
-    return autoCastKey(key, value) + ' < ' + autoCastValue(value.$lt);
+    return autoCastKeyFunction(key, value) + ' < ' + autoCastValue(value.$lt);
   }
   if (value.$lte) {
-    return autoCastKey(key, value) + ' <= ' + autoCastValue(value.$lte);
+    return autoCastKeyFunction(key, value) + ' <= ' + autoCastValue(value.$lte);
   }
   if (!_.isNil(value.$ne)) {
-    return autoCastKey(key, value) + ' != ' + autoCastValue(value.$ne);
+    return autoCastKeyFunction(key, value) + ' != ' + autoCastValue(value.$ne);
   }
   if (value.$inVal) {
-    return autoCastValue(value.$inVal) + ' IN ' + autoCastKey(key, value);
+    return autoCastValue(value.$inVal) + ' IN ' + autoCastKeyFunction(key, value);
   }
   if (value.$in) {
     if (_.isString(value.$in)) {
       // if it is a field which should be an array
       // (useful for querying within a document list-like attributen
-      return autoCastValue(value.$in) + ' IN ' + autoCastKey(key);
+      return autoCastValue(value.$in) + ' IN ' + autoCastKeyFunction(key);
     }
     // assuming it is a list of provided values
-    return autoCastKey(key, value) + ' IN ' + autoCastValue(value.$in);
+    return autoCastKeyFunction(key, value) + ' IN ' + autoCastValue(value.$in);
   }
   if (value.$nin) {
-    return autoCastKey(key, value) + ' NOT IN ' + autoCastValue(value.$nin);
+    return autoCastKeyFunction(key, value) + ' NOT IN ' + autoCastValue(value.$nin);
   }
   if (value.$iLike) {
     // @param 'true' is for case insensitive
-    return 'LOWER(' + autoCastKey(key, value) + ') LIKE ' + autoCastValue(value.$iLike.toLowerCase());
+    return 'LOWER(' + autoCastKeyFunction(key, value) + ') LIKE ' + autoCastValue(value.$iLike.toLowerCase());
   }
   if (!_.isNil(value.$not)) {
-    const temp = buildGraphField(key, value.$not);
+    const temp = buildGraphField(key, value.$not, root);
     return `!(${temp})`;
   }
   if (_.has(value, '$isEmpty')) {
     // will always search for an empty string
-    return autoCastKey(key, '') + ' == ' + autoCastValue('');
+    return autoCastKeyFunction(key, '') + ' == ' + autoCastValue('');
   }
   throw new Error(`unsupported operator ${_.keys(value)} in ${key}`);
 };
@@ -301,7 +321,10 @@ export const buildGraphField = (key: any, value: any): string => {
  * @param {Object} filter key, value tree object
  * @return {any} query template string and bind variables
  */
-export const buildGraphFilter = (filter: any): any => {
+export const buildGraphFilter = (filter: any, root?: boolean): any => {
+  if (!root) {
+    root = false;
+  }
   if (filter.length > 0) {
     let q: any = '';
     let multipleFilters = false;
@@ -313,12 +336,12 @@ export const buildGraphFilter = (filter: any): any => {
               if (_.isEmpty(value)) {
                 q = true;
               } else {
-                q = buildComparison(value, '||').q;
+                q = buildComparison(value, '||', root).q;
               }
 
               multipleFilters = true;
             } else {
-              q = q + '&& ' + buildComparison(value, '||').q;
+              q = q + '&& ' + buildComparison(value, '||', root).q;
             }
             break;
           case '$and':
@@ -326,11 +349,11 @@ export const buildGraphFilter = (filter: any): any => {
               if (_.isEmpty(value)) {
                 q = false;
               } else {
-                q = buildComparison(value, '&&').q;
+                q = buildComparison(value, '&&', root).q;
               }
               multipleFilters = true;
             } else {
-              q = q + '&& ' + buildComparison(value, '&&').q;
+              q = q + '&& ' + buildComparison(value, '&&', root).q;
             }
             break;
           default:
@@ -338,10 +361,10 @@ export const buildGraphFilter = (filter: any): any => {
               throw new Error(`unsupported query operator ${key}`);
             }
             if (!multipleFilters) {
-              q = buildGraphField(key, value);
+              q = buildGraphField(key, value, root);
               multipleFilters = true;
             } else {
-              q = q + ' && ' + buildGraphField(key, value);
+              q = q + ' && ' + buildGraphField(key, value, root);
             }
             break;
         }
@@ -399,20 +422,6 @@ export const buildGraphLimiter = (limit?: number, offset?: number): string => {
     return `LIMIT ${limit}`;
   }
   return '';
-};
-
-/**
- * Auto-casting reference value by using native function of arangoDB
- *
- * @param {string} key
- * @param {object} value - raw value optional
- * @return {object} interpreted value
- */
-export const autoCastRootKey = (key: any, value?: any): any => {
-  if (_.isDate(value)) { // Date
-    return `DATE_TIMESTAMP(obj.${key})`;
-  }
-  return 'obj.' + key;
 };
 
 /**
