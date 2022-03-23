@@ -1,3 +1,7 @@
+### 0.3.9 (March 23rd, 2022)
+
+- fix traversal filters for root entity
+
 ### 0.3.8 (February 18th, 2022)
 
 - fixed offset store config
