@@ -1,3 +1,7 @@
+### 0.3.10 (May 27th, 2022)
+
+- up dependencies
+
 ### 0.3.9 (March 23rd, 2022)
 
 - fix traversal filters for root entity
