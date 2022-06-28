@@ -239,14 +239,9 @@ export const makeEndpoint = (middleware: any[], service: any, transportName: str
       }
       if (err instanceof SyntaxError || err instanceof RangeError ||
         err instanceof ReferenceError || err instanceof TypeError) {
-        logger.error(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
-          {
-            Request,
-            err: err.stack
-          });
+        logger.error(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`, { message: err.message, stack: err.stack });
       } else {
-        logger.info(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`,
-          { Request, err });
+        logger.info(`${rid} request to method ${ctx.method} over transport ${ctx.transport} error`, { message: err.message, stack: err.stack });
       }
       throw err;
     }

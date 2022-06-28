@@ -128,7 +128,7 @@ export class CommandInterface implements ICommandInterface {
     const topicCfg = config.get('events:kafka:topics:command');
 
     events.topic(topicCfg.topic).then(topic => this.commandTopic = topic).catch(err => {
-      this.logger.error('Error occurred while retrieving command kafka topic', err);
+      this.logger.error('Error occurred while retrieving command kafka topic', { code: err.code, message: err.message, stack: err.stack });
     });
 
     // check for buffer fields
@@ -328,21 +328,21 @@ export class CommandInterface implements ICommandInterface {
             eventListener(decodedMsg, context, that.config.get(), eventName).then(() => {
               done();
             }).catch((err) => {
-              that.logger.error(`Exception caught invoking restore listener for event ${eventName}:`, err);
+              that.logger.error(`Exception caught invoking restore listener for event ${eventName}`, { code: err.code, message: err.message, stack: err.stack });
               done(err);
             });
 
             if (message.offset >= targetOffset) {
               for (let event of eventNames) {
                 restoreTopic.removeAllListeners(event).then(() => { }).catch((err) => {
-                  that.logger.error('Error removing listeners after restore', err);
+                  that.logger.error('Error removing listeners after restore', { code: err.code, message: err.message, stack: err.stack });
                 });
               }
               for (let event of previousEvents) {
                 const listeners = listenersBackup.get(event);
                 for (let listener of listeners) {
                   restoreTopic.on(event, listener).then(() => { }).catch((err) => {
-                    that.logger.error('Error subscribing to listeners after restore', err);
+                    that.logger.error('Error subscribing to listeners after restore', { code: err.code, message: err.message, stack: err.stack });
                   });
                 }
               }
@@ -360,14 +360,14 @@ export class CommandInterface implements ICommandInterface {
                   }).then(() => {
                     that.logger.info('Restore response emitted');
                   }).catch((err) => {
-                    that.logger.error('Error emitting command response', err);
+                    that.logger.error('Error emitting command response', { code: err.code, message: err.message, stack: err.stack });
                   });
                   that.logger.info('restore process done');
                 }).catch(err => {
-                  that.logger.error('Error deleting restore kafka group:', err);
+                  that.logger.error('Error deleting restore kafka group', { code: err.code, message: err.message, stack: err.stack });
                 });
               }).catch(err => {
-                that.logger.error('Error stopping consumer:', err);
+                that.logger.error('Error stopping consumer', { code: err.code, message: err.message, stack: err.stack });
               });
             }
           };
@@ -375,7 +375,7 @@ export class CommandInterface implements ICommandInterface {
           const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
 
           await consumer.connect().catch(err => {
-            that.logger.error(`error connecting consumer:`, err);
+            that.logger.error('error connecting consumer', { code: err.code, message: err.message, stack: err.stack });
             throw err;
           });
 
@@ -402,7 +402,7 @@ export class CommandInterface implements ICommandInterface {
         this.logger.debug('waiting until all messages are processed');
       }
     } catch (err) {
-      this.logger.error('Error occurred while restoring the system', err.message);
+      this.logger.error('Error occurred while restoring the system', { code: err.code, message: err.message, stack: err.stack });
       await this.commandTopic.emit('restoreResponse', {
         services: _.keys(this.service),
         payload: this.encodeMsg({
@@ -468,7 +468,7 @@ export class CommandInterface implements ICommandInterface {
         }
       }
     } catch (err) {
-      this.logger.error('Unexpected error while resetting the system', err.message);
+      this.logger.error('Unexpected error while resetting the system', { code: err.code, message: err.message, stack: err.stack });
       errorMsg = err.message;
     }
 
@@ -586,7 +586,7 @@ export class CommandInterface implements ICommandInterface {
         payload: this.encodeMsg(response)
       });
     } catch (error) {
-      this.logger.error('Error executing configUpdate Command', { message: error.message });
+      this.logger.error('Error executing configUpdate Command', { code: error.code, message: error.message, stack: error.stack });
       response = error.message;
     }
     return response;
@@ -619,7 +619,7 @@ export class CommandInterface implements ICommandInterface {
         payload: this.encodeMsg(response)
       });
     } catch (err) {
-      this.logger.error('Error executing setApiKey Command', { message: err.message });
+      this.logger.error('Error executing setApiKey Command', { code: err.code, message: err.message, stack: err.stack });
       response = err.message;
     }
 
@@ -663,7 +663,7 @@ export class CommandInterface implements ICommandInterface {
             status: 'Successfully flushed cache pattern'
           };
         } catch (err) {
-          this.logger.error('Error creating stream / pipeline in Redis', { message: err.message });
+          this.logger.error('Error creating stream / pipeline in Redis', { code: err.code, message: err.message, stack: err.stack });
           response = err.message;
         }
       } else {

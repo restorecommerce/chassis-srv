@@ -272,7 +272,7 @@ export class ServerReflection {
           await call.end();
           return;
         }
-        logger.error('Error reading stream on serverReflectionInfo', error);
+        logger.error('Error reading stream on serverReflectionInfo', { code: error.code, message: error.message, stack: error.stack });
         continue;
       }
       let methodName = req.message_request;

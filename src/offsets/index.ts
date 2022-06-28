@@ -39,7 +39,7 @@ export class OffsetStore {
         redisConfig.database = _.get(redisConfig, 'db-indexes.db-offsetStore');
       }
       this.redisClient = createClient(redisConfig);
-      this.redisClient.on('error', (err) => logger.error('Redis Client Error in offsetstore', err));
+      this.redisClient.on('error', (err) => logger.error('Redis Client Error in offsetstore', { code: err.code, message: err.message, stack: err.stack }));
       this.redisClient.connect().then((val) => logger.info('Redis client connection successful for offsetstore'));
     }
     this.topics = {};

@@ -119,7 +119,7 @@ export class Server extends EventEmitter {
     try {
       this.transport = setupTransport(this.config.transports, this.logger);
     } catch (error) {
-      this.logger.error('setupTransports', error);
+      this.logger.error('setupTransports', { code: error.code, message: error.message, stack: error.stack });
       throw error;
     }
 
