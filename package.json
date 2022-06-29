@@ -30,7 +30,7 @@
     "cache-manager": "^4.0.1",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^2.6.0",
-    "kafkajs": "^2.0.2",
+    "kafkajs": "^2.1.0",
     "lodash": "^4.17.21",
     "long": "^5.2.0",
     "nedb": "^1.8.0",
