@@ -35,7 +35,7 @@
     "long": "^5.2.0",
     "nedb": "^1.8.0",
     "protobufjs": "^6.11.3",
-    "redis": "^4.1.0"
+    "redis": "^4.2.0"
   },
   "devDependencies": {
     "@types/cache-manager": "^4.0.0",
