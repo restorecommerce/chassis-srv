@@ -1,3 +1,7 @@
+### 0.3.12 (July 7th, 2022)
+
+- up deps
+
 ### 0.3.11 (June 28th, 2022)
 
 - up deps and fixed logger error messages
