@@ -35,7 +35,7 @@ export class Arango implements DatabaseProvider {
    * @param  {Object} options     options.limit, options.offset
    * @return {Promise<any>}  Promise for list of found documents.
    */
-  async find(collectionName: string, filter: any, options: any): Promise<any> {
+  async find(collectionName: string, filter?: any, options?: any): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument for find operation');

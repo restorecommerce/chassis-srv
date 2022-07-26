@@ -13,20 +13,17 @@ export { nedb };
 import { Server as Server } from './microservice/server';
 export { Server };
 
-import { makeEndpoint, chainMiddleware } from './microservice/endpoint';
-export { makeEndpoint, chainMiddleware };
-
 import * as errors from './microservice/errors';
 export { errors };
 import * as grpc from './microservice/transport/provider/grpc';
 export { grpc };
 
 export { Server as grpcServer } from './microservice/transport/provider/grpc';
-import { ServerReflection } from './microservice/transport/provider/grpc';
-export { ServerReflection };
+import { buildReflectionService } from './microservice/transport/provider/grpc/reflection';
+export { buildReflectionService };
 
-import { ICommandInterface, CommandInterface as CommandInterface } from './command-interface';
-export { ICommandInterface, CommandInterface };
+import { CommandInterface as CommandInterface } from './command-interface';
+export { CommandInterface };
 
 import { OffsetStore } from './offsets';
 export { OffsetStore };
@@ -37,5 +34,5 @@ export { Health };
 import { toTraversalFilterObject } from './database/provider/arango/utils';
 export { toTraversalFilterObject };
 
-import { Vertices, Collection, GraphFilters, TraversalOptions, TraversalResponse } from './database/provider/arango/interface';
-export { Vertices, Collection, GraphFilters, TraversalOptions, TraversalResponse };
+import { TraversalResponse } from './database/provider/arango/interface';
+export { TraversalResponse };

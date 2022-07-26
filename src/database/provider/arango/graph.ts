@@ -7,7 +7,15 @@ import { GraphDatabaseProvider } from '../..';
 import { Graph } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
 import { buildGraphFilter, buildGraphLimiter, buildGraphSorter, createGraphsAssociationFilter } from './utils';
-import { Vertices, Collection, TraversalOptions, GraphFilters, TraversalResponse, Direction } from './interface';
+import {
+  Vertices,
+  Collection,
+  Options as TraversalOptions,
+  Filters as GraphFilters,
+  Options_Direction as Direction,
+  DeepPartial
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
+import { TraversalResponse } from './interface';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   graph: Graph;
@@ -353,7 +361,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * opts.init, opts.expander, opts.sort
   * @return  {[Object]} edge traversal path
   */
-  async traversal(vertices: Vertices, collection: Collection, opts: TraversalOptions,
+  async traversal(vertices: Vertices, collection: Collection, opts: DeepPartial<TraversalOptions>,
     filters?: GraphFilters[]): Promise<TraversalResponse> {
     if (vertices) {
       if (_.isEmpty(vertices.collection_name) && !_.isEmpty(vertices.start_vertex_id)) {
@@ -391,7 +399,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       opts = {};
     }
     // make outbound traversal by default if not provided
-    if (!opts.direction || _.isEmpty(opts.direction)) {
+    if (opts.direction === undefined) {
       opts.direction = Direction.OUTBOUND;
     }
 
@@ -459,7 +467,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       defaultOptions = JSON.stringify(defaultOptions);
       // traversal data
       const traversalQuery = `For obj IN ${traversalCollectionName} ${rootFilter} ${limitFilter} ${sortFilter}
-          FOR v, e, p IN 1..100 ${opts.direction} obj GRAPH "${this.graph.name}"
+          FOR v, e, p IN 1..100 ${Direction[opts.direction]} obj GRAPH "${this.graph.name}"
           OPTIONS ${defaultOptions}
           ${filter}
           RETURN { v, e, p }`;

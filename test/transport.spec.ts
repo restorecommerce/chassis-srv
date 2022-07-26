@@ -1,35 +1,25 @@
 import * as should from 'should';
 import { createLogger } from '@restorecommerce/logger';
-import { GrpcClient } from '@restorecommerce/grpc-client';
+import { createClient } from '@restorecommerce/grpc-client';
 import { grpcServer } from '../src';
 import * as sleep from 'sleep';
+import { TestClient, TestDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
+import { TestDefinition as ServerTestDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/test/test';
+import { testService } from './microservice.spec';
+import { BindConfig } from '../src/microservice/transport/provider/grpc';
+import { createChannel } from 'nice-grpc';
 /* global describe it before after*/
 
 const providers = [{
   config: {
     client: {
       test: {
-        address: 'localhost:50060',
-        proto: {
-          protoRoot: 'node_modules/@restorecommerce/protos/',
-          protoPath: 'test/test.proto',
-          services: {
-            test: {
-              packageName: 'test',
-              serviceName: 'Test'
-            }
-          }
-        }
+        address: 'localhost:50060'
       }
     },
     server: {
       name: 'grpcTest',
       provider: 'grpc',
-      services: {
-        test: 'test.Test',
-      },
-      protos: ['test/test.proto'],
-      protoRoot: 'node_modules/@restorecommerce/protos/',
       addr: 'localhost:50060'
     },
     logger: {
@@ -42,36 +32,34 @@ const providers = [{
     }
   },
   name: 'grpc',
-  Client: GrpcClient,
   Server: grpcServer,
 }];
 
 providers.forEach((provider) => {
   describe(`transport provider ${provider.name}`, () => {
     describe('the server', () => {
-      const Server = provider.Server;
-      let server;
-      /* eslint-disable */
-      const service = {
-        test(request, context) { },
-      };
+      const ProviderServer = provider.Server;
+      let server: grpcServer;
       it('should conform to a server provider', () => {
-        should.exist(Server.constructor);
-        should.exist(Server.prototype.bind);
-        should.exist(Server.prototype.start);
-        should.exist(Server.prototype.end);
+        should.exist(ProviderServer.constructor);
+        should.exist(ProviderServer.prototype.bind);
+        should.exist(ProviderServer.prototype.start);
+        should.exist(ProviderServer.prototype.end);
       });
       describe('constructing the server provider with proper config',
         () => {
           it('should result in a server transport provider', () => {
             const logger = createLogger(provider.config.logger);
-            server = new Server(provider.config.server, logger);
+            server = new ProviderServer(provider.config.server, logger);
             should.exist(server);
           });
         });
       describe('binding a service', () => {
         it('should result in a wrapped service', async () => {
-          await server.bind('test', service);
+          await server.bind({
+            service: ServerTestDefinition,
+            implementation: testService
+          } as BindConfig<ServerTestDefinition>);
         });
       });
       describe('start', () => {
@@ -87,12 +75,11 @@ providers.forEach((provider) => {
       });
     });
     describe('the client', () => {
-      const Client = provider.Client;
-      let client;
+      let client: TestClient;
       const methodName = 'test';
       let endpoint;
       const response = {
-        result: 'abcd',
+        result: 'welcome',
         status: {
           id: '',
           code: 200,
@@ -102,55 +89,41 @@ providers.forEach((provider) => {
       const request = {
         value: 'hello',
       };
-      it('should conform to a client provider', () => {
-        should.exist(Client.constructor);
-      });
       describe('constructing the client provider with proper config',
         () => {
           it('should result in a client transport provider', () => {
             const logger = createLogger(provider.config.logger);
-            client = new GrpcClient(provider.config.client.test, logger);
+            const channel = createChannel(provider.config.client.test.address);
+            client = createClient({
+              ...provider.config.client.test,
+              logger
+            }, TestDefinition, channel);
             should.exist(client);
           });
         });
       describe('makeEndpoint', () => {
-        it('should fail when creating an undefined protobuf method',
-          async () => {
-            const errMessage = 'client.test.methodNameFail is not a function';
-            try {
-              endpoint = await client.test.methodNameFail({});
-            } catch (err) {
-              should.exist(err);
-              err.message.should.equal(errMessage);
-            }
-            should.not.exist(endpoint);
-          });
         describe('without running server', function runWithoutServer() {
           this.slow(200);
           it('should fail', async () => {
-            endpoint = client.test[methodName];
-            const result = await endpoint({});
-            result.operationStatus.message.should.equal('14 UNAVAILABLE: No connection established');
+            endpoint = client[methodName];
+            try {
+              await endpoint({});
+            } catch (err) {
+              err.message.should.equal('14 UNAVAILABLE: No connection established');
+            }
           });
         });
         describe('with running server', () => {
           const errMessage = 'forced error';
-          let server;
-          const service = {
-            test(call, context) {
-              const req = call.request;
-              should.deepEqual(request, req);
-              return response;
-            },
-            throw(req, context) {
-              throw new Error(errMessage);
-            },
-          };
+          let server: grpcServer;
           before(async function startServer() {
             this.timeout(5000);
             const logger = createLogger(provider.config.logger);
             server = new provider.Server(provider.config.server, logger);
-            await server.bind('test', service);
+            await server.bind({
+              service: ServerTestDefinition,
+              implementation: testService
+            } as BindConfig<ServerTestDefinition>);
             await server.start();
             sleep.sleep(2);
           });
@@ -158,7 +131,7 @@ providers.forEach((provider) => {
             await server.end();
           });
           it('should create an endpoint', () => {
-            endpoint = client.test[methodName];
+            endpoint = client[methodName];
             should.exist(endpoint);
           });
           it('should succeed when calling with empty context',
@@ -171,21 +144,13 @@ providers.forEach((provider) => {
               const result = await endpoint(request);
               should.deepEqual(response, result);
             });
-          it('should return an error when calling an unimplemented method',
-            async () => {
-              const endpointThrow = client.test['notImplemented'];
-              should.exist(endpoint);
-              const result = await endpointThrow(request);
-              result.operationStatus.code.should.equal(12);
-              result.operationStatus.message.should.equal('12 UNIMPLEMENTED: The server does not implement the method NotImplemented');
-            });
           it('should return an error when calling failing endpoint',
             async () => {
-              const endpointThrow = client.test['throw'];
+              const endpointThrow = client['throw'];
               should.exist(endpoint);
               const result = await endpointThrow(request);
-              result.operationStatus.code.should.equal(13);
-              result.operationStatus.message.should.equal('13 INTERNAL: forced error');
+              result.status.code.should.equal(500);
+              result.status.message.should.equal('forced error');
             });
         });
       });

@@ -1,6 +1,10 @@
 import * as _ from 'lodash';
 import Long from 'long';
-import { GraphFilters, Direction } from './interface';
+import {
+  Filters as GraphFilters,
+  Options_Direction,
+  Options_Direction as Direction,
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 
 const filterOperationMap = new Map([
   [0, 'eq'],
@@ -388,15 +392,15 @@ export const recursiveFindEntities = (collection, edgeDefConfig, direction, enti
   }
   entitiesList.push(collection);
   let items = [];
-  if (direction === 'OUTBOUND') {
+  if (direction === Direction.OUTBOUND) {
     items = edgeDefConfig.filter(col => col.from === collection);
-  } else if (direction === 'INBOUND') {
+  } else if (direction === Direction.INBOUND) {
     items = edgeDefConfig.filter(col => col.to === collection);
   }
   for (let item of items) {
-    if (direction === 'OUTBOUND') {
+    if (direction === Direction.OUTBOUND) {
       recursiveFindEntities(item.to, edgeDefConfig, direction, entitiesList);
-    } else if (direction === 'INBOUND') {
+    } else if (direction === Direction.INBOUND) {
       recursiveFindEntities(item.from, edgeDefConfig, direction, entitiesList);
     }
   }
@@ -476,9 +480,9 @@ export const createGraphsAssociationFilter = (filters: GraphFilters[],
         // depending on direction
         const entityConnectedToEdge = edgeDefConfig.filter(e => e.collection === eachFilter.edge);
         if (entityConnectedToEdge?.length === 1) {
-          if (direction === 'OUTBOUND') {
+          if (direction === Options_Direction.OUTBOUND) {
             filteredEntities.push(entityConnectedToEdge[0].to);
-          } else if (direction === 'INBOUND') {
+          } else if (direction === Options_Direction.INBOUND) {
             filteredEntities.push(entityConnectedToEdge[0].from);
           }
         }

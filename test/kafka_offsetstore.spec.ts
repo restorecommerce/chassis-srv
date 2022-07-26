@@ -1,10 +1,13 @@
 import * as should from 'should';
-import { Events, Topic } from '@restorecommerce/kafka-client';
-import { createLogger} from '@restorecommerce/logger';
+import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
+import { createLogger } from '@restorecommerce/logger';
 import { OffsetStore } from '../src/offsets';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import * as sleep from 'sleep';
+import {
+  protoMetadata
+} from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
 
+registerProtoMeta(protoMetadata);
 
 /* global describe it before after */
 

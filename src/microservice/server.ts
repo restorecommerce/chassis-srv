@@ -1,10 +1,10 @@
-import { makeEndpoint } from './endpoint';
 import { createLogger } from '@restorecommerce/logger';
 import { Logger } from 'winston';
 import * as _ from 'lodash';
 import { EventEmitter } from 'events';
+import { BindConfig } from './transport/provider/grpc';
 
-const transports: any = {};
+const transports: Record<string, any> = {};
 
 /**
  * register transport provider
@@ -70,7 +70,7 @@ export class Server extends EventEmitter {
    * @param {object} config Server config.
    * @param {Logger} logger
    */
-  constructor(config?: any, logger?: Logger, middleware?: any) {
+  constructor(config?: any, logger?: Logger) {
     super();
     if (_.isNil(config)) {
       throw new Error('mising argument config');
@@ -95,24 +95,6 @@ export class Server extends EventEmitter {
 
     // services
     this.logger.debug('setting up service endpoints');
-    if (!this.config.services || !this.config.transports) {
-      if (this.config.events) {
-        if (this.config.transports) {
-          this.logger.warn('missing endpoints configuration');
-        }
-        if (this.config.services) {
-          this.logger.warn('missing services configuration');
-        }
-        return;
-      }
-      if (this.config.transports && this.config.transports.length > 0) {
-        throw new Error('missing services configuration');
-      }
-      if (this.config.services) {
-        throw new Error('missing transports configuration');
-      }
-      throw new Error('missing server configuration');
-    }
 
     // transports
     this.logger.debug('setting up transports');
@@ -122,110 +104,34 @@ export class Server extends EventEmitter {
       this.logger.error('setupTransports', { code: error.code, message: error.message, stack: error.stack });
       throw error;
     }
-
-    /**
-     * Requests will traverse the middlewares in the order they're declared.
-     * That is, the first middleware is called first.
-     *
-     * @type {Array.<generator>}
-     */
-    if (!middleware) {
-      this.middleware = [];
-    } else {
-      this.middleware = middleware;
-    }
   }
 
   /**
    * bind connects the service to configured transports.
    *
    * @param  {string} name Service name.
-   * @param  {object} service A business logic service.
+   * @param  {BindConfig} bindConfig A business logic service.
    */
-  async bind(name: string, service: any): Promise<any> {
+  async bind(name: string, bindConfig: BindConfig<any>): Promise<void> {
     if (_.isNil(name)) {
       throw new Error('missing argument name');
     }
     if (!_.isString(name)) {
       throw new Error('argument name is not of type string');
     }
-    if (_.isNil(service)) {
-      throw new Error('missing argument service');
+    if (_.isNil(bindConfig)) {
+      throw new Error('missing argument bindConfig');
     }
-    const serviceCfg = this.config.services[name];
-    if (!serviceCfg) {
-      throw new Error(`configuration for ${name} does not exist`);
-    }
+
+    this.logger.debug('binding endpoints to transports');
 
     const transportNames = Object.keys(this.transport);
-
-    // endpoints
-    const logger = this.logger;
-    const endpoints = {};
-    Object.keys(serviceCfg).forEach((endpointName) => {
-      const endpointCfg = serviceCfg[endpointName];
-      if (_.isNil(endpointCfg)) {
-        logger.error(`configuration for service
-        ${name} endpoint ${endpointName} does not exist`);
-        return;
-      }
-      for (let i = 0; i < endpointCfg.transport.length; i += 1) {
-        const transportName = endpointCfg.transport[i];
-        if (!endpoints[transportName]) {
-          endpoints[transportName] = [];
-        }
-        if (!_.includes(transportNames, transportName)) {
-          logger.warn(`transport ${transportName} does not exist`, {
-            service: name,
-            method: endpointName,
-          });
-          continue;
-        }
-        endpoints[transportName].push(endpointName);
-      }
-    });
-    logger.debug('endpoints', endpoints);
-
-    logger.debug('binding endpoints to transports');
-    const middleware = this.middleware;
     const transport = this.transport;
-    const cfg = this.config;
     for (let i = 0; i < transportNames.length; i += 1) {
       const transportName = transportNames[i];
       const provider = transport[transportName];
-      const methodNames = endpoints[transportName];
-      if (!methodNames) {
-        logger.verbose(`transport ${transportName} does not have any endpoints configured`);
-        continue;
-      }
-      const binding = {};
-      for (let j = 0; j < methodNames.length; j += 1) {
-        const methodName = methodNames[j];
-        if (!_.isFunction(service[methodName])) {
-          logger.warn(`endpoint ${methodName} does not have matching service method`);
-          continue;
-        }
-        const methodCfg = serviceCfg[methodName];
-        if (_.isNil(methodCfg)) {
-          logger.error(`endpoint ${name}.${methodName} does not have configuration`);
-          continue;
-        }
-        if (!_.includes(methodCfg.transport, transportName)) {
-          logger.error(`endpoint ${name}.${methodName}
-        is not configured for transport ${transportName}, skipping endpoint binding`);
-          continue;
-        }
-        binding[methodName] = makeEndpoint(middleware,
-          service, transportName, methodName, logger, cfg);
-        logger.debug(`endpoint ${methodName} bound to transport ${transportName}`);
-      }
-      if (_.size(_.functions(binding)) === 0) {
-        logger.verbose(`service ${name} has no endpoints configured
-          for transport ${transportName}, skipping service binding`);
-        continue;
-      }
-      await provider.bind(name, binding);
-      this.emit('bound', name, binding, provider);
+      await provider.bind(bindConfig);
+      this.emit('bound', name, bindConfig, provider);
     }
   }
 

@@ -1,29 +1,26 @@
 import * as _ from 'lodash';
 import { Server } from './../microservice/server';
-import * as errors from './../microservice/errors';
 import * as database from './../database';
-import { Events, Topic } from '@restorecommerce/kafka-client';
+import { Events, Topic, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { EventEmitter } from 'events';
 import * as async from 'async';
 import { Logger } from 'winston';
 import { RedisClientType } from 'redis';
 import { Kafka as KafkaJS } from 'kafkajs';
+import {
+  CommandRequest,
+  ServiceServiceImplementation,
+  protoMetadata
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import { CallContext } from 'nice-grpc';
+import {
+  HealthCheckResponse_ServingStatus
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
 
 // For some reason this is required
 const crypto = require('crypto');
 
-const ServingStatus = {
-  UNKNOWN: 'UNKNOWN',
-  SERVING: 'SERVING',
-  NOT_SERVING: 'NOT_SERVING',
-};
-
-/**
- * Generic interface to expose system operations.
- */
-export interface ICommandInterface {
-  command(call, context);
-}
+registerProtoMeta(protoMetadata);
 
 interface RestoreData {
   base_offset: number;
@@ -49,7 +46,7 @@ interface FlushCacheData {
  * In case of custom data/events handling or service-specific operations regarding
  * a certain method, such method should be extended or overriden.
  */
-export class CommandInterface implements ICommandInterface {
+export class CommandInterface implements ServiceServiceImplementation {
   logger: Logger;
   config: any;
   health: any;
@@ -59,15 +56,13 @@ export class CommandInterface implements ICommandInterface {
   commandTopic: Topic;
   bufferedCollection: Map<string, string>;
   redisClient: RedisClientType<any, any>;
+
   constructor(server: Server, config: any, logger: Logger, events: Events, redisClient: RedisClientType<any, any>) {
     if (_.isNil(events)) {
       if (logger.error) {
         logger.error('No Kafka client was provided. Disabling all commands.');
         return;
       }
-    }
-    if (!config.get('server:services')) {
-      throw new Error('missing config server.services');
     }
 
     this.config = config;
@@ -82,34 +77,29 @@ export class CommandInterface implements ICommandInterface {
 
     // Health
     this.health = {
-      status: ServingStatus.UNKNOWN,
+      status: HealthCheckResponse_ServingStatus.UNKNOWN,
     };
     this.service = {};
-    const service = this.service;
-    const health = this.health;
-    _.forEach(config.get('server:services'), (serviceCfg, serviceName) => {
-      service[serviceName] = {
-        bound: false,
+    server.on('bound', (serviceName) => {
+      this.service[serviceName] = {
+        bound: true,
         transport: {},
       };
-    });
-    server.on('bound', (serviceName) => {
-      service[serviceName].bound = true;
-      health.status = ServingStatus.NOT_SERVING;
+      this.health.status = HealthCheckResponse_ServingStatus.NOT_SERVING;
     });
     server.on('serving', (transports) => {
-      health.status = ServingStatus.SERVING;
+      this.health.status = HealthCheckResponse_ServingStatus.SERVING;
       _.forEach(transports, (transport, transportName) => {
-        _.forEach(service, (srv, serviceName) => {
-          service[serviceName].transport[transportName] = ServingStatus.SERVING;
+        _.forEach(this.service, (srv, serviceName) => {
+          this.service[serviceName].transport[transportName] = HealthCheckResponse_ServingStatus.SERVING;
         });
       });
     });
     server.on('stopped', (transports) => {
-      health.status = ServingStatus.NOT_SERVING;
+      this.health.status = HealthCheckResponse_ServingStatus.NOT_SERVING;
       _.forEach(transports, (transport, transportName) => {
-        _.forEach(service, (srv, serviceName) => {
-          service[serviceName].transport[transportName] = ServingStatus.NOT_SERVING;
+        _.forEach(this.service, (srv, serviceName) => {
+          this.service[serviceName].transport[transportName] = HealthCheckResponse_ServingStatus.NOT_SERVING;
         });
       });
     });
@@ -128,7 +118,11 @@ export class CommandInterface implements ICommandInterface {
     const topicCfg = config.get('events:kafka:topics:command');
 
     events.topic(topicCfg.topic).then(topic => this.commandTopic = topic).catch(err => {
-      this.logger.error('Error occurred while retrieving command kafka topic', { code: err.code, message: err.message, stack: err.stack });
+      this.logger.error('Error occurred while retrieving command kafka topic', {
+        code: err.code,
+        message: err.message,
+        stack: err.stack
+      });
     });
 
     // check for buffer fields
@@ -142,36 +136,38 @@ export class CommandInterface implements ICommandInterface {
       this.logger.info('Buffered collections are:', this.bufferedCollection);
     }
   }
+
   /**
    * Generic command operation, which demultiplexes a command by its name and parameters.
-   * @param call
-   * @param context
    */
-  async command(call, context?: any): Promise<any> {
-    if (_.isNil(call.request) && _.isNil(call.name)) {
-      const result = {
+  async command(request: CommandRequest, context: CallContext): Promise<{ typeUrl?: string; value?: Buffer }> {
+    if (_.isNil(request) || _.isNil(request.name)) {
+      return this.encodeMsg({
         error: {
           code: 400,
           message: 'No command name provided',
         }
-      };
-      return this.encodeMsg(result);
+      });
     }
-    const name = call.name || call.request.name;
 
-    if (_.isNil(this.commands[name])) {
-      const result = {
+    if (_.isNil(this.commands[request.name])) {
+      return this.encodeMsg({
         error: {
           code: 400,
-          message: `Command name ${name} does not exist`
+          message: `Command name ${request.name} does not exist`
         }
-      };
-      return this.encodeMsg(result);
+      });
     }
-    const payload = call.payload ? this.decodeMsg(call.payload) :
-      (call.request.payload ? this.decodeMsg(call.request.payload) : null);
+
+    const payload = request.payload ? this.decodeMsg(request.payload) : null;
+
     // calling operation bound to the command name
-    const result = await this.commands[name].apply(this, [payload]);
+    const result = await Promise.resolve(this.commands[request.name].apply(this, [payload])).catch(err => ({
+      error: {
+        code: 404,
+        message: err.message
+      }
+    }));
 
     return this.encodeMsg(result);
   }
@@ -444,7 +440,7 @@ export class CommandInterface implements ICommandInterface {
    */
   async reset(): Promise<any> {
     this.logger.info('reset process started');
-    if (this.health.status !== ServingStatus.NOT_SERVING) {
+    if (this.health.status !== HealthCheckResponse_ServingStatus.NOT_SERVING) {
       this.logger.warn('reset process starting while server is serving');
     }
 
@@ -502,17 +498,12 @@ export class CommandInterface implements ICommandInterface {
 
   /**
    * Check the service status
-   * @param call List of services to be checked
-   * @param context
    */
-  async check(payload: any): Promise<any> {
+  async check(payload: { service?: string }): Promise<{
+    status: HealthCheckResponse_ServingStatus;
+  }> {
     if (_.isNil(payload)) {
-      return {
-        error: {
-          code: 400,
-          message: 'Invalid payload for restore command'
-        }
-      };
+      throw new Error('Invalid payload for restore command');
     }
     const serviceName = payload.service;
 
@@ -525,17 +516,12 @@ export class CommandInterface implements ICommandInterface {
     if (_.isNil(service)) {
       const errorMsg = 'Service ' + serviceName + ' does not exist';
       this.logger.warn(errorMsg);
-      return {
-        error: {
-          code: 404,
-          message: errorMsg
-        }
-      };
+      throw new Error(errorMsg);
     }
-    let status = ServingStatus.UNKNOWN;
+    let status = HealthCheckResponse_ServingStatus.UNKNOWN;
     // If one transports serves the service, set it to SERVING
     _.forEach(service.transport, (transportStatus) => {
-      if (transportStatus === ServingStatus.SERVING) {
+      if (transportStatus === HealthCheckResponse_ServingStatus.SERVING) {
         status = transportStatus;
       }
     });
@@ -747,8 +733,7 @@ export class CommandInterface implements ICommandInterface {
   * @returns Arbitrary JSON
   */
   decodeMsg(msg: any): any {
-    const decoded = Buffer.from(msg.value, 'base64').toString();
-    return JSON.parse(decoded);
+    return JSON.parse(Buffer.from(msg.value, 'base64').toString());
   }
 
   /**
@@ -758,13 +743,10 @@ export class CommandInterface implements ICommandInterface {
    */
   encodeMsg(msg: any): any {
     if (msg) {
-      const stringified = JSON.stringify(msg);
-      const encoded = Buffer.from(stringified).toString('base64');
-      const ret = {
+      return {
         type_url: 'payload',
-        value: encoded
+        value: Buffer.from(JSON.stringify(msg)).toString('base64')
       };
-      return ret;
     }
   }
 

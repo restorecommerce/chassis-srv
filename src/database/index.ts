@@ -1,8 +1,11 @@
 import { Logger } from 'winston';
+import { TraversalResponse } from './provider/arango/interface';
 import {
-  TraversalOptions, GraphFilters, TraversalResponse,
-  Collection, Vertices
-} from './provider/arango/interface';
+  Vertices,
+  Collection,
+  Options as TraversalOptions,
+  Filters as GraphFilters,
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 
 /**
  * A key, value map containing database providers.

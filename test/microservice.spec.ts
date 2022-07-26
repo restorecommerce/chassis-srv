@@ -3,161 +3,100 @@ import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
 import * as sleep from 'sleep';
 import * as chassis from '../src';
-import { createServiceConfig } from '@restorecommerce/service-config';
-import { GrpcClient } from '@restorecommerce/grpc-client';
-import { Observable } from 'rxjs';
+import { createClient } from '@restorecommerce/grpc-client';
+import { TestDefinition, TestClient } from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
+import { TestServiceImplementation, TestDefinition as ServerTestDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/test/test';
+import { BindConfig } from '../src/microservice/transport/provider/grpc';
+import {
+  StreamDefinition,
+  StreamServiceImplementation,
+  StreamClient
+} from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
+import { Channel, createChannel } from 'nice-grpc';
+import { DeepPartial } from '../../libs/packages/rc-grpc-clients/dist/generated/grpc/reflection/v1alpha/reflection';
 
 const config = chassis.config;
 const Server = chassis.Server;
 const grpc = chassis.grpc;
-const errors = chassis.errors;
 
 const status = {
   code: 200,
   message: 'success'
 };
 
-/* global describe context it before after*/
-/* eslint-disable */
-const service = {
-  test(call, context) {
-    const request = call.request;
+export const testService: TestServiceImplementation = {
+  test: async (request) => {
     request.value.should.be.equal('hello');
     return {
       result: 'welcome',
       status
     };
   },
-  create(call, context) {
-    let payLoadList = [];
-    for (let item of call.request.items) {
-      payLoadList.push({
+  create: async (request) => {
+    return {
+      items: request.items.map(item => ({
         payload: item,
         status
-      });
-    }
-    return {
-      items: payLoadList,
-      total_count: call.request.items.lenght,
+      })),
+      total_count: request.items.length,
       operation_status: status
     };
   },
-  throw(request, context) {
-    return {
-      status: {
-        code: 500,
-        message: 'forced error'
-      }
+  throw: async () => {
+    throw new Error('forced error');
+  },
+  notFound: async () => ({
+    status: {
+      code: 404,
+      message: 'test not found'
     }
-  },
-  notFound(request, context) {
-    return {
-      status: {
-        code: 404,
-        message: 'test not found'
-      }
-    }
-  },
-  notImplemented: null,
-  async biStream(call, context) {
-    let req;
-    let stream = true;
-    while (stream) {
-      try {
-        req = await call.read();
-        // Promisify callback to get response
-        req = await new Promise((resolve, reject) => {
-          req((err, response) => {
-            if (err) {
-              reject(err);
-            }
-            resolve(response);
-          });
-        });
-      } catch (e) {
-        stream = false;
-        if (e.message === 'stream end') {
-          await call.end();
-          return;
-        }
-      }
-      should.exist(req);
-      should.exist(req.value);
-      req.value.should.equal('ping');
-      await call.write({ result: 'pong' });
-    }
-  },
-  async requestStream(call, context) {
-    const streamRequest = await call.getServerRequestStream();
-    let result = '';
-    streamRequest.on('data', (data) => {
-      result += data.value;
-    });
-    return await new Promise((resolve, reject) => {
-      streamRequest.on('end', () => {
-        result.should.equal('ping');
-        resolve({ result: 'pong', status });
-      });
-    });
-  },
-  async responseStream(call: any, context: any) {
-    const req = call.request.request;
-    should.exist(req);
-    should.exist(req.value);
-    req.value.should.equal('ping');
-    for (let i = 0; i < 3; i += 1) {
-      await (call.write({ result: `${i}` }));
-    }
-    await call.end();
-  },
+  }),
+  notImplemented: async () => ({}),
+  read: async () => ({
+    items: [],
+    total_count: 0,
+  })
 };
 
-const chunkSize = 1 << 10;
-
-const bufferToObservable = (buffer: Buffer): any => {
-  return new Observable((subscriber) => {
-    for (let i = 0; i < Math.ceil(buffer.length / chunkSize); i++) {
-      subscriber.next({
-        value: buffer.slice(i * chunkSize, (i + 1) * chunkSize)
-      })
+const streamService: StreamServiceImplementation = {
+  requestStream: async (request) => {
+    let result = '';
+    for await (const item of request) {
+      result += item.value;
     }
-    subscriber.complete();
-  });
-}
+    result.should.equal('ping');
+    return {
+      result: 'pong',
+      status
+    };
+  },
+  async* responseStream(request) {
+    should.exist(request);
+    should.exist(request.value);
+    request.value.should.equal('ping');
+    for (let i = 0; i < 3; i += 1) {
+      yield {result: `${i}`};
+    }
+  },
+  async* biStream(request) {
+    for await (const item of request) {
+      should.exist(item);
+      should.exist(item.value);
+      item.value.should.equal('ping');
+    }
+    yield {result: 'pong'};
+  }
+};
 
-let cfg;
+const toAsync = async function* <T>(requests: DeepPartial<T>[]): AsyncIterable<DeepPartial<T>> {
+  for (const request of requests) {
+    yield request;
+  }
+};
+
 describe('microservice.Server', () => {
   let server: chassis.Server;
   describe('constructing the sever', () => {
-    it('should throw an error when services config is missing',
-      async () => {
-        await config.load(process.cwd() + '/test');
-        cfg = await config.get();
-        cfg = createServiceConfig(process.cwd() + '/test');
-        cfg.set('server:services', undefined);
-        (() => {
-          server = new Server(cfg.get('server'));
-        }).should.throw('missing services configuration');
-      });
-    it('should throw an error when transports config is missing',
-      async () => {
-        await config.load(process.cwd() + '/test');
-        const cfg = await config.get();
-        cfg.set('server:transports', undefined);
-        (() => {
-          server = new Server(cfg.get('server'));
-        }).should.throw('missing transports configuration');
-      });
-    it('should throw an error when configuration does not exist',
-      async () => {
-        await config.load(process.cwd() + '/test');
-        const cfg = await config.get();
-        cfg.set('server:services', undefined);
-        cfg.set('server:transports', undefined);
-        (() => {
-          server = new Server(cfg.get('server'));
-        }).should.throw('missing server configuration');
-      });
     it('should return a server when provided with correct config',
       async () => {
         await config.load(process.cwd() + '/test');
@@ -181,13 +120,14 @@ describe('microservice.Server', () => {
   describe('calling bind', () => {
     it('should wrap a service and create endpoints for each object function',
       async () => {
-        const boundServices = 2;
-        let currentBoundServices = 0;
-        server.on('bound', () => {
-          currentBoundServices += 1;
-        });
-        await server.bind('test', service);
-        await server.bind('stream', service);
+        await server.bind('test', {
+          service: ServerTestDefinition,
+          implementation: testService
+        } as BindConfig<ServerTestDefinition>);
+        await server.bind('stream', {
+          service: StreamDefinition,
+          implementation: streamService
+        } as BindConfig<StreamDefinition>);
       });
   });
   describe('calling start', () => {
@@ -195,7 +135,7 @@ describe('microservice.Server', () => {
       async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await config.get();
-        const logger = createLogger(cfg.get('logger'))
+        const logger = createLogger(cfg.get('logger'));
         let serving = false;
         server.on('serving', () => {
           serving = !serving;
@@ -203,134 +143,112 @@ describe('microservice.Server', () => {
         await server.start();
         sleep.sleep(1);
         serving.should.equal(true);
-        let client = new GrpcClient(cfg.get('client:test'), logger);
-        let result;
-        should.exist(client);
+        const testChannel = createChannel(cfg.get('client:test:address'));
+        const testClient: TestClient = createClient({
+          ...cfg.get('client:test'),
+          logger
+        }, TestDefinition, testChannel);
+        should.exist(testClient);
         // --- 'test' endpoint ---
-        result = await client.test.test({
-          value: 'hello',
-        },
-          {
-            test: true,
-          });
-        should.exist(result.status);
-        result.status.code.should.equal(200);
-        result.status.message.should.equal('success');
-        should.exist(result.result);
-        result.result.should.be.equal('welcome');
+        const testResult = await testClient.test({value: 'hello'});
+        should.exist(testResult.status);
+        testResult.status.code.should.equal(200);
+        testResult.status.message.should.equal('success');
+        should.exist(testResult.result);
+        testResult.result.should.be.equal('welcome');
 
         // --- 'testCreate' endpoint ---
-        let msg: any = {
+        const msg: any = {
           testKey: 'testVal'
         };
         const msgBuffer: any = Buffer.from(JSON.stringify(msg));
-        result = await client.test.create(
-          {
-            items: [{
-              value: 'helloWorld123',
-              data: { value: msgBuffer }
-            }]
-          });
-        should.exist(result.operation_status);
-        result.operation_status.code.should.equal(200);
-        result.operation_status.message.should.equal('success');
-        should.exist(result.items);
+        const createResult = await testClient.create({
+          items: [{
+            value: 'helloWorld123',
+            data: {value: msgBuffer}
+          }]
+        });
+        should.exist(createResult.operationStatus);
+        createResult.operationStatus.code.should.equal(200);
+        createResult.operationStatus.message.should.equal('success');
+        should.exist(createResult.items);
         // verify decoded google.protobuf.any buffered response
-        result.items[0].payload.value.should.equal('helloWorld123');
-        const decodedBuffResp = JSON.parse(result.items[0].payload.data.value.toString());
-        decodedBuffResp.testKey.should.equal("testVal");
+        createResult.items[0].payload.value.should.equal('helloWorld123');
+        const decodedBuffResp = JSON.parse(createResult.items[0].payload.data.value.toString());
+        decodedBuffResp.testKey.should.equal('testVal');
 
         // --- 'throw' endpoint ---
-        result = await client.test.throw({
-          value: 'hello',
-        },
-          {
-            test: true,
-          });
-        should.exist(result.status);
-        result.status.code.should.equal(500);
-        result.status.message.should.equal('forced error');
-        result.result.should.be.empty();
+        const throwResult = await testClient.throw({value: 'hello'});
+        should.exist(throwResult.status);
+        throwResult.status.code.should.equal(500);
+        throwResult.status.message.should.equal('forced error');
+        throwResult.result.should.be.empty();
 
         // --- 'notFound' endpoint ---
-        result = await client.test.notFound({
-          value: 'hello',
-        },
-          {
-            test: true,
-          });
-        should.exist(result.status);
-        result.status.code.should.equal(404);
-        result.status.message.should.equal('test not found');
-        result.result.should.be.empty();
-
-        // --- 'notImplemented' endpoint ---
-        try {
-          result = await client.test.notImplemented({
-            value: 'hello',
-          },
-            {
-              test: true,
-            });
-        } catch (err) {
-          err.message.should.equal('12 UNIMPLEMENTED: The server does not implement this method');
-        }
+        const notFoundResult = await testClient.notFound({value: 'hello'});
+        should.exist(notFoundResult.status);
+        notFoundResult.status.code.should.equal(404);
+        notFoundResult.status.message.should.equal('test not found');
+        notFoundResult.result.should.be.empty();
 
         // 'requestStream'
-        const streamClient = new GrpcClient(cfg.get('client:stream'), logger);
-        let inputBuffer = Buffer.from('ping');
-        result = await streamClient.stream.requestStream(bufferToObservable(inputBuffer));
-        should.exist(result.status);
-        result.status.code.should.equal(200);
-        result.status.message.should.equal('success');
-        should.exist(result);
-        should.exist(result.result);
-        result.result.should.be.equal('pong');
+        const streamChannel = createChannel(cfg.get('client:stream:address'));
+        const streamClient: StreamClient = createClient({
+          ...cfg.get('client:stream'),
+          logger
+        }, StreamDefinition, streamChannel);
+        const streamResult = await streamClient.requestStream(toAsync([{
+          value: 'ping'
+        }]));
+        should.exist(streamResult.status);
+        streamResult.status.code.should.equal(200);
+        streamResult.status.message.should.equal('success');
+        should.exist(streamResult);
+        should.exist(streamResult.result);
+        streamResult.result.should.be.equal('pong');
 
         // 'responseStream'
-        result = await streamClient.stream.responseStream({
+        const responseStreamRequest = streamClient.responseStream({
           value: 'ping'
         });
         let concatDataResp = [];
-        let actualResp: any = await new Promise((resolve, reject) => {
-          result.subscribe(data => {
-            concatDataResp.push(data.result);
-            if (data.result === '2') {
-              resolve(concatDataResp);
-            }
-          });
-        });
-        actualResp.should.deepEqual(['0', '1', '2']);
+        for await (const response of responseStreamRequest) {
+          concatDataResp.push(response.result);
+        }
+        concatDataResp.should.deepEqual(['0', '1', '2']);
 
         // 'biStream'
-        result = await streamClient.stream.biStream(bufferToObservable(inputBuffer));
-        await new Promise((resolve, reject) => {
-          result.subscribe(data => {
-            data.result.should.be.equal('pong');
-            resolve(data);
-          });
-        });
+        const biStreamRequest = await streamClient.biStream(toAsync([{
+          value: 'ping'
+        }]));
+        for await (const response of biStreamRequest) {
+          response.result.should.be.equal('pong');
+        }
       });
   });
 
   describe('connecting with multiple clients', () => {
     it('should be possible', async () => {
       const numClients = 3;
-      const conns = [];
-      const clients = [];
+      const clients: TestClient[] = [];
       const cfg = await chassis.config.get();
       for (let i = 0; i < numClients; i += 1) {
-        const conn = new GrpcClient(cfg.get('client:test'), createLogger(cfg.get('logger')));
-        conns.push(conn.test);
-        clients.push(conn.test);
+        const channel = createChannel(cfg.get('client:test:address'));
+        const client = createClient({
+          ...cfg.get('client:test'),
+          logger: createLogger(cfg.get('logger'))
+        }, TestDefinition, channel);
+        clients.push(client);
       }
+
       const reqs = [];
       for (let i = 0; i < numClients; i += 1) {
         reqs.push(clients[i].test({
           value: 'hello',
         }));
       }
-      const resps = await reqs;
+
+      const resps = await Promise.all(reqs);
       for (let i = 0; i < resps.length; i += 1) {
         const response = await resps[i];
         should.exist(response.status);
@@ -350,31 +268,20 @@ describe('microservice.Server', () => {
 });
 
 describe('microservice.Client', () => {
-  let client;
-  let server;
+  let channel: Channel;
+  let client: TestClient;
+  let server: chassis.Server;
   describe('constructing the client', () => {
     it('should create a client when providing correct configuration',
       async () => {
         await config.load(process.cwd() + '/test');
         const cfg = await chassis.config.get();
-        client = new GrpcClient(cfg.get('client:test'), createLogger(cfg.get('logger')));
+        channel = createChannel(cfg.get('client:test:address'));
+        client = createClient({
+          ...cfg.get('client:test'),
+          logger: createLogger(cfg.get('logger'))
+        }, TestDefinition, channel);
         should.exist(client);
-      });
-    it('should throw an error when providing no configuration',
-      async () => {
-        await config.load(process.cwd() + '/test');
-        const cfg = await chassis.config.get();
-        cfg.set('client:test', null);
-        (() => {
-          client = new GrpcClient(null, null);
-        }).should.throw('Grpc client configuration missing');
-      });
-    it('should throw an error when providing with invalid configuration',
-      async () => {
-        const invalidClientConfig = { address: 'localhost:50051' };
-        (() => {
-          client = new GrpcClient(invalidClientConfig, null);
-        }).should.throw('missing logger configuration');
       });
   });
   context('with running server', () => {
@@ -383,7 +290,10 @@ describe('microservice.Client', () => {
       const cfg = await config.get();
       const logger = createLogger(cfg.get('logger'));
       server = new Server(cfg.get('server'), logger);
-      await server.bind('test', service);
+      await server.bind('test', {
+        service: ServerTestDefinition,
+        implementation: testService
+      } as BindConfig<ServerTestDefinition>);
       await server.start();
       sleep.sleep(1);
     });
@@ -393,15 +303,14 @@ describe('microservice.Client', () => {
     describe('connect', () => {
       it('should return a service object with endpoint functions',
         async () => {
-          const testService = client.test;
-          should.exist(testService);
-          should.exist(testService.test);
-          should.exist(testService.throw);
-          should.exist(testService.notImplemented);
-          should.exist(testService.notFound);
+          should.exist(client);
+          should.exist(client.test);
+          should.exist(client.throw);
+          should.exist(client.notImplemented);
+          should.exist(client.notFound);
 
           // test
-          let result = await testService.test({
+          let result = await client.test({
             value: 'hello',
           });
           should.exist(result);
@@ -415,8 +324,12 @@ describe('microservice.Client', () => {
           await config.load(process.cwd() + '/test');
           const cfg = await config.get();
           cfg.set('client:test:timeout', 5000);
-          const newGrpcClient = new GrpcClient(cfg.get('client:test'), createLogger(cfg.get('logger')));
-          result = await newGrpcClient.test.test({
+          const channel = createChannel(cfg.get('client:test:address'));
+          const newGrpcClient = createClient({
+            ...cfg.get('client:test'),
+            logger: createLogger(cfg.get('logger'))
+          }, TestDefinition, channel);
+          result = await newGrpcClient.test({
             value: 'hello',
           });
           should.exist(result);
@@ -429,7 +342,7 @@ describe('microservice.Client', () => {
     });
     describe('end', () => {
       it('should disconnect from all endpoints', async () => {
-        await client.close();
+        await channel.close();
       });
     });
   });
@@ -437,32 +350,34 @@ describe('microservice.Client', () => {
     describe('connect', () => {
       it('Call should not be created from a closed channel ',
         async () => {
-          const testService = client.test;
-          should.exist(testService);
-          should.exist(testService.test);
-          should.exist(testService.throw);
-          should.exist(testService.notImplemented);
+          should.exist(client);
+          should.exist(client.test);
+          should.exist(client.throw);
+          should.exist(client.notImplemented);
 
           // test
           await config.load(process.cwd() + '/test');
           const cfg = await config.get();
           cfg.set('client:test:timeout', 1);
-          const timeoutGrpcClient = new GrpcClient(cfg.get('client:test'), createLogger(cfg.get('logger')));
-          let result;
+          const channel = createChannel(cfg.get('client:test:address'));
+          const timeoutGrpcClient = createClient({
+            ...cfg.get('client:test'),
+            logger: createLogger(cfg.get('logger'))
+          }, TestDefinition, channel);
           try {
-            result = await timeoutGrpcClient.test.test({
+            await timeoutGrpcClient.test({
               value: 'hello',
             });
           } catch (err) {
             should.exist(err);
-            err.message.should.equal('4 DEADLINE_EXCEEDED: Deadline exceeded');
+            err.message.should.equal('/test.Test/Test DEADLINE_EXCEEDED: Deadline exceeded');
           }
         });
     });
     describe('end', () => {
       it('should disconnect from all endpoints',
         async () => {
-          await client.close();
+          await channel.close();
         });
     });
   });

@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "crit",
+      "level": "silly",
       "colorize": true,
       "prettyPrint": true
     }
@@ -76,57 +76,16 @@
   },
   "client": {
     "commandinterface": {
-      "address": "localhost:50051",
-      "proto": {
-        "protoRoot": "node_modules/@restorecommerce/protos/",
-        "protoPath": "io/restorecommerce/commandinterface.proto",
-        "services": {
-          "commandinterface": {
-            "packageName": "io.restorecommerce.commandinterface",
-            "serviceName": "Service"
-          }
-        }
-      }
+      "address": "localhost:50051"
     },
     "test": {
-      "address": "localhost:50051",
-      "proto": {
-        "protoRoot": "node_modules/@restorecommerce/protos/",
-        "protoPath": "test/test.proto",
-        "services": {
-          "test": {
-            "packageName": "test",
-            "serviceName": "Test"
-          }
-        }
-      }
+      "address": "localhost:50051"
     },
     "stream": {
-      "address": "localhost:50051",
-      "proto": {
-        "protoRoot": "node_modules/@restorecommerce/protos/",
-        "protoPath": "test/test.proto",
-        "services": {
-          "stream": {
-            "packageName": "test",
-            "serviceName": "Stream"
-          }
-        }
-      },
-      "observable": true
+      "address": "localhost:50051"
     },
     "reflection": {
-      "address": "localhost:50051",
-      "proto": {
-        "protoRoot": "node_modules/@restorecommerce/protos/",
-        "protoPath": "grpc/reflection/v1alpha/reflection.proto",
-        "services": {
-          "reflection": {
-            "packageName": "grpc.reflection.v1alpha",
-            "serviceName": "ServerReflection"
-          }
-        }
-      }
+      "address": "localhost:50051"
     }
   },
   "events": {
@@ -147,99 +106,43 @@
           "localhost:29092"
         ]
       },
-      "protos": [
-        "test/test.proto"
-      ],
-      "protoRoot": "node_modules/@restorecommerce/protos/",
       "test-event": {
-        "protos": [
-          "test/test.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "test.TestEvent"
       },
       "testCreated": {
-        "protos": [
-          "test/test.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "test.TestEvent"
       },
       "restoreCommand": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
       },
       "restoreResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "healthCheckResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "resetResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "versionResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "configUpdateCommand": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
       },
       "configUpdateResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "setApiKeyCommand": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
       },
       "setApiKeyResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "flushCacheCommand": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandRequest"
       },
       "flushCacheResponse": {
-        "protos": [
-          "io/restorecommerce/commandinterface.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "messageObject": "io.restorecommerce.commandinterface.CommandResponse"
       },
       "topics": {
@@ -264,99 +167,15 @@
     "logger": {
       "console": {
         "handleExceptions": false,
-        "level": "debug",
+        "level": "silly",
         "colorize": true,
         "prettyPrint": true
-      }
-    },
-    "services": {
-      "test": {
-        "test": {
-          "transport": [
-            "grpcTest"
-          ]
-        },
-        "create": {
-          "transport": [
-            "grpcTest"
-          ],
-          "bufferFields": {
-            "TestBufferedDataList": "data"
-          }
-        },
-        "throw": {
-          "transport": [
-            "grpcTest"
-          ]
-        },
-        "notImplemented": {
-          "transport": [
-            "grpcTest"
-          ]
-        },
-        "notFound": {
-          "transport": [
-            "grpcTest"
-          ]
-        }
-      },
-      "not_bound": {
-        "notImplemented": {
-          "transport": [
-            "grpcTest"
-          ]
-        }
-      },
-      "commandinterface": {
-        "command": {
-          "transport": [
-            "grpcTest"
-          ]
-        }
-      },
-      "stream": {
-        "biStream": {
-          "transport": [
-            "grpcTest"
-          ]
-        },
-        "requestStream": {
-          "transport": [
-            "grpcTest"
-          ]
-        },
-        "responseStream": {
-          "transport": [
-            "grpcTest"
-          ]
-        }
-      },
-      "reflection": {
-        "serverReflectionInfo": {
-          "transport": [
-            "grpcTest"
-          ]
-        }
       }
     },
     "transports": [
       {
         "name": "grpcTest",
         "provider": "grpc",
-        "services": {
-          "test": "test.Test",
-          "stream": "test.Stream",
-          "commandinterface": "io.restorecommerce.commandinterface.Service",
-          "reflection": "grpc.reflection.v1alpha.ServerReflection"
-        },
-        "protos": [
-          "test/test.proto",
-          "test/test.proto",
-          "io/restorecommerce/commandinterface.proto",
-          "grpc/reflection/v1alpha/reflection.proto",
-          "google/protobuf/descriptor.proto"
-        ],
-        "protoRoot": "node_modules/@restorecommerce/protos/",
         "addr": "localhost:50051"
       }
     ]

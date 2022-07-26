@@ -1,13 +1,19 @@
 import { CommandInterface } from '../command-interface';
 import { ServiceConfig } from '@restorecommerce/service-config';
-import { GrpcClient } from '@restorecommerce/grpc-client';
+import { createClient } from '@restorecommerce/grpc-client';
 import { Logger } from 'winston';
-
-const ServingStatus = {
-  UNKNOWN: 'UNKNOWN',
-  SERVING: 'SERVING',
-  NOT_SERVING: 'NOT_SERVING',
-};
+import {
+  HealthClient,
+  HealthDefinition,
+} from '@restorecommerce/rc-grpc-clients/dist/generated/grpc/health/v1/health';
+import {
+  DeepPartial,
+  HealthCheckRequest,
+  HealthCheckResponse,
+  HealthCheckResponse_ServingStatus,
+  HealthServiceImplementation
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
+import { createChannel } from 'nice-grpc';
 
 export interface HealthOptions {
   cfg?: ServiceConfig;
@@ -16,11 +22,11 @@ export interface HealthOptions {
   readiness?: () => Promise<boolean>;
 }
 
-export class Health {
+export class Health implements HealthServiceImplementation {
 
   readonly ci: CommandInterface;
   readonly opts?: HealthOptions;
-  readonly endpoints?: { [key: string]: any };
+  readonly endpoints?: { [key: string]: HealthClient };
 
   constructor(ci: CommandInterface, opts?: HealthOptions) {
     this.ci = ci;
@@ -35,58 +41,41 @@ export class Health {
             throw new Error('Dependency "' + dependency + '" not provided in client config!');
           }
 
-          let dependencyCfg = {
-            packageName: 'grpc.health.v1',
-            serviceName: 'Health'
-          };
-          const serviceConfig = {
+          const channel = createChannel(clientCfg[dependency].address);
+          this.endpoints[dependency] = createClient({
             ...clientCfg[dependency],
-            proto: {
-              ...clientCfg[dependency]['proto'],
-              protoPath: 'grpc/health/v1/health.proto',
-              services: {
-                ['dependency']: dependencyCfg
-              }
-            }
-          };
-
-          const client = new GrpcClient(serviceConfig, this.opts.logger);
-          this.endpoints[dependency] = client.dependency;
+            logger: this.opts.logger
+          }, HealthDefinition, channel);
         }
       }
     }
   }
 
-  async watch(call, context?: any): Promise<any> {
-    // TODO
-    // IGNORED
-  }
-
-  async check(call, context?: any): Promise<any> {
-    const service = (call.request && call.request.service) || 'liveness';
+  async check(request: HealthCheckRequest, context): Promise<DeepPartial<HealthCheckResponse>> {
+    const service = (request && request.service) || 'liveness';
 
     if (service === 'readiness') {
       if (this.ci.redisClient && !this.ci.redisClient.ping()) {
-        return { status: ServingStatus.NOT_SERVING };
+        return {status: HealthCheckResponse_ServingStatus.NOT_SERVING};
       }
 
       if (this.opts) {
-        if (this.endpoints) {
-          for (const service of Object.keys(this.endpoints)) {
-            const response = await this.endpoints[service].check({});
-            if ('error' in response && response.error) {
-              this.opts.logger.warn('Readiness error from ' + service + ':', response);
-              return { status: ServingStatus.NOT_SERVING };
+        try {
+          if (this.endpoints) {
+            for (const service of Object.keys(this.endpoints)) {
+              const response = await this.endpoints[service].check({});
+              if ('error' in response && (response as any).error) {
+                this.opts.logger.warn('Readiness error from ' + service + ':', response);
+                return {status: HealthCheckResponse_ServingStatus.NOT_SERVING};
+              }
             }
           }
-        }
 
-        try {
           if (this.opts.readiness && !await this.opts.readiness()) {
-            return { status: ServingStatus.NOT_SERVING };
+            return {status: HealthCheckResponse_ServingStatus.NOT_SERVING};
           }
         } catch (e) {
-          return { status: ServingStatus.NOT_SERVING };
+          return {status: HealthCheckResponse_ServingStatus.NOT_SERVING};
         }
       }
     }
@@ -94,7 +83,7 @@ export class Health {
     const response = await this.ci.check({});
 
     if (!('status' in response)) {
-      return { status: ServingStatus.UNKNOWN };
+      return {status: HealthCheckResponse_ServingStatus.UNKNOWN};
     }
 
     return response;

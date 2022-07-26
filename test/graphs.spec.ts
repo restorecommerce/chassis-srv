@@ -2,10 +2,12 @@ import * as should from 'should';
 import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
 import { Database } from 'arangojs';
-import { Direction } from '../lib/database/provider/arango/interface'
 import * as chassis from '../src';
 const config = chassis.config;
 const database = chassis.database;
+import {
+  Options_Direction as Direction,
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 
 /* global describe context it beforeEach */
 

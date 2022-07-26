@@ -1,11 +1,23 @@
 // microservice chassis
 import { CommandInterface, database, Server } from '../src';
 import * as should from 'should';
-import { GrpcClient } from '@restorecommerce/grpc-client';
+import { createClient as createGrpcClient } from '@restorecommerce/grpc-client';
 import { Events } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
-import { createLogger } from '@restorecommerce/logger'
+import { createLogger } from '@restorecommerce/logger';
 import { createClient } from 'redis';
+import {
+  ServiceDefinition,
+  ServiceClient
+} from '@restorecommerce/rc-grpc-clients/dist/generated/io/restorecommerce/commandinterface';
+import {
+  ServiceDefinition as ServerServiceDefinition,
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import { BindConfig } from '../src/microservice/transport/provider/grpc';
+import {
+  HealthCheckResponse_ServingStatus
+} from '@restorecommerce/rc-grpc-clients/dist/generated/grpc/health/v1/health';
+import { Channel, createChannel } from 'nice-grpc';
 
 
 /**
@@ -45,12 +57,13 @@ describe('CommandInterfaceService', () => {
     value: 'a test event',
     count: 0,
   };
-  let service;
   let cfg;
   let testTopic;
   let commandTopic;
   let validate;
   let redisClient;
+  let channel: Channel;
+  let grpcClient: ServiceClient;
   const eventListener = async (msg: any,
     context: any, config: any, eventName: string): Promise<any> => {
     await validate(msg, eventName);
@@ -84,11 +97,17 @@ describe('CommandInterfaceService', () => {
     await redisClient.connect();
 
     const cis = new CommandInterface(server, cfg, logger, events, redisClient);
-    await server.bind('commandinterface', cis);
+    await server.bind('commandinterface', {
+      service: ServerServiceDefinition,
+      implementation: cis
+    } as BindConfig<ServerServiceDefinition>);
     await server.start();
 
-    const client = new GrpcClient(cfg.get('client:commandinterface'), logger);
-    service = client.commandinterface;
+    channel = createChannel(cfg.get('client:commandinterface:address'));
+    grpcClient = createGrpcClient({
+      ...cfg.get('client:commandinterface'),
+      logger
+    }, ServiceDefinition, channel);
   });
   after(async function teardown() {
     this.timeout(30000);
@@ -107,25 +126,25 @@ describe('CommandInterfaceService', () => {
       };
 
       // check commandinterface service, should serve
-      let resp = await service.command(msg);
+      let resp = await grpcClient.command(msg);
       should.exist(resp);
-      should.not.exist(resp.error);
+      should.not.exist((resp as any).error);
       let data = decodeMsg(resp);
       should.exist(data.status);
-      data.status.should.equal('SERVING');
+      data.status.should.equal(HealthCheckResponse_ServingStatus.SERVING);
 
       // should not serve if service does not exist
       cmdPayload = encodeMsg({
         service: 'does_not_exist'
       });
       // check none existing service, should throw error
-      resp = await service.command({
+      resp = await grpcClient.command({
         name: 'health_check',
         payload: cmdPayload
       });
       should.exist(resp);
       data = decodeMsg(resp);
-      should.not.exist(resp.error); // no exception thrown
+      should.not.exist((resp as any).error); // no exception thrown
       should.exist(data.error);  // tolerant error handling
       data.error.code.should.equal(404);
       data.error.message.should.equal('Service does_not_exist does not exist');
@@ -134,20 +153,20 @@ describe('CommandInterfaceService', () => {
         service: ''
       });
       // check server, should serve
-      resp = await service.command({
+      resp = await grpcClient.command({
         name: 'health_check',
         payload: cmdPayload
       });
-      should.not.exist(resp.error);
+      should.not.exist((resp as any).error);
       should.exist(resp);
       data = decodeMsg(resp);
       should.exist(data.status);
-      data.status.should.equal('SERVING');
+      data.status.should.equal(HealthCheckResponse_ServingStatus.SERVING);
     });
   });
   describe('reconfigure', () => {
     it('should return an error since it is not implemented', async () => {
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'reconfigure'
       });
       const decodedResp = decodeMsg(resp);
@@ -174,7 +193,7 @@ describe('CommandInterfaceService', () => {
         should.not.exist(payload.error);
       };
       const offset = await commandTopic.$offset(-1);
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'reset'
       });
       await commandTopic.$wait(offset);
@@ -236,11 +255,11 @@ describe('CommandInterfaceService', () => {
         ]
       });
 
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'restore',
         payload: cmdPayload
       });
-      should.not.exist(resp.error);
+      should.not.exist((resp as any).error);
 
       await commandTopic.$wait(offset);
     });
@@ -259,7 +278,7 @@ describe('CommandInterfaceService', () => {
         payload.nodejs.should.equal(process.version);
       };
       const offset = await commandTopic.$offset(-1);
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'version',
       });
       await commandTopic.$wait(offset);
@@ -287,7 +306,7 @@ describe('CommandInterfaceService', () => {
           apiKey: 'test-api-key-value'
         }
       });
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'set_api_key',
         payload: apiKeyPayload
       });
@@ -313,7 +332,7 @@ describe('CommandInterfaceService', () => {
         authentication: {
         }
       });
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'config_update',
         payload: configPayload
       });
@@ -350,7 +369,7 @@ describe('CommandInterfaceService', () => {
           pattern: 'user'
         }
       });
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'flush_cache',
         payload: flushCachePayload
       });
@@ -375,7 +394,7 @@ describe('CommandInterfaceService', () => {
           db_index: 3 // No pattern is specified
         }
       });
-      const resp = await service.command({
+      const resp = await grpcClient.command({
         name: 'flush_cache',
         payload: flushCachePayload
       });
