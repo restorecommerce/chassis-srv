@@ -226,7 +226,7 @@ export class CommandInterface implements ServiceServiceImplementation {
     });
 
     const restoreSetup = {};
-    const restoreEventSetup = {};
+    const restoreEventSetup: any = {};
 
     restoreData.forEach((data) => {
       const ignoreOffset = (data.ignore_offset || []).filter((offset) => {
