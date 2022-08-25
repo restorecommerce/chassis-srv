@@ -131,7 +131,7 @@ describe('CommandInterfaceService', () => {
       should.not.exist((resp as any).error);
       let data = decodeMsg(resp);
       should.exist(data.status);
-      data.status.should.equal(HealthCheckResponse_ServingStatus.SERVING);
+      data.status.should.equal('SERVING');
 
       // should not serve if service does not exist
       cmdPayload = encodeMsg({
@@ -161,7 +161,7 @@ describe('CommandInterfaceService', () => {
       should.exist(resp);
       data = decodeMsg(resp);
       should.exist(data.status);
-      data.status.should.equal(HealthCheckResponse_ServingStatus.SERVING);
+      data.status.should.equal('SERVING');
     });
   });
   describe('reconfigure', () => {
