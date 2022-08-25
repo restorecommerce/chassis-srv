@@ -1,3 +1,7 @@
+### 1.0.2 (August 25th, 2022)
+
+- move dev deps to main deps as needed by other modules
+
 ### 1.0.1 (August 25th, 2022)
 
 - added google-protobuf as main dep as needed by reflection service 
