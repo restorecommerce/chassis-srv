@@ -1,3 +1,7 @@
+### 1.0.1 (August 25th, 2022)
+
+- added google-protobuf as main dep as needed by reflection service 
+
 ### 1.0.0 (August 25th, 2022)
 
 - migrated to fully-typed grpc-client and server

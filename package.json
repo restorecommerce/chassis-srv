@@ -1,6 +1,6 @@
 {
   "name": "@restorecommerce/chassis-srv",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Restore Commerce microservice chassis",
   "main": "./lib/index.js",
   "author": "n-fuse GmbH",
@@ -30,6 +30,7 @@
     "cache-manager": "^4.1.0",
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^2.6.2",
+    "google-protobuf": "^3.21.0",
     "kafkajs": "^2.2.0",
     "lodash": "^4.17.21",
     "long": "^5.2.0",
