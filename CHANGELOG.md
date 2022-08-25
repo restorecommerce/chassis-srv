@@ -1,3 +1,8 @@
+### 1.0.0 (August 25th, 2022)
+
+- migrated to fully-typed grpc-client and server
+- up deps
+
 ### 0.3.12 (July 7th, 2022)
 
 - up deps
