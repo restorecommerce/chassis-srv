@@ -13,7 +13,7 @@ import {
   StreamClient
 } from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
 import { Channel, createChannel } from 'nice-grpc';
-import { DeepPartial } from '../../libs/packages/rc-grpc-clients/dist/generated/grpc/reflection/v1alpha/reflection';
+import { DeepPartial } from '@restorecommerce/rc-grpc-clients/dist/generated/grpc/reflection/v1alpha/reflection';
 
 const config = chassis.config;
 const Server = chassis.Server;
