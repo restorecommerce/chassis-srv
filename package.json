@@ -37,7 +37,7 @@
     "nedb": "^1.8.0",
     "nice-grpc": "^2.0.0",
     "nice-grpc-server-reflection": "^2.0.0",
-    "protobufjs": "^7.0.0",
+    "protobufjs": "^7.1.0",
     "redis": "^4.3.0"
   },
   "devDependencies": {
