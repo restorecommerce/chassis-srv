@@ -41,7 +41,7 @@
     "redis": "^4.3.0"
   },
   "devDependencies": {
-    "@types/cache-manager": "^4.0.1",
+    "@types/cache-manager": "^4.0.2",
     "@types/lodash": "^4.14.184",
     "@types/long": "^5.0.0",
     "@types/mocha": "^9.1.1",
