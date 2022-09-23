@@ -17,7 +17,7 @@ export interface ViewAnalyzerOptions {
     viewName: string;
     similarityThreshold: number;
     options: ArangoSearchViewPropertiesOptions;
-  },
+  };
   analyzers: string[];
   analyzerOptions: AnalyzerOptions[];
 }
@@ -26,6 +26,5 @@ export interface ViewMap {
   fields: string[]; // list of indexed fields of entity
   viewName: string;
   similarityThreshold: number;
-  // analyzers: string[];
   analyzerOptions: AnalyzerOptions[];
 }

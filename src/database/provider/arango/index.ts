@@ -124,7 +124,7 @@ export const create = async (conf: any, logger: any, graphName?: string, edgeDef
       } catch (error) {
         logger.error('Error creating analyzer or view', {
           code: error.code, message: error.message, stack: error.stack
-        })
+        });
       }
     });
   }

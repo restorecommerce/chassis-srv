@@ -115,9 +115,9 @@ export class Arango implements DatabaseProvider {
       }
       for (let field of searchFields) {
         if(!searchQuery) {
-          searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `
+          searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
         } else {
-          searchQuery = searchQuery + `OR NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `
+          searchQuery = searchQuery + `OR NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
         }
       }
       // override collection name with view name
@@ -348,7 +348,7 @@ export class Arango implements DatabaseProvider {
    * @param  {Object} ids list of document identifiers
    * @return  {Promise<any>} delete response
    */
-  async delete(collectionName: string, ids: string[]): Promise<any> {
+  async delete(collectionName: string, ids: string[], viewName: string[], analyzerName: string[]): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
@@ -521,7 +521,7 @@ export class Arango implements DatabaseProvider {
       throw new Error(`View name or view configuration missing for ${collectionName}`);
     }
     if ((!viewConfig?.analyzers) || (viewConfig.analyzers.length === 0) || !(viewConfig.analyzerOptions)) {
-      throw new Error(`Analyzer options or configuration missing for ${collectionName}`)
+      throw new Error(`Analyzer options or configuration missing for ${collectionName}`);
     }
     // create analyzer if it does not exist
     viewConfig.analyzers.forEach(async (analyzerName) => {
@@ -558,6 +558,6 @@ export class Arango implements DatabaseProvider {
       fields: indexedFields,
       analyzerOptions: viewConfig.analyzerOptions,
       similarityThreshold: viewConfig.view.similarityThreshold
-    })
+    });
   }
 }
