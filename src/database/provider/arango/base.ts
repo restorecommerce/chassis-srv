@@ -114,7 +114,7 @@ export class Arango implements DatabaseProvider {
         });
       }
       for (let field of searchFields) {
-        if(!searchQuery) {
+        if (!searchQuery) {
           searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
         } else {
           searchQuery = searchQuery + `OR NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
@@ -348,7 +348,7 @@ export class Arango implements DatabaseProvider {
    * @param  {Object} ids list of document identifiers
    * @return  {Promise<any>} delete response
    */
-  async delete(collectionName: string, ids: string[], viewName: string[], analyzerName: string[]): Promise<any> {
+  async delete(collectionName: string, ids: string[]): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
       throw new Error('invalid or missing collection argument');
@@ -447,6 +447,25 @@ export class Arango implements DatabaseProvider {
     }
   }
 
+  /**
+   * Drop view
+   * @param string[] list of view names.
+   */
+  async dropView(viewName: string[]): Promise<any> {
+    if (viewName.length > 0) {
+      viewName.forEach(async (view) => await this.db.view(view).drop());
+    }
+  }
+
+  /**
+   * Delete Analyzer
+   * @param string[] list of analyzer names.
+   */
+  async deleteAnalyzer(analyzerName: string[]): Promise<any> {
+    if (analyzerName.length > 0) {
+      analyzerName.forEach(async (analyzer) => await this.db.analyzer(analyzer).drop());
+    }
+  }
 
   /**
    * Insert documents into database.
@@ -539,7 +558,7 @@ export class Arango implements DatabaseProvider {
         await collection.create();
         await collection.load(false);
       }
-    } catch(err) {
+    } catch (err) {
       if (err.message && err.message.indexOf('duplicate name') == -1) {
         throw err;
       }
