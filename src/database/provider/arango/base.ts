@@ -5,6 +5,7 @@ import {
   sanitizeInputFields, query, sanitizeOutputFields
 } from './common';
 import { DatabaseProvider } from '../..';
+import { ViewAnalyzerOptions, ViewMap } from './interface';
 
 export interface CustomQuery {
   code: string; // AQL code
@@ -18,6 +19,7 @@ export interface CustomQuery {
 export class Arango implements DatabaseProvider {
   db: Database;
   customQueries: Map<string, CustomQuery>;
+  collectionNameAnalyzerMap: Map<string, ViewMap>;
   /**
    *
    * @param {Object} conn Arangojs database connection.
@@ -84,7 +86,50 @@ export class Arango implements DatabaseProvider {
     if (_.isEmpty(returnQuery)) {
       returnQuery = 'RETURN node';
     }
+    // if search options are set build search query
+    let searchQuery;
+    if (opts?.search?.search) {
+      const searchString = options.search.search;
+      const searchFields = (options?.search?.fields.length > 0) ? options.search.fields : this.collectionNameAnalyzerMap.get(collectionName).fields;
+      const similarityThreshold = this.collectionNameAnalyzerMap.get(collectionName).similarityThreshold;
+      const viewName = this.collectionNameAnalyzerMap.get(collectionName).viewName;
+
+      const caseSensitive = options?.search?.case_sensitive;
+      const analyzerOptions = this.collectionNameAnalyzerMap.get(collectionName).analyzerOptions;
+      const analyzers = Object.keys(analyzerOptions);
+      let analyzerName;
+      if (caseSensitive) {
+        // for casesensitive search use "ngram" analayzer type
+        analyzerName = analyzers.filter((analyzerName) => {
+          if (analyzerOptions[analyzerName].type === 'ngram') {
+            return analyzerName;
+          }
+        });
+      } else {
+        // for case-insensitive search use "pipleline" type (ngram + norm)
+        analyzerName = analyzers.filter((analyzerName) => {
+          if (analyzerOptions[analyzerName].type === 'pipeline') {
+            return analyzerName;
+          }
+        });
+      }
+      for (let field of searchFields) {
+        if(!searchQuery) {
+          searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `
+        } else {
+          searchQuery = searchQuery + `OR NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `
+        }
+      }
+      // override collection name with view name
+      collectionName = viewName;
+      // override sortQuery (to rank based on score for frequency search match - term frequency–inverse document frequency algorithm TF-IDF)
+      sortQuery = `SORT TFIDF(node) DESC`;
+    }
+
     let queryString = `FOR node in @@collection FILTER ${filterQuery}`;
+    if (searchQuery) {
+      queryString = `FOR node in @@collection SEARCH ${searchQuery} FILTER ${filterQuery}`;
+    }
     if (!_.isEmpty(customFilter)) {
       queryString += customFilter;
     }
@@ -119,8 +164,12 @@ export class Arango implements DatabaseProvider {
     if (!_.isEmpty(customFilter) && opts.customArguments) {
       bindVars = _.assign(bindVars, opts.customArguments);
     }
-
-    const res = await query(this.db, collectionName, queryString, bindVars);
+    let res;
+    if (!searchQuery) {
+      res = await query(this.db, collectionName, queryString, bindVars);
+    } else {
+      res = this.db.query(queryString, bindVars);
+    }
     const docs = await res.all(); // TODO: paginate
 
     return _.map(docs, sanitizeOutputFields);
@@ -465,5 +514,50 @@ export class Arango implements DatabaseProvider {
 
   listCustomQueries(): Array<any> {
     return [...this.customQueries];
+  }
+
+  async createAnalyzerAndView(viewConfig: ViewAnalyzerOptions, collectionName: string): Promise<void> {
+    if (!viewConfig.view.viewName || !viewConfig?.view?.options) {
+      throw new Error(`View name or view configuration missing for ${collectionName}`);
+    }
+    if ((!viewConfig?.analyzers) || (viewConfig.analyzers.length === 0) || !(viewConfig.analyzerOptions)) {
+      throw new Error(`Analyzer options or configuration missing for ${collectionName}`)
+    }
+    // create analyzer if it does not exist
+    viewConfig.analyzers.forEach(async (analyzerName) => {
+      const analyzer = this.db.analyzer(analyzerName);
+      if (!(await analyzer.exists())) {
+        await analyzer.create(viewConfig.analyzerOptions[analyzerName]);
+      }
+    });
+
+    // check if collection exits (before creating view)
+    const collection = this.db.collection(collectionName);
+    const collectionExists = await collection.exists();
+    try {
+      if (!collectionExists) {
+        await collection.create();
+        await collection.load(false);
+      }
+    } catch(err) {
+      if (err.message && err.message.indexOf('duplicate name') == -1) {
+        throw err;
+      }
+    }
+
+    // create view if it does not exist
+    const view = this.db.view(viewConfig.view.viewName);
+    if (!(await view.exists())) {
+      await this.db.createView(viewConfig?.view?.viewName, viewConfig?.view?.options);
+    }
+    // map the collectionName with list of indexed fields, view name, analyzerslist, similarity threshold
+    // to be used in find()
+    const indexedFields = Object.keys(viewConfig.view.options.links[collectionName].fields);
+    this.collectionNameAnalyzerMap.set(collectionName, {
+      viewName: viewConfig.view.viewName,
+      fields: indexedFields,
+      analyzerOptions: viewConfig.analyzerOptions,
+      similarityThreshold: viewConfig.view.similarityThreshold
+    })
   }
 }
