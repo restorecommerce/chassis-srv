@@ -549,10 +549,10 @@ const testProvider = (providerCfg) => {
           await sleep.sleep(2);
           let addressFound = await db.find(addressCollection, {}, { search: { search: 'ber man' } });
           addressFound.length.should.equal(4);
-          addressFound[0].city.should.equal('Berlin');
-          addressFound[1].city.should.equal('Berlin');
+          addressFound[0].city.should.equal('Berlin'); // Berlin, Germany (both terms match)
+          addressFound[1].city.should.equal('Bern');
           addressFound[2].country.should.equal('Germany'); // match becasue of Country Germany with search string `man`
-          addressFound[3].coountry.should.equal('Germany'); // match becasue of Country Germany with search string `man`
+          addressFound[3].country.should.equal('Germany'); // match becasue of Country Germany with search string `man`
         }).timeout(5000);
 
         it('should search with case sensitive based on first name and last name', async () => {
