@@ -51,10 +51,11 @@ export interface DatabaseProvider {
   delete(collectionName: string, ids: string[]): Promise<Array<any>>;
   count(collectionName: string, filter?: any): Promise<number>;
   truncate(collectionName?: string): Promise<void>;
-
   registerCustomQuery?: (name: string, script: string, type?: string) => any;
   unregisterCustomQuery?: (name: string) => any;
   listCustomQueries?: () => Array<any>;
+  deleteAnalyzer(analyzerName: string[]): Promise<any>;
+  dropView(viewName: string[]): Promise<any>;
 }
 
 

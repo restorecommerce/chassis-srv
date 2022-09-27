@@ -2,7 +2,7 @@
   "logger": {
     "console": {
       "handleExceptions": false,
-      "level": "silly",
+      "level": "info",
       "colorize": true,
       "prettyPrint": true
     }
@@ -15,8 +15,13 @@
       "database": "chassis-test",
       "autoCreate": true,
       "collections": [
-        "test"
-      ]
+        "test",
+        "user"
+      ],
+      "arangoSearch": [{
+        "collectionName": "users",
+        "path": "test/views/users_view.json"
+      }]
     },
     "nedb": {
       "provider": "nedb",

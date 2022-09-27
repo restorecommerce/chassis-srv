@@ -6,6 +6,7 @@ import {
 } from './common';
 import { DatabaseProvider } from '../..';
 import { ViewAnalyzerOptions, ViewMap } from './interface';
+import { Logger } from 'winston';
 
 export interface CustomQuery {
   code: string; // AQL code
@@ -20,13 +21,16 @@ export class Arango implements DatabaseProvider {
   db: Database;
   customQueries: Map<string, CustomQuery>;
   collectionNameAnalyzerMap: Map<string, ViewMap>;
+  logger: Logger;
   /**
    *
    * @param {Object} conn Arangojs database connection.
    */
-  constructor(conn: any) {
+  constructor(conn: any, logger?: Logger) {
     this.db = conn;
     this.customQueries = new Map<string, CustomQuery>();
+    this.logger = logger;
+    this.collectionNameAnalyzerMap = new Map<string, ViewMap>();
   }
 
   /**
@@ -89,41 +93,46 @@ export class Arango implements DatabaseProvider {
     // if search options are set build search query
     let searchQuery;
     if (opts?.search?.search) {
-      const searchString = options.search.search;
-      const searchFields = (options?.search?.fields.length > 0) ? options.search.fields : this.collectionNameAnalyzerMap.get(collectionName).fields;
-      const similarityThreshold = this.collectionNameAnalyzerMap.get(collectionName).similarityThreshold;
-      const viewName = this.collectionNameAnalyzerMap.get(collectionName).viewName;
+      const searchString = JSON.stringify(options.search.search);
+      if (this.collectionNameAnalyzerMap && this.collectionNameAnalyzerMap.get(collectionName)) {
+        const searchFields = (options?.search?.fields?.length > 0) ? options.search.fields : this.collectionNameAnalyzerMap.get(collectionName).fields;
+        const similarityThreshold = this.collectionNameAnalyzerMap.get(collectionName).similarityThreshold;
+        const viewName = this.collectionNameAnalyzerMap.get(collectionName).viewName;
 
-      const caseSensitive = options?.search?.case_sensitive;
-      const analyzerOptions = this.collectionNameAnalyzerMap.get(collectionName).analyzerOptions;
-      const analyzers = Object.keys(analyzerOptions);
-      let analyzerName;
-      if (caseSensitive) {
-        // for casesensitive search use "ngram" analayzer type
-        analyzerName = analyzers.filter((analyzerName) => {
-          if (analyzerOptions[analyzerName].type === 'ngram') {
-            return analyzerName;
-          }
-        });
-      } else {
-        // for case-insensitive search use "pipleline" type (ngram + norm)
-        analyzerName = analyzers.filter((analyzerName) => {
-          if (analyzerOptions[analyzerName].type === 'pipeline') {
-            return analyzerName;
-          }
-        });
-      }
-      for (let field of searchFields) {
-        if (!searchQuery) {
-          searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
+        const caseSensitive = options?.search?.case_sensitive;
+        const analyzerOptions: any = this.collectionNameAnalyzerMap.get(collectionName).analyzerOptions;
+        let analyzerName;
+        if (caseSensitive) {
+          // for casesensitive search use "ngram" analayzer type
+          analyzerOptions.forEach((optionObj) => {
+            let keyName = Object.keys(optionObj)[0];
+            if (optionObj[keyName].type === 'ngram') {
+              analyzerName = JSON.stringify(keyName);
+            }
+          });
         } else {
-          searchQuery = searchQuery + `OR NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
+          // for case-insensitive search use "pipleline" type (ngram + norm)
+          analyzerOptions.forEach((optionObj) => {
+            let keyName = Object.keys(optionObj)[0];
+            if (optionObj[keyName].type === 'pipeline') {
+              analyzerName = JSON.stringify(keyName);
+            }
+          });
         }
+        for (let field of searchFields) {
+          if (!searchQuery) {
+            searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
+          } else {
+            searchQuery = searchQuery + `OR NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
+          }
+        }
+        // override collection name with view name
+        collectionName = viewName;
+        // override sortQuery (to rank based on score for frequency search match - term frequency–inverse document frequency algorithm TF-IDF)
+        sortQuery = `SORT TFIDF(node) DESC`;
+      } else {
+        this.logger.info(`View and analyzer configuration data not set for ${collectionName} and hence ignoring search string`);
       }
-      // override collection name with view name
-      collectionName = viewName;
-      // override sortQuery (to rank based on score for frequency search match - term frequency–inverse document frequency algorithm TF-IDF)
-      sortQuery = `SORT TFIDF(node) DESC`;
     }
 
     let queryString = `FOR node in @@collection FILTER ${filterQuery}`;
@@ -168,7 +177,7 @@ export class Arango implements DatabaseProvider {
     if (!searchQuery) {
       res = await query(this.db, collectionName, queryString, bindVars);
     } else {
-      res = this.db.query(queryString, bindVars);
+      res = await this.db.query(queryString, bindVars);
     }
     const docs = await res.all(); // TODO: paginate
 
@@ -452,9 +461,22 @@ export class Arango implements DatabaseProvider {
    * @param string[] list of view names.
    */
   async dropView(viewName: string[]): Promise<any> {
+    let dropViewResponse = [];
     if (viewName.length > 0) {
-      viewName.forEach(async (view) => await this.db.view(view).drop());
+      for (let view of viewName) {
+        try {
+          let response = await this.db.view(view).drop();
+          this.logger.info(`View ${view} dropped successfully`, response);
+          if (response === true) {
+            dropViewResponse.push({ id: view, code: 200, message: `View ${view} dropped successfully` });
+          }
+        } catch (err) {
+          this.logger.error(`Error dropping View ${view}`, { code: err.code, message: err.message, stack: err.stack });
+          dropViewResponse.push({ id: view, code: err.code, message: err.message });
+        }
+      }
     }
+    return dropViewResponse;
   }
 
   /**
@@ -462,9 +484,22 @@ export class Arango implements DatabaseProvider {
    * @param string[] list of analyzer names.
    */
   async deleteAnalyzer(analyzerName: string[]): Promise<any> {
+    let deleteResponse = [];
     if (analyzerName.length > 0) {
-      analyzerName.forEach(async (analyzer) => await this.db.analyzer(analyzer).drop());
+      for (let analyzer of analyzerName) {
+        try {
+          let response = await this.db.analyzer(analyzer).drop();
+          this.logger.info(`Analyzer ${analyzer} deleted successfully`, response);
+          if (response.code === 200 && response.error === false) {
+            deleteResponse.push({ id: analyzer, code: response.code, message: `Analyzer ${analyzer} deleted successfully` });
+          }
+        } catch (err) {
+          this.logger.error(`Error deleting analyzer ${analyzer}`, { code: err.code, message: err.message, stack: err.stack });
+          deleteResponse.push({ id: analyzer, code: err.code, message: err.message });
+        }
+      }
     }
+    return deleteResponse;
   }
 
   /**
@@ -543,12 +578,22 @@ export class Arango implements DatabaseProvider {
       throw new Error(`Analyzer options or configuration missing for ${collectionName}`);
     }
     // create analyzer if it does not exist
-    viewConfig.analyzers.forEach(async (analyzerName) => {
+    for (let analyzerName of viewConfig.analyzers) {
       const analyzer = this.db.analyzer(analyzerName);
       if (!(await analyzer.exists())) {
-        await analyzer.create(viewConfig.analyzerOptions[analyzerName]);
+        try {
+          let analyzerCfg = viewConfig.analyzerOptions.filter((optionsCfg) => Object.keys(optionsCfg)[0] === analyzerName);
+          if (analyzerCfg?.length === 1) {
+            await analyzer.create(analyzerCfg[0][analyzerName] as any);
+            this.logger.info(`Analyzer ${analyzerName} created successfully`);
+          }
+        } catch (err) {
+          this.logger.error(`Error creating analyzer ${analyzerName}`, { code: err.code, message: err.message, stack: err.stack });
+        }
+      } else {
+        this.logger.info(`Analyzer ${analyzerName} already exists`);
       }
-    });
+    }
 
     // check if collection exits (before creating view)
     const collection = this.db.collection(collectionName);
@@ -557,17 +602,27 @@ export class Arango implements DatabaseProvider {
       if (!collectionExists) {
         await collection.create();
         await collection.load(false);
+        this.logger.info(`Collection ${collectionName} created successfully`);
       }
     } catch (err) {
       if (err.message && err.message.indexOf('duplicate name') == -1) {
+        this.logger.error(`Error creating collection ${collectionName}`, { code: err.code, message: err.message, stack: err.stack });
         throw err;
       }
     }
 
     // create view if it does not exist
     const view = this.db.view(viewConfig.view.viewName);
-    if (!(await view.exists())) {
-      await this.db.createView(viewConfig?.view?.viewName, viewConfig?.view?.options);
+    let viewExists = await view.exists();
+    if (!viewExists) {
+      try {
+        await this.db.createView(viewConfig?.view?.viewName, viewConfig?.view?.options);
+        this.logger.info(`View ${viewConfig?.view?.viewName} created successfully`);
+      } catch (err) {
+        this.logger.error(`Error creating View ${viewConfig?.view?.viewName}`, { code: err.code, message: err.message, stack: err.stack });
+      }
+    } else {
+      this.logger.info(`View ${viewConfig?.view?.viewName} already exists`);
     }
     // map the collectionName with list of indexed fields, view name, analyzerslist, similarity threshold
     // to be used in find()

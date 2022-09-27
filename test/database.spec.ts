@@ -6,6 +6,7 @@ import * as chassis from '../src';
 import { DatabaseProvider } from '../src/database';
 const config = chassis.config;
 const database = chassis.database;
+const sleep = require('sleep');
 
 let db: DatabaseProvider;
 
@@ -120,12 +121,12 @@ const providers = [
               $eq: true
             }
           },
-          {
-            customQueries: ['script'],
-            customArguments: {
-              param: 'a'
-            }
-          });
+            {
+              customQueries: ['script'],
+              customArguments: {
+                param: 'a'
+              }
+            });
 
           should.exist(result);
           result.should.have.length(2);
@@ -176,11 +177,24 @@ const testProvider = (providerCfg) => {
   ];
   const document = testData[4];
 
+  const userCollection = 'users';
+  const userData = [
+    { id: '1', first_name: 'Jenny', last_name: 'Brookes' },
+    { id: '2', first_name: 'Michael', last_name: 'Goldsmith' },
+    { id: '3', first_name: 'Michela', last_name: 'Smith' },
+    { id: '4', first_name: 'Michael', last_name: 'Bowden' },
+    { id: '5', first_name: 'Stephanie', last_name: 'Stokes' },
+    { id: '6', first_name: 'David', last_name: 'Müller' }
+  ];
   beforeEach(async () => {
     db = await providerCfg.init();
     await db.insert(collection, testData);
     should.exist(db);
     const result = await db.count(collection, {});
+    // insert user collection for full text search testcase
+    if (providerCfg.name === 'arango') {
+      await db.insert(userCollection, userData);
+    }
   });
 
   afterEach(async () => {
@@ -325,9 +339,9 @@ const testProvider = (providerCfg) => {
         const result: Object = await db.find(collection, {
           id: document.id,
         },
-        {
-          limit: 1
-        });
+          {
+            limit: 1
+          });
         should.exist(result);
         result.should.be.length(1);
         result[0].should.deepEqual(document);
@@ -376,10 +390,10 @@ const testProvider = (providerCfg) => {
       result = await db.find(collection, {
         id: document.id,
       },
-      {
-        limit: 1,
-        offset: 1,
-      });
+        {
+          limit: 1,
+          offset: 1,
+        });
       result.should.be.empty();
 
       result = await db.find(collection, {
@@ -488,11 +502,128 @@ const testProvider = (providerCfg) => {
       result.should.be.Array();
       result.should.be.length(2);
       timeData.splice(2, 1);
-      result = _.sortBy(result, [ (o) => { return o.id; }]);
+      result = _.sortBy(result, [(o) => { return o.id; }]);
       result.should.deepEqual(timeData);
       // truncate test DB
       await db.truncate();
     });
+
+    if (providerCfg.name === 'arango') {
+      describe('full text search', () => {
+        it('should return all test docs ignorning search string when analayzer or view config not set', async () => {
+          let testDocs = await db.find(collection, {}, { search: { search: 'test' } });
+          testDocs.length.should.equal(8);
+        });
+
+        it('should search with default case insensitive based on first name and last name', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let usersFound = await db.find(userCollection, {}, { search: { search: 'Ich oWd' } });
+          usersFound.length.should.equal(3);
+          usersFound[0].id.should.equal('4');
+          usersFound[0].first_name.should.equal('Michael');
+          usersFound[0].last_name.should.equal('Bowden');
+          usersFound[1].id.should.equal('2');
+          usersFound[1].first_name.startsWith('Mich').should.equal(true);
+          usersFound[1].last_name.endsWith('mith').should.equal(true);
+          usersFound[2].id.should.equal('3');
+          usersFound[2].first_name.startsWith('Mich').should.equal(true);
+          usersFound[2].last_name.endsWith('mith').should.equal(true);
+        }).timeout(5000);
+
+        it('should search with case sensitive based on first name and last name', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let usersFound = await db.find(userCollection, {}, { search: { search: 'Ich oWd', case_sensitive: true } });
+          usersFound.length.should.equal(0);
+          usersFound = await db.find(userCollection, {}, { search: { search: 'Mic Bow', case_sensitive: true } });
+          usersFound.length.should.equal(3);
+          usersFound[0].id.should.equal('4');
+          usersFound[0].first_name.should.equal('Michael');
+          usersFound[0].last_name.should.equal('Bowden');
+          usersFound[1].id.should.equal('2');
+          usersFound[1].first_name.startsWith('Mich').should.equal(true);
+          usersFound[1].last_name.endsWith('mith').should.equal(true);
+          usersFound[2].id.should.equal('3');
+          usersFound[2].first_name.startsWith('Mich').should.equal(true);
+          usersFound[2].last_name.endsWith('mith').should.equal(true);
+        }).timeout(5000);
+
+        it('should search for umlauts', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let usersFound = await db.find(userCollection, {}, { search: { search: 'müll' } });
+          usersFound.length.should.equal(1);
+          usersFound[0].first_name.should.equal('David');
+          usersFound[0].last_name.should.equal('Müller');
+        }).timeout(5000);
+
+        it('should not return any result for any match of the search string', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let usersFound = await db.find(userCollection, {}, { search: { search: 'does not exist' } });
+          usersFound.length.should.equal(0);
+        }).timeout(5000);
+
+        it('should search with filter', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let usersFound = await db.find(userCollection, { last_name: { $iLike: '%bow%' } }, { search: { search: 'mic' } });
+          usersFound.length.should.equal(1);
+          usersFound[0].first_name.should.equal('Michael');
+          usersFound[0].last_name.should.equal('Bowden');
+        }).timeout(5000);
+
+        it('should return an error deleting analyzer since the view still exists', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let resp = await db.deleteAnalyzer(['trigram', 'trigram_norm']);
+          resp.length.should.equal(2);
+          resp[0].id.should.equal('trigram');
+          resp[0].code.should.equal(409);
+          resp[0].message.should.equal("analyzer in-use while removing arangosearch analyzer 'chassis-test::trigram'");
+          resp[1].id.should.equal('trigram_norm');
+          resp[1].code.should.equal(409);
+          resp[1].message.should.equal("analyzer in-use while removing arangosearch analyzer 'chassis-test::trigram_norm'");
+        }).timeout(5000);
+
+        it('should return an error dropping view which does not exist', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let resp = await db.dropView(['test']);
+          resp.length.should.equal(1);
+          resp[0].id.should.equal('test');
+          resp[0].code.should.equal(404);
+          resp[0].message.should.equal('collection or view not found');
+        }).timeout(5000);
+
+        it('should drop view', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let resp = await db.dropView(['users_view']);
+          resp.length.should.equal(1);
+          resp[0].id.should.equal('users_view');
+          resp[0].code.should.equal(200);
+          resp[0].message.should.equal('View users_view dropped successfully');
+        }).timeout(5000);
+
+        it('should delete analyzers', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          // drop view and then analyzer
+          await db.dropView(['users_view']);
+          let resp = await db.deleteAnalyzer(['trigram', 'trigram_norm']);
+          resp.length.should.equal(2);
+          resp[0].id.should.equal('trigram');
+          resp[0].code.should.equal(200);
+          resp[0].message.should.equal('Analyzer trigram deleted successfully');
+          resp[1].id.should.equal('trigram_norm');
+          resp[1].code.should.equal(200);
+          resp[1].message.should.equal('Analyzer trigram_norm deleted successfully');
+        }).timeout(5000);
+
+      });
+    }
   });
   describe('custom tests', () => providerCfg.custom());
 };

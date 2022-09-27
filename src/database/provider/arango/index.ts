@@ -111,22 +111,22 @@ export const create = async (conf: any, logger: any, graphName?: string, edgeDef
 
     db = new ArangoGraph(conn, graph, edgeDefConfig);
   } else {
-    db = new Arango(conn);
+    db = new Arango(conn, logger);
   }
 
   // iterate db conf and create list of views / analayzers
   if (conf?.arangoSearch?.length > 0) {
-    conf.arangoSearch.forEach((obj) => {
+    for (let obj of conf.arangoSearch) {
       try {
         const { collectionName, path } = obj;
         const viewCfg = JSON.parse(fs.readFileSync(path, 'utf8'));
-        db.createAnalyzerAndView(viewCfg, collectionName);
+        await db.createAnalyzerAndView(viewCfg, collectionName);
       } catch (error) {
         logger.error('Error creating analyzer or view', {
           code: error.code, message: error.message, stack: error.stack
         });
       }
-    });
+    }
   }
 
   if (conf.customQueries) {
