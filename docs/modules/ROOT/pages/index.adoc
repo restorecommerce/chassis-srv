@@ -14,7 +14,8 @@ A base service part of the link:https://github.com/restorecommerce[Restorecommer
 * Retry and timeout logic
 * Even sourcing via Kafka messaging
 * Endpoint calls with custom middleware
-* Primitives for logging, database access, cache handling or exposing system commands.
+* Primitives for logging, database access, cache handling or exposing system commands
+* full text search for ArangoDB
 
 [#architecture]
 == Architecture
@@ -121,6 +122,39 @@ and the https://docs.arangodb.com/3.3/HTTP/Gharial/[ArangoDB graphs documentatio
 Database providers can be used as a database abstraction by any service that owns a set of resources.
 Furthermore, services can later expose their database operations via gRPC.
 Exposure of these operations is easily achieved using the https://github.com/restorecommerce/resource-base-interface[resource-base-interface].
+
+[#configuration_full_text_search]
+==== Full text search
+
+Full text search is supported currently for ArangoDB in `chassis-srv`.
+A view should be created for each entity with the list of fields to be indexed.
+The View definition such as entity to which the view links to and the set of fields to be indexed with supported list of analyzers can be configured in view definition.
+Currently `ngram` and `pipeline` type analyzers are supported, analyzer options can be changed via configuration file.
+
+To enable the full text search for entity the collection name and view configuration file should be specified in https://github.com/restorecommerce/chassis-srv/blob/master/test/cfg/config.json#L22[configuration].
+Enable search:
+`database.arango.arangoSearch`: a list containing `collectionName` and path to View and Analyzer configuration file
+
+Refer https://github.com/restorecommerce/chassis-srv/blob/master/test/views/users_view.json#L22[user view] configuration for test View and Analyzer configuration. 
+
+Analyzer Configuration:
+`analyzers` (string [ ]): supported analyzers list
+`analyzerOptions.type` (string): type of analyzer currently `ngram` and `pipeline` are supported
+`analyzerOptions.properties.min` (number): minimum n-gram size to match from search string
+`analyzerOptions.properties.max` (number): maximum n-gram size to match from search string
+`analyzerOptions.properties.preserveOriginal` (boolean): `true` to include the original value as well, `false` to produce the n-grams based on min and max only 
+`analyzerOptions.properties.startMarker` (string, optional): this value will be prepended to n-grams which include the beginning of the input. Can be used for matching prefixes. Choose a character or sequence as marker which does not occur in the input.
+`analyzerOptions.properties.endMarker` (string, optional): this value will be appended to n-grams which include the end of the input. Can be used for matching suffixes. Choose a character or sequence as marker which does not occur in the input.
+`analyzerOptions.properties.streamType` (string, optional): type of the input stream `binary` one byte is considered as one character (default) `utf8` one Unicode codepoint is treated as one character.
+
+View Configuration:
+`view.CollectionName` (string): collection name to which view links to.
+`view.viewName`(string): View name
+`view.similarityThreshold` (number): to assess the similarity of longer strings that share subsequences value betwen `0.0` and `1.0`
+`view.options`: View Options containing list of `fields` to be indexed with applicable `analyzers` for each field.
+
+Refer test for further
+For more details refer https://github.com/restorecommerce/chassis-srv/blob/master/test/database.spec.ts#L525[full text search tests].
 
 [#configuration_command_interface]
 === Command Interface
