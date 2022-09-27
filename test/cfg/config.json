@@ -16,12 +16,19 @@
       "autoCreate": true,
       "collections": [
         "test",
-        "user"
+        "user",
+        "address"
       ],
-      "arangoSearch": [{
-        "collectionName": "users",
-        "path": "test/views/users_view.json"
-      }]
+      "arangoSearch": [
+        {
+          "collectionName": "users",
+          "path": "test/views/users_view.json"
+        },
+        {
+          "collectionName": "addresss",
+          "path": "test/views/address_view.json"
+        }
+      ]
     },
     "nedb": {
       "provider": "nedb",

@@ -177,6 +177,7 @@ const testProvider = (providerCfg) => {
   ];
   const document = testData[4];
 
+  // users data
   const userCollection = 'users';
   const userData = [
     { id: '1', first_name: 'Jenny', last_name: 'Brookes' },
@@ -186,6 +187,17 @@ const testProvider = (providerCfg) => {
     { id: '5', first_name: 'Stephanie', last_name: 'Stokes' },
     { id: '6', first_name: 'David', last_name: 'Müller' }
   ];
+
+  // address data
+  const addressCollection = 'addresss';
+  const addressData = [
+    { id: '1', city: 'Stuttgart', country: 'Germany' },
+    { id: '2', city: 'Berlin', country: 'Germany' },
+    { id: '3', city: 'Munich', country: 'Germany' },
+    { id: '4', city: 'Bern', country: 'Switzerland' },
+    { id: '5', city: 'Zurich', country: 'Switzerland' },
+    { id: '6', city: 'Basel', country: 'Switzerland' }
+  ];
   beforeEach(async () => {
     db = await providerCfg.init();
     await db.insert(collection, testData);
@@ -194,6 +206,7 @@ const testProvider = (providerCfg) => {
     // insert user collection for full text search testcase
     if (providerCfg.name === 'arango') {
       await db.insert(userCollection, userData);
+      await db.insert(addressCollection, addressData);
     }
   });
 
@@ -531,6 +544,17 @@ const testProvider = (providerCfg) => {
           usersFound[2].last_name.endsWith('mith').should.equal(true);
         }).timeout(5000);
 
+        it('should search with default case insensitive based on city name and country name', async () => {
+          // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
+          await sleep.sleep(2);
+          let addressFound = await db.find(addressCollection, {}, { search: { search: 'ber man' } });
+          addressFound.length.should.equal(4);
+          addressFound[0].city.should.equal('Berlin');
+          addressFound[1].city.should.equal('Berlin');
+          addressFound[2].country.should.equal('Germany'); // match becasue of Country Germany with search string `man`
+          addressFound[3].coountry.should.equal('Germany'); // match becasue of Country Germany with search string `man`
+        }).timeout(5000);
+
         it('should search with case sensitive based on first name and last name', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
           await sleep.sleep(2);
@@ -611,7 +635,7 @@ const testProvider = (providerCfg) => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
           await sleep.sleep(2);
           // drop view and then analyzer
-          await db.dropView(['users_view']);
+          await db.dropView(['users_view', 'addresss_view']);
           let resp = await db.deleteAnalyzer(['trigram', 'trigram_norm']);
           resp.length.should.equal(2);
           resp[0].id.should.equal('trigram');

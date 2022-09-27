@@ -269,7 +269,7 @@ export class Arango implements DatabaseProvider {
     let updateDocsResponse = [];
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for update operation')
+      this.logger.error('invalid or missing collection argument for update operation');
       throw new Error('invalid or missing collection argument for update operation');
     }
     if (_.isNil(documents)) {
