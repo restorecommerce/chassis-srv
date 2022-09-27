@@ -87,16 +87,15 @@ const connect = async (conf: any, logger: Logger): Promise<any> => {
  * @return {Arango}        ArangoDB provider
  */
 export const create = async (conf: any, logger: any, graphName?: string, edgeDefConfig?: any): Promise<Arango> => {
-  let log = logger;
   if (!logger) {
-    log = {
+    logger = {
       verbose: () => { },
       info: () => { },
       error: () => { },
     };
   }
   let graph;
-  const conn = await connect(conf, log);
+  const conn = await connect(conf, logger);
   let db: Arango;
   // conn is nothing but this.db
   if (graphName) {
@@ -109,7 +108,7 @@ export const create = async (conf: any, logger: any, graphName?: string, edgeDef
       }
     }
 
-    db = new ArangoGraph(conn, graph, edgeDefConfig);
+    db = new ArangoGraph(conn, graph, edgeDefConfig, logger);
   } else {
     db = new Arango(conn, logger);
   }

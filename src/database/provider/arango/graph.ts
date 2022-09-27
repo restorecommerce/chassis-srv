@@ -16,15 +16,18 @@ import {
   DeepPartial
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 import { TraversalResponse } from './interface';
+import { Logger } from 'winston';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   graph: Graph;
   edgeDefConfig: any;
+  logger: Logger;
 
-  constructor(conn: Database, graph: Graph, edgeDefConfig: any) {
+  constructor(conn: Database, graph: Graph, edgeDefConfig: any, logger: Logger) {
     super(conn);
     this.graph = graph;
     this.edgeDefConfig = edgeDefConfig; // edge definition config
+    this.logger = logger;
   }
 
   /**
