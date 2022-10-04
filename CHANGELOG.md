@@ -1,3 +1,7 @@
+### 1.1.0 (October 4th, 2022)
+
+- support for full text search
+
 ### 1.0.2 (August 25th, 2022)
 
 - move dev deps to main deps as needed by other modules
