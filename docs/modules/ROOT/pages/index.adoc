@@ -154,8 +154,7 @@ The following View specific configuration properties are available:
 * `view.similarityThreshold` [`number`]: to assess the similarity of longer strings that share subsequences value betwen `0.0` and `1.0`
 * `view.options`: View Options containing list of `fields` to be indexed with applicable `analyzers` for each field.
 
-Refer test for further
-For more details refer https://github.com/restorecommerce/chassis-srv/blob/master/test/database.spec.ts#L525[full text search tests].
+Refer test for further details https://github.com/restorecommerce/chassis-srv/blob/master/test/database.spec.ts#L525[full text search tests].
 
 [#configuration_command_interface]
 === Command Interface
