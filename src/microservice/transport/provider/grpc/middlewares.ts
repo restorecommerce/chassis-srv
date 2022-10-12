@@ -28,11 +28,11 @@ export const loggingMiddleware = (logger: Logger) => {
   ) {
     const {path} = call.method;
 
-    logger.verbose(`[rid: ${context.rid}] received request to method ${path}`, call);
+    logger.verbose(`[rid: ${context.rid}] received request to method ${path}`, call.request);
 
     try {
       const response = yield* call.next(call.request, context);
-      logger.verbose(`[rid: ${context.rid}] request to method ${path} response`, {request: call, response});
+      logger.verbose(`[rid: ${context.rid}] request to method ${path} response`, {request: call.request, response});
       return response;
     } catch (error) {
       if (error instanceof ServerError) {
