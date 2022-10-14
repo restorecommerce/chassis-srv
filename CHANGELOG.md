@@ -1,3 +1,7 @@
+### 1.1.2 (October 14th, 2022)
+
+- updated dependencies
+
 ### 1.1.1 (October 14th, 2022)
 
 - updated dependencies logger (for centralized field handling), protos (address changes)
