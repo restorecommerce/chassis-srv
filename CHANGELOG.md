@@ -1,3 +1,7 @@
+### 1.1.1 (October 14th, 2022)
+
+- updated dependencies logger (for centralized field handling), protos (address changes)
+
 ### 1.1.0 (October 4th, 2022)
 
 - support for full text search
