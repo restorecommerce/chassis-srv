@@ -31,7 +31,7 @@
     "cls-hooked": "^4.2.2",
     "cls-rtracer": "^2.6.2",
     "google-protobuf": "^3.21.2",
-    "kafkajs": "^2.2.1",
+    "kafkajs": "^2.2.3",
     "lodash": "^4.17.21",
     "long": "^5.2.0",
     "nedb": "^1.8.0",
