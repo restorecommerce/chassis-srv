@@ -1,3 +1,7 @@
+### 1.2.0 (May 30th, 2023)
+
+- updated deps (For pluralized protos and libs)
+
 ### 1.1.2 (October 14th, 2022)
 
 - updated dependencies
