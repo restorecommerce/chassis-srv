@@ -347,7 +347,7 @@ export class Arango implements DatabaseProvider {
       this.logger.error(`Collection ${collectionName} does not exist for upsert operation`);
       throw new Error(`Collection ${collectionName} does not exist for upsert operation`);
     }
-    let upsertedDocs = await collection.saveAll(docs, { returnNew: true, overwrite: true });
+    let upsertedDocs = await collection.saveAll(docs, { returnNew: true, overwriteMode: 'update' });
     if (!_.isArray(upsertedDocs)) {
       upsertedDocs = [upsertedDocs];
     }
@@ -621,7 +621,6 @@ export class Arango implements DatabaseProvider {
     try {
       if (!collectionExists) {
         await collection.create();
-        await collection.load(false);
         this.logger.info(`Collection ${collectionName} created successfully`);
       }
     } catch (err) {

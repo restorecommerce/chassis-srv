@@ -9,7 +9,7 @@ import { RedisClientType } from 'redis';
 import { Kafka as KafkaJS } from 'kafkajs';
 import {
   CommandRequest,
-  ServiceServiceImplementation,
+  CommandInterfaceServiceImplementation,
   protoMetadata
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
 import { CallContext } from 'nice-grpc';
@@ -46,7 +46,7 @@ interface FlushCacheData {
  * In case of custom data/events handling or service-specific operations regarding
  * a certain method, such method should be extended or overriden.
  */
-export class CommandInterface implements ServiceServiceImplementation {
+export class CommandInterface implements CommandInterfaceServiceImplementation {
   logger: Logger;
   config: any;
   health: any;
@@ -230,7 +230,7 @@ export class CommandInterface implements ServiceServiceImplementation {
 
     restoreData.forEach((data) => {
       const ignoreOffset = (data.ignore_offset || []).filter((offset) => {
-        const isNumber = Number(offset) != NaN;
+        const isNumber = Number(offset);
         if (!isNumber) {
           this.logger.warn(`Invalid value for "ignore_offset" parameter in restore: ${offset}`);
         }

@@ -2,21 +2,21 @@
 import { CommandInterface, database, Server } from '../src';
 import * as should from 'should';
 import { createClient as createGrpcClient } from '@restorecommerce/grpc-client';
-import { Events } from '@restorecommerce/kafka-client';
+import { Events, registerProtoMeta } from '@restorecommerce/kafka-client';
 import { createServiceConfig } from '@restorecommerce/service-config';
 import { createLogger } from '@restorecommerce/logger';
 import { createClient } from 'redis';
 import {
-  ServiceDefinition,
-  ServiceClient
-} from '@restorecommerce/rc-grpc-clients/dist/generated/io/restorecommerce/commandinterface';
-import {
-  ServiceDefinition as ServerServiceDefinition,
+  CommandInterfaceServiceDefinition
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
-import { BindConfig } from '../src/microservice/transport/provider/grpc';
 import {
-  HealthCheckResponse_ServingStatus
-} from '@restorecommerce/rc-grpc-clients/dist/generated/grpc/health/v1/health';
+  CommandInterfaceServiceDefinition as CISServiceDefinition,
+  CommandInterfaceServiceClient
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
+import {
+  protoMetadata
+} from '@restorecommerce/rc-grpc-clients/dist/generated-server/test/test'
+import { BindConfig } from '../src/microservice/transport/provider/grpc';
 import { Channel, createChannel } from 'nice-grpc';
 
 
@@ -46,6 +46,9 @@ const encodeMsg = (msg: any): any => {
   return ret;
 };
 
+// register Test proto for emitting TestEvent
+registerProtoMeta(protoMetadata);
+
 /*
  * Note: Running Kafka and ArangoDB instances are required.
  */
@@ -63,7 +66,7 @@ describe('CommandInterfaceService', () => {
   let validate;
   let redisClient;
   let channel: Channel;
-  let grpcClient: ServiceClient;
+  let grpcClient: CommandInterfaceServiceClient;
   const eventListener = async (msg: any,
     context: any, config: any, eventName: string): Promise<any> => {
     await validate(msg, eventName);
@@ -98,16 +101,16 @@ describe('CommandInterfaceService', () => {
 
     const cis = new CommandInterface(server, cfg, logger, events, redisClient);
     await server.bind('commandinterface', {
-      service: ServerServiceDefinition,
+      service: CommandInterfaceServiceDefinition,
       implementation: cis
-    } as BindConfig<ServerServiceDefinition>);
+    } as BindConfig<CommandInterfaceServiceDefinition>);
     await server.start();
 
     channel = createChannel(cfg.get('client:commandinterface:address'));
     grpcClient = createGrpcClient({
       ...cfg.get('client:commandinterface'),
       logger
-    }, ServiceDefinition, channel);
+    }, CISServiceDefinition, channel);
   });
   after(async function teardown() {
     this.timeout(30000);

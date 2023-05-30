@@ -1,5 +1,5 @@
 import { ArrayCursor } from 'arangojs/cursor';
-import { ArangoSearchViewPropertiesOptions } from 'arangojs/view';
+import { CreateArangoSearchViewOptions } from 'arangojs/view';
 import { CreateAnalyzerOptions } from 'arangojs/analyzer';
 
 export interface TraversalResponse {
@@ -16,7 +16,7 @@ export interface ViewAnalyzerOptions {
     collectionName: string;
     viewName: string;
     similarityThreshold: number;
-    options: ArangoSearchViewPropertiesOptions;
+    options: CreateArangoSearchViewOptions;
   };
   analyzers: string[];
   analyzerOptions: AnalyzerOptions[];

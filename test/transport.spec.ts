@@ -81,7 +81,7 @@ providers.forEach((provider) => {
       const response = {
         result: 'welcome',
         status: {
-          id: '',
+          id: undefined,
           code: 200,
           message: 'success'
         }

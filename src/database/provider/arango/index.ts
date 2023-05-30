@@ -48,26 +48,24 @@ const connect = async (conf: any, logger: Logger): Promise<any> => {
         arangoVersion,
       });
       try {
-        db.useDatabase(dbName);
-
         if (username && password) {
           db.useBasicAuth(username, password);
         }
-        await db.get();
+        await db.database(dbName).get();
       } catch (err) {
         if (err.name === 'ArangoError' && err.errorNum === 1228) {
           if (autoCreate) {
             logger.verbose(`auto creating arango database ${dbName}`);
             // Database does not exist, create a new one
-            db.useDatabase(DB_SYSTEM);
+            db.database(DB_SYSTEM);
             await db.createDatabase(dbName);
-            db.useDatabase(dbName);
-            return db;
+            db.database(dbName);
+            return db.database(dbName);
           }
         }
         throw err;
       }
-      return db;
+      return db.database(dbName);
     }, { retries: attempts, minTimeout: delay });
   }
   catch (err) {

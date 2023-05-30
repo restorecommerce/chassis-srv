@@ -219,7 +219,7 @@ const testProvider = (providerCfg) => {
       let errMessage = '';
       // missing collection name in vertices
       try {
-        await db.traversal({ start_vertex_id: ['a'] }, null, null, null, false);
+        await db.traversal({ start_vertex_ids: ['a'] }, null, null, null, false);
       } catch (err) {
         errMessage = err.message;
       }
@@ -244,7 +244,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph and return only vertices for Person A', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, null, null, false);
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, null, null, false);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       result.data = rootEntityData;
@@ -259,7 +259,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph and return both vertices and paths when paths flag is set to true', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, null, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, null, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -285,7 +285,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with included vertices options and return only the included vertices', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { include_vertex: ['car'] }, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, { include_vertexs: ['car'] }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -308,7 +308,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with excluded vertices options and return only traversed data with excluded vertices', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { exclude_vertex: ['car'] }, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, { exclude_vertexs: ['car'] }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -333,7 +333,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with included edges options and return vertices from included edges', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { include_edge: ['has'] }, null, true);
+      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, { include_edges: ['has'] }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -356,7 +356,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with exclude edges options and return vertices from excluded edges', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { exclude_edge: ['belongs'] }, null, true);
+      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, { exclude_edges: ['belongs'] }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -381,7 +381,7 @@ const testProvider = (providerCfg) => {
     it('for 2 entities should exclude one entity edge and include another entity edge', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a'] }, null, { exclude_edge: ['resides'], include_edge: ['lives'] }, null, true);
+      let traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a'] }, null, { exclude_edges: ['resides'], include_edges: ['lives'] }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -485,7 +485,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with filters and included vertices options and return only the filtered and included vertices', async () => {
       // traverse graph with 1 included vertex
       let result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car'], direction: Direction.OUTBOUND },
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertexs: ['car'], direction: Direction.OUTBOUND },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
@@ -517,7 +517,7 @@ const testProvider = (providerCfg) => {
 
       // traverse graph with 2 included vertex
       result = { data: [], paths: [] };
-      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertex: ['car', 'state'], direction: Direction.OUTBOUND },
+      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertexs: ['car', 'state'], direction: Direction.OUTBOUND },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
@@ -557,7 +557,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with filters and excluded vertices options and return only the filtered and excluded vertices', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal({ collection_name: '', start_vertex_id: [] }, { collection_name: 'person' }, { exclude_vertex: ['car'] },
+      let traversalResponse = await db.traversal({ collection_name: '', start_vertex_ids: [] }, { collection_name: 'person' }, { exclude_vertexs: ['car'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateB' }],
           operator: 'or', // Default is AND operation
@@ -595,7 +595,7 @@ const testProvider = (providerCfg) => {
     it('for 2 entities should exclude one entity edge and include another entity edge with filtering enabled on second edge entity', async () => {
       let result = { data: [], paths: [] };
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edge: ['resides'] },
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edges: ['resides'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
@@ -623,7 +623,7 @@ const testProvider = (providerCfg) => {
 
       result = { data: [], paths: [] };
       // with iLike traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edge: ['resides'] },
+      traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edges: ['resides'] },
         [{
           filter: [{ field: 'name', operation: 'iLike', value: 'StaTe%' }],
           operator: 'or', // Default is AND operation
@@ -656,7 +656,7 @@ const testProvider = (providerCfg) => {
     it('should traverse the graph with filters and included edges and return only the filtered and included edge vertices data', async () => {
       const result = { data: [], paths: [] };
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
-      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_edge: ['has', 'lives'] },
+      let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_edges: ['has', 'lives'] },
         [{
           filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
@@ -736,7 +736,7 @@ const testProvider = (providerCfg) => {
     it('array start vertices - should traverse the graph through list of specified start vertices', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_id: ['a', 'b', 'c'] }, null, null, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'person', start_vertex_ids: ['a', 'b', 'c'] }, null, null, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -762,7 +762,7 @@ const testProvider = (providerCfg) => {
     it('car entity - should traverse the graph from Car vertice and return list of traversed entities from Car entity', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'car', start_vertex_id: ['c1', 'c2'] }, null, null, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'car', start_vertex_ids: ['c1', 'c2'] }, null, null, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -815,7 +815,7 @@ const testProvider = (providerCfg) => {
     it('inbound traversal - should traverse the graph from Place vertice in inbound direction and return list of traversed entities from Place entity', async () => {
       // traverse graph
       let result = { data: [], paths: [] };
-      const traversalResponse = await db.traversal({ collection_name: 'place', start_vertex_id: ['p1'] }, null, { direction: Direction.INBOUND }, null, true);
+      const traversalResponse = await db.traversal({ collection_name: 'place', start_vertex_ids: ['p1'] }, null, { direction: Direction.INBOUND }, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       const associationEntityData = await traversalResponse.associationCursor.all();
       for (let data of associationEntityData) {
@@ -866,7 +866,7 @@ const testProvider = (providerCfg) => {
     it('should sort the root collection in descending order and return data from all traversed entities', async () => {
       // traverse graph
       const result = { data: [], paths: [] };
-      let traversalResponse = await db.traversal(null, { collection_name: 'person', sort: { name: 'DESC' } }, null, null, true);
+      let traversalResponse = await db.traversal(null, { collection_name: 'person', sorts: { name: 'DESC' } }, null, null, true);
       const rootEntityData = await traversalResponse.rootCursor.all();
       rootEntityData[0].name.should.equal('Eve');
       rootEntityData[1].name.should.equal('Dave');

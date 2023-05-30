@@ -312,7 +312,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       throw new Error('missing document handle');
     }
     const collection = this.graph.edgeCollection(collectionName).collection;
-    return await collection.edges(documentHandle);
+    return await collection.edges(documentHandle, {});
   }
 
   /**
@@ -330,7 +330,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       throw new Error('missing document handle');
     }
     const collection = this.graph.edgeCollection(collectionName).collection;
-    return await collection.inEdges(documentHandle);
+    return await collection.inEdges(documentHandle, {});
   }
 
   /**
@@ -348,7 +348,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       throw new Error('missing document handle');
     }
     const collection = this.graph.edgeCollection(collectionName).collection;
-    return collection.outEdges(documentHandle);
+    return collection.outEdges(documentHandle, {});
   }
 
   /**
@@ -367,9 +367,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   async traversal(vertices: Vertices, collection: Collection, opts: DeepPartial<TraversalOptions>,
     filters?: GraphFilters[]): Promise<TraversalResponse> {
     if (vertices) {
-      if (_.isEmpty(vertices.collection_name) && !_.isEmpty(vertices.start_vertex_id)) {
-        throw new Error(`missing collection name for vertex id ${vertices.start_vertex_id}`);
-      } else if (!_.isEmpty(vertices.collection_name) && _.isEmpty(vertices.start_vertex_id)) {
+      if (_.isEmpty(vertices.collection_name) && !_.isEmpty(vertices.start_vertex_ids)) {
+        throw new Error(`missing collection name for vertex id ${vertices.start_vertex_ids}`);
+      } else if (!_.isEmpty(vertices.collection_name) && _.isEmpty(vertices.start_vertex_ids)) {
         throw new Error(`missing vertex id for collection_name ${vertices.collection_name}`);
       }
     }
@@ -378,7 +378,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     let vertexCollectionName, startVertexIds;
     if (vertices) {
       vertexCollectionName = vertices.collection_name;
-      startVertexIds = vertices.start_vertex_id;
+      startVertexIds = vertices.start_vertex_ids;
     }
 
     // collection data
@@ -387,7 +387,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       collectionName = collection.collection_name;
       limit = collection.limit;
       offset = collection.offset;
-      sort = collection.sort;
+      sort = collection.sorts;
     }
 
     if ((_.isUndefined(startVertexIds) || _.isNil(startVertexIds) || _.isEmpty(startVertexIds)) &&
@@ -413,25 +413,25 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     let limitFilter = '';
     let sortFilter = '';
     // include vertices in options if specified
-    if (opts.include_vertex) {
-      defaultOptions.vertexCollections = opts.include_vertex;
+    if (opts.include_vertexs) {
+      defaultOptions.vertexCollections = opts.include_vertexs;
     }
 
     // include edges in options if specified
-    if (opts.include_edge) {
-      defaultOptions.edgeCollections = opts.include_edge;
+    if (opts.include_edges) {
+      defaultOptions.edgeCollections = opts.include_edges;
     }
 
     // exclude vertices
-    if (opts.exclude_vertex) {
-      for (let excludeVertex of opts.exclude_vertex) {
+    if (opts.exclude_vertexs) {
+      for (let excludeVertex of opts.exclude_vertexs) {
         filter = filter + ` FILTER v._id NOT LIKE "${excludeVertex}%" `;
       }
     }
 
     // exclude edges
-    if (opts.exclude_edge) {
-      for (let excludeEdge of opts.exclude_edge) {
+    if (opts.exclude_edges) {
+      for (let excludeEdge of opts.exclude_edges) {
         filter = filter + ` FILTER e._id NOT LIKE "${excludeEdge}%" `;
       }
     }

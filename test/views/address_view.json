@@ -4,6 +4,7 @@
       "viewName": "addresss_view",
       "similarityThreshold": 0.1,
       "options": {
+        "type": "arangosearch",
         "links": {
           "addresss": {
             "includeAllFields": true,
