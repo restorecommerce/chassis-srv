@@ -427,10 +427,10 @@ const testProvider = (providerCfg) => {
       let result = { data: [], paths: [] };
       let traversalResponse = await db.traversal(null, { collection_name: 'person' }, null,
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'carA' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'carA' }],
           entity: 'car'
         }, {
-          filter: [{ field: 'name', operation: 'eq', value: 'placeA' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'placeA' }],
           entity: 'place'
         }],
         true);
@@ -457,7 +457,7 @@ const testProvider = (providerCfg) => {
       result = { data: [], paths: [] };
       traversalResponse = await db.traversal(null, { collection_name: 'person' }, null,
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateAA' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateAA' }],
           operator: 'or', // Default is AND operation
           entity: 'state'
         }],
@@ -487,7 +487,7 @@ const testProvider = (providerCfg) => {
       let result = { data: [], paths: [] };
       let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertexs: ['car'], direction: Direction.OUTBOUND },
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
           entity: 'car'
         }],
@@ -519,11 +519,11 @@ const testProvider = (providerCfg) => {
       result = { data: [], paths: [] };
       traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_vertexs: ['car', 'state'], direction: Direction.OUTBOUND },
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'carA' }, { field: 'name', operation: 'eq', value: 'carB' }],
           operator: 'or', // Default is AND operation
           entity: 'car'
         }, {
-          filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
           entity: 'state'
         }],
@@ -559,7 +559,7 @@ const testProvider = (providerCfg) => {
       const result = { data: [], paths: [] };
       let traversalResponse = await db.traversal({ collection_name: '', start_vertex_ids: [] }, { collection_name: 'person' }, { exclude_vertexs: ['car'] },
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateB' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'stateA' }, { field: 'name', operation: 'eq', value: 'stateB' }],
           operator: 'or', // Default is AND operation
           entity: 'state'
         }], true);
@@ -597,7 +597,7 @@ const testProvider = (providerCfg) => {
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
       let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { exclude_edges: ['resides'] },
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
           edge: 'lives'
         }],
@@ -658,7 +658,7 @@ const testProvider = (providerCfg) => {
       // traverse graph with filtering for state entities (filter with exclude one edge and include other edge)
       let traversalResponse = await db.traversal(null, { collection_name: 'person' }, { include_edges: ['has', 'lives'] },
         [{
-          filter: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
+          filters: [{ field: 'name', operation: 'eq', value: 'stateAA' }, { field: 'name', operation: 'eq', value: 'stateBB' }],
           operator: 'or', // Default is AND operation
           edge: 'lives'
         }],

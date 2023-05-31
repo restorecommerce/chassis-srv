@@ -1,3 +1,7 @@
+### 1.2.1 (May 31st, 2023)
+
+- renamed filter to filters for Graph filters and fixed tests
+
 ### 1.2.0 (May 30th, 2023)
 
 - updated deps (For pluralized protos and libs)

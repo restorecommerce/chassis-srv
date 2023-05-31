@@ -134,15 +134,18 @@ export const toTraversalFilterObject = (input: any, obj?: any, operatorList?: st
   } else {
     filters = input;
   }
-  // const filters = _.cloneDeep( (input.filters && input.filters.length > 0) ? input.filters : input);
+  // use operator provided in input
+  if (input.operator) {
+    filters.operator = input.operator;
+  }
   // by default use 'and' operator if no operator is specified
-  if (filters && _.isArray(filters.filter) && !filters.operator) {
+  if (filters && _.isArray(filters.filters) && !filters.operator) {
     filters.operator = 'and';
   }
   if (!obj) {
     obj = {};
   }
-  if (_.isArray(filters.filter)) {
+  if (_.isArray(filters.filters) && filters.filters.length > 0) {
     let operatorValue;
     if (typeof filters.operator === 'string' || filters.operator instanceof String) {
       operatorValue = filters.operator;
@@ -159,13 +162,29 @@ export const toTraversalFilterObject = (input: any, obj?: any, operatorList?: st
       obj[newOperator] = [];
     }
     // pass operatorList and obj recursively
-    toTraversalFilterObject(filters.filter, obj, operatorList);
+    obj = toTraversalFilterObject(filters.filters, obj, operatorList);
   } else if (_.isArray(filters)) {
+    if (!operatorList) {
+      const operator = input.operator ? `$${input.operator}` : '$and';
+      operatorList = [operator];
+    }
+    if (_.isEmpty(obj)) {
+      const operator = input.operator ? `$${input.operator}` : '$and';
+      obj = { [operator]: [] };
+    }
     for (let filterObj of filters) {
-      toTraversalFilterObject(filterObj, obj, operatorList);
+      obj = toTraversalFilterObject(filterObj, obj, operatorList);
     }
   } else if (filters.field && (filters.operation || filters.operation === 0) && filters.value != undefined) {
     // object contains field, operation and value, update it on obj using convertFilterToObject()
+    if (!operatorList) {
+      const operator = input.operator ? `$${input.operator}` : '$and';
+      operatorList = [operator];
+    }
+    if (_.isEmpty(obj)) {
+      const operator = filters.operator ? `$${filters.operator}` : '$and';
+      obj = { [operator]: [] };
+    }
     obj = convertFilterToObject(filters, obj, operatorList);
   }
   return obj;
