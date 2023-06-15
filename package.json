@@ -19,7 +19,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.8.14",
     "@restorecommerce/grpc-client": "^2.0.1",
-    "@restorecommerce/kafka-client": "^1.0.7",
+    "@restorecommerce/kafka-client": "^1.0.9",
     "@restorecommerce/logger": "^1.2.3",
     "@restorecommerce/protos": "^3.0.1",
     "@restorecommerce/rc-grpc-clients": "^3.0.1",
