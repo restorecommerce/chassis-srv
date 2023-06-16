@@ -1,3 +1,7 @@
+### 1.2.2 (June 16th, 2023)
+
+- updated libs (rename resource to master_data, up kafka-client and rc-grpc-clients)
+
 ### 1.2.1 (May 31st, 2023)
 
 - renamed filter to filters for Graph filters and fixed tests
