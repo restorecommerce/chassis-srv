@@ -45,7 +45,7 @@
     "@types/lodash": "^4.14.195",
     "@types/mocha": "^10.0.1",
     "@types/nedb": "^1.8.13",
-    "@types/node": "^20.3.1",
+    "@types/node": "^20.3.3",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/eslint-plugin-tslint": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
