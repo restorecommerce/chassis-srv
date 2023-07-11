@@ -1,3 +1,7 @@
+### 1.2.3 (July 11th, 2023)
+
+- updated deps (google.protobuf.timestamp proto usage for date fields)
+
 ### 1.2.2 (June 16th, 2023)
 
 - updated libs (rename resource to master_data, up kafka-client and rc-grpc-clients)
