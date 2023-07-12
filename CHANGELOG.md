@@ -1,3 +1,7 @@
+### 1.2.4 (July 12th, 2023)
+
+- updated deps
+
 ### 1.2.3 (July 11th, 2023)
 
 - updated deps (google.protobuf.timestamp proto usage for date fields)
