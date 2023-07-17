@@ -35,7 +35,7 @@
     "lodash": "^4.17.21",
     "long": "^5.2.3",
     "nedb": "^1.8.0",
-    "nice-grpc": "^2.1.4",
+    "nice-grpc": "^2.1.5",
     "nice-grpc-server-reflection": "^2.0.6",
     "protobufjs": "^7.2.4",
     "redis": "^4.6.7"
