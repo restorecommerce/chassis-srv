@@ -1,3 +1,7 @@
+### 1.2.5 (July 21st, 2023)
+
+- updated deps
+
 ### 1.2.4 (July 12th, 2023)
 
 - updated deps
