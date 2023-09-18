@@ -105,7 +105,6 @@ describe('binding the grpc.ServerReflection service', () => {
             should.exist(data.allExtensionNumbersResponse);
             should.exist(data.allExtensionNumbersResponse.baseTypeName);
             data.allExtensionNumbersResponse.baseTypeName.should.equal('test.ExtendMe');
-            should.exist(data.allExtensionNumbersResponse.extensionNumber);
           }
         });
     });

@@ -182,7 +182,7 @@ describe('microservice.Server', () => {
         should.exist(throwResult.status);
         throwResult.status.code.should.equal(500);
         throwResult.status.message.should.equal('forced error');
-        throwResult.result.should.be.empty();
+        should.not.exist(throwResult.result);
 
         // --- 'notFound' endpoint ---
         const notFoundResult = await testClient.notFound({value: 'hello'});
