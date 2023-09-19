@@ -189,7 +189,7 @@ describe('microservice.Server', () => {
         should.exist(notFoundResult.status);
         notFoundResult.status.code.should.equal(404);
         notFoundResult.status.message.should.equal('test not found');
-        notFoundResult.result.should.be.empty();
+        should.not.exist(notFoundResult.result);
 
         // 'requestStream'
         const streamChannel = createChannel(cfg.get('client:stream:address'));

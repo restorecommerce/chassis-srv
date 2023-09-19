@@ -1,3 +1,7 @@
+### 1.3.1 (September 18th, 2023)
+
+- updated test proto files
+
 ### 1.3.0 (September 18th, 2023)
 
 - updated deps (all fields are made optional in proto file)
