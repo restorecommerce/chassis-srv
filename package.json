@@ -38,7 +38,7 @@
     "nice-grpc": "^2.1.5",
     "nice-grpc-server-reflection": "^2.0.7",
     "protobufjs": "^7.2.5",
-    "redis": "^4.6.8"
+    "redis": "^4.6.10"
   },
   "devDependencies": {
     "@types/cache-manager": "^4.0.3",
