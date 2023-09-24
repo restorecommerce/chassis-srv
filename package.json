@@ -42,7 +42,7 @@
   },
   "devDependencies": {
     "@types/cache-manager": "^4.0.3",
-    "@types/lodash": "^4.14.198",
+    "@types/lodash": "^4.14.199",
     "@types/mocha": "^10.0.1",
     "@types/nedb": "^1.8.13",
     "@types/node": "^20.6.2",
