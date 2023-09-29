@@ -21,7 +21,7 @@
     "@restorecommerce/grpc-client": "^2.0.3",
     "@restorecommerce/kafka-client": "^1.1.1",
     "@restorecommerce/logger": "^1.2.4",
-    "@restorecommerce/protos": "^6.1.1",
+    "@restorecommerce/protos": "^6.1.2",
     "@restorecommerce/rc-grpc-clients": "^5.1.1",
     "@restorecommerce/service-config": "^1.0.6",
     "arangojs": "^8.4.1",
