@@ -6,7 +6,6 @@ import * as chassis from '../src';
 import { DatabaseProvider } from '../src/database';
 const config = chassis.config;
 const database = chassis.database;
-const sleep = require('sleep');
 
 let db: DatabaseProvider;
 
@@ -530,7 +529,9 @@ const testProvider = (providerCfg) => {
 
         it('should search with default case insensitive based on first name and last name', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let usersFound = await db.find(userCollection, {}, { search: { search: 'Ich oWd' } });
           usersFound.length.should.equal(3);
           usersFound[0].id.should.equal('4');
@@ -546,7 +547,9 @@ const testProvider = (providerCfg) => {
 
         it('should search with default case insensitive based on city name and country name', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let addressFound = await db.find(addressCollection, {}, { search: { search: 'ber man' } });
           addressFound.length.should.equal(4);
           addressFound[0].city.should.equal('Berlin'); // Berlin, Germany (both terms match)
@@ -557,7 +560,9 @@ const testProvider = (providerCfg) => {
 
         it('should search with case sensitive based on first name and last name', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let usersFound = await db.find(userCollection, {}, { search: { search: 'Ich oWd', case_sensitive: true } });
           usersFound.length.should.equal(0);
           usersFound = await db.find(userCollection, {}, { search: { search: 'Mic Bow', case_sensitive: true } });
@@ -575,7 +580,9 @@ const testProvider = (providerCfg) => {
 
         it('should search for umlauts', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let usersFound = await db.find(userCollection, {}, { search: { search: 'müll' } });
           usersFound.length.should.equal(1);
           usersFound[0].first_name.should.equal('David');
@@ -584,14 +591,18 @@ const testProvider = (providerCfg) => {
 
         it('should not return any result for any match of the search string', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let usersFound = await db.find(userCollection, {}, { search: { search: 'does not exist' } });
           usersFound.length.should.equal(0);
         }).timeout(5000);
 
         it('should search with filter', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let usersFound = await db.find(userCollection, { last_name: { $iLike: '%bow%' } }, { search: { search: 'mic' } });
           usersFound.length.should.equal(1);
           usersFound[0].first_name.should.equal('Michael');
@@ -600,7 +611,9 @@ const testProvider = (providerCfg) => {
 
         it('should return an error deleting analyzer since the view still exists', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let resp = await db.deleteAnalyzer(['trigram', 'trigram_norm']);
           resp.length.should.equal(2);
           resp[0].id.should.equal('trigram');
@@ -613,7 +626,9 @@ const testProvider = (providerCfg) => {
 
         it('should return an error dropping view which does not exist', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let resp = await db.dropView(['test']);
           resp.length.should.equal(1);
           resp[0].id.should.equal('test');
@@ -623,7 +638,9 @@ const testProvider = (providerCfg) => {
 
         it('should drop view', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           let resp = await db.dropView(['users_view']);
           resp.length.should.equal(1);
           resp[0].id.should.equal('users_view');
@@ -633,7 +650,9 @@ const testProvider = (providerCfg) => {
 
         it('should delete analyzers', async () => {
           // delay is added since the index takes a second (since we delete and create users in beforeEach and afterEach)
-          await sleep.sleep(2);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 2000);
+          });
           // drop view and then analyzer
           await db.dropView(['users_view', 'addresss_view']);
           let resp = await db.deleteAnalyzer(['trigram', 'trigram_norm']);

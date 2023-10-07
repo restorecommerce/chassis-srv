@@ -1,3 +1,7 @@
+### 1.4.0 (October 7th, 2023)
+
+- updated node version to 20 and all other dependencies
+
 ### 1.3.1 (September 18th, 2023)
 
 - updated test proto files

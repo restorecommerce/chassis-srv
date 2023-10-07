@@ -3,7 +3,6 @@ import { createLogger } from '@restorecommerce/logger';
 import * as chassis from '../src';
 import { Server, buildReflectionService } from '../src';
 import { createClient } from '@restorecommerce/grpc-client';
-import * as sleep from 'sleep';
 import {
   protoMetadata
 } from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
@@ -41,13 +40,17 @@ describe('binding the grpc.ServerReflection service', () => {
     });
 
     await server.start();
-    sleep.sleep(1);
+    await new Promise((resolve, reject) => {
+      setTimeout(resolve, 1000);
+    });
   });
 
   after(async function end() {
     this.timeout(4000);
     await server.stop();
-    sleep.sleep(2);
+    await new Promise((resolve, reject) => {
+      setTimeout(resolve, 2000);
+    });
   });
   describe('calling endpoint ServerReflectionInfo', () => {
     let client: ServerReflectionClient;

@@ -2,7 +2,6 @@ import * as should from 'should';
 import { createLogger } from '@restorecommerce/logger';
 import { createClient } from '@restorecommerce/grpc-client';
 import { grpcServer } from '../src';
-import * as sleep from 'sleep';
 import { TestClient, TestDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
 import { TestDefinition as ServerTestDefinition } from '@restorecommerce/rc-grpc-clients/dist/generated-server/test/test';
 import { testService } from './microservice.spec';
@@ -65,7 +64,9 @@ providers.forEach((provider) => {
       describe('start', () => {
         it('should start the server', async () => {
           await server.start();
-          sleep.sleep(1);
+          await new Promise((resolve, reject) => {
+            setTimeout(resolve, 1000);
+          });
         });
       });
       describe('end', () => {
@@ -124,7 +125,9 @@ providers.forEach((provider) => {
               implementation: testService
             } as BindConfig<ServerTestDefinition>);
             await server.start();
-            sleep.sleep(2);
+            await new Promise((resolve, reject) => {
+              setTimeout(resolve, 2000);
+            });
           });
           after(async () => {
             await server.end();

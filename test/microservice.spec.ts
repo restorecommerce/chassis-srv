@@ -1,7 +1,6 @@
 import * as should from 'should';
 import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
-import * as sleep from 'sleep';
 import * as chassis from '../src';
 import { createClient } from '@restorecommerce/grpc-client';
 import { TestDefinition, TestClient } from '@restorecommerce/rc-grpc-clients/dist/generated/test/test';
@@ -141,7 +140,9 @@ describe('microservice.Server', () => {
           serving = !serving;
         });
         await server.start();
-        sleep.sleep(1);
+        await new Promise((resolve, reject) => {
+          setTimeout(resolve, 1000);
+        });
         serving.should.equal(true);
         const testChannel = createChannel(cfg.get('client:test:address'));
         const testClient: TestClient = createClient({
@@ -295,7 +296,9 @@ describe('microservice.Client', () => {
         implementation: testService
       } as BindConfig<ServerTestDefinition>);
       await server.start();
-      sleep.sleep(1);
+      await new Promise((resolve, reject) => {
+        setTimeout(resolve, 1000);
+      });
     });
     after(async () => {
       await server.stop();
