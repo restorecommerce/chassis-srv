@@ -23,7 +23,7 @@
     "@restorecommerce/logger": "^1.2.5",
     "@restorecommerce/protos": "^6.1.2",
     "@restorecommerce/rc-grpc-clients": "^5.1.3",
-    "@restorecommerce/service-config": "^1.0.7",
+    "@restorecommerce/service-config": "^1.0.9",
     "arangojs": "^8.4.1",
     "async": "^3.2.4",
     "async-retry": "^1.3.3",
