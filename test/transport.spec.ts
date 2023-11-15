@@ -109,7 +109,7 @@ providers.forEach((provider) => {
             try {
               await endpoint({});
             } catch (err) {
-              err.message.should.equal('/test.Test/Test UNAVAILABLE: No connection established');
+              err.message.startsWith('/test.Test/Test UNAVAILABLE: No connection established').should.equal(true);
             }
           });
         });

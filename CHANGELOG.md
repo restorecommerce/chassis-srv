@@ -1,3 +1,8 @@
+### 1.4.1 (November 15th, 2023)
+
+- updated token proto for expires_in, last_login and user proto for last_access
+- updated all dependencies
+
 ### 1.4.0 (October 7th, 2023)
 
 - updated node version to 20 and all other dependencies
