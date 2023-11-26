@@ -16,7 +16,6 @@ export const query = async (db: any, collectionName: string, query: string | any
   try {
     if (!collectionExists) {
       await collection.create();
-      await collection.load(false);
     }
   } catch(err) {
     if (err.message && err.message.indexOf('duplicate name') == -1) {
