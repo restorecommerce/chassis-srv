@@ -4,7 +4,7 @@ import { Logger } from 'winston';
 import type { Server as GRPCServer, ServiceImplementation } from 'nice-grpc';
 import type { CompatServiceDefinition } from 'nice-grpc/lib/service-definitions';
 import { createServer } from 'nice-grpc';
-import { loggingMiddleware, tracingMiddleware, WithRequestID } from './middlewares';
+import { loggingMiddleware, metaMiddleware, tracingMiddleware, WithRequestID } from './middlewares';
 
 /**
  * Name of the transport
@@ -50,6 +50,7 @@ export class Server {
 
     this.server = createServer()
       .use(tracingMiddleware)
+      .use(metaMiddleware)
       .use(loggingMiddleware(this.logger));
 
     this.name = NAME;

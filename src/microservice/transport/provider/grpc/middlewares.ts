@@ -2,6 +2,8 @@ import { CallContext, ServerError, ServerMiddlewareCall } from 'nice-grpc';
 import { isAbortError } from 'abort-controller-x';
 import { Logger } from 'winston';
 import { v1 as uuidv1 } from 'uuid';
+import { metadataPassThrough } from '@restorecommerce/grpc-client/dist/middleware';
+import { AsyncLocalStorage } from 'async_hooks';
 
 const tracingHeader = 'x-request-id';
 
@@ -61,3 +63,37 @@ export const loggingMiddleware = (logger: Logger) => {
     }
   };
 };
+
+
+function bindAsyncGenerator<T = any, TReturn = any, TNext = any>(
+  store: AsyncLocalStorage<any>,
+  generator: AsyncGenerator<any, any, any>,
+): AsyncGenerator<T, TReturn, TNext> {
+  const ctx = store.getStore();
+  return {
+    next: () => store.run(ctx, generator.next.bind(generator)),
+    return: (args) => store.run(ctx, generator.return.bind(generator), args),
+    throw: (args) => store.run(ctx, generator.throw.bind(generator), args),
+
+    [Symbol.asyncIterator]() {
+      return this;
+    },
+  };
+}
+
+export async function* metaMiddleware<Request, Response>(
+  call: ServerMiddlewareCall<Request, Response>,
+  context: CallContext,
+) {
+  const mapped = {};
+  for (const [a, b] of context.metadata) {
+    mapped[a] = b;
+  }
+
+  const val = JSON.stringify(mapped);
+  metadataPassThrough.enterWith(val);
+
+  return yield* bindAsyncGenerator(metadataPassThrough, call.next(call.request, {
+    ...context,
+  }));
+}
