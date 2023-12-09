@@ -1,3 +1,7 @@
+### 1.4.5 (December 9th, 2023)
+
+- metadata upstream passing
+
 ### 1.4.4 (November 26th, 2023)
 
 - removed deprecated method (collection.load)
