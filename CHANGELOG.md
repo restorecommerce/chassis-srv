@@ -1,3 +1,7 @@
+### 1.4.6 (December 9th, 2023)
+
+- update grpc-client dependency
+
 ### 1.4.5 (December 9th, 2023)
 
 - metadata upstream passing
