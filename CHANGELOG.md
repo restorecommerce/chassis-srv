@@ -1,3 +1,7 @@
+### 1.4.7 (February 21st, 2023)
+
+- update deps
+
 ### 1.4.6 (December 9th, 2023)
 
 - update grpc-client dependency
