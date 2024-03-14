@@ -37,13 +37,14 @@ export class Health implements HealthServiceImplementation {
         this.endpoints = {};
         const clientCfg = this.opts.cfg.get('client');
         for (const dependency of this.opts.dependencies) {
-          if (!(dependency in clientCfg)) {
-            throw new Error('Dependency "' + dependency + '" not provided in client config!');
+          const dep = clientCfg?.[dependency] ?? this.opts.cfg.get(dependency);
+          if (!dep) {
+            throw new Error(`Dependency '${ dependency }' not provided in config!`);
           }
 
-          const channel = createChannel(clientCfg[dependency].address);
+          const channel = createChannel(dep.address);
           this.endpoints[dependency] = createClient({
-            ...clientCfg[dependency],
+            ...dep,
             logger: this.opts.logger
           }, HealthDefinition, channel);
         }
