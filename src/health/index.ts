@@ -43,7 +43,7 @@ export class Health implements HealthServiceImplementation {
           }
 
           const channel = createChannel(dep.address);
-          this.endpoints[dependency] = createClient({
+          this.endpoints[dep.endpoint ?? dependency] = createClient({
             ...dep,
             logger: this.opts.logger
           }, HealthDefinition, channel);
