@@ -10,7 +10,7 @@ import {
 } from 'nice-grpc-server-reflection/lib/proto/grpc/reflection/v1alpha/reflection_grpc_pb';
 
 export const buildReflectionService = (services: {
-  descriptor: FileDescriptorProto;
+  descriptor: any;
   name?: string;
 }[]): ServiceImplementation<IServerReflectionService> => {
   const set = new FileDescriptorSet();
