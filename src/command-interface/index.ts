@@ -671,7 +671,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
         }
       }
     } catch (err) {
-      this.logger.error('Error flushing cache', { code: err.code, message: err.message, stack: err.stack });
+      this.logger.error('Error flushing Redis Cache', { code: err.code, message: err.message, stack: err.stack });
       response = err.message;
     }
     await this.commandTopic.emit('flushCacheResponse', {
