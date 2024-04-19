@@ -6,7 +6,7 @@
   "author": "n-fuse GmbH",
   "repository": {
     "type": "git",
-    "url": "https://github.com/restorecommerce/restore-chassis.git"
+    "url": "https://github.com/restorecommerce/chassis-srv.git"
   },
   "license": "MIT",
   "keywords": [
