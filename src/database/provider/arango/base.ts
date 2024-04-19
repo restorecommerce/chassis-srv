@@ -173,7 +173,7 @@ export class Arango implements DatabaseProvider {
       '@collection': collectionName
     }, varArgs);
     if (!_.isEmpty(customFilter) && opts.customArguments) {
-      bindVars = _.assign(bindVars, opts.customArguments);
+      bindVars = _.assign(bindVars, { customArguments: opts.customArguments });
     }
     let res;
     if (!searchQuery) {
