@@ -78,7 +78,7 @@ export class Server {
       }
       new Promise((resolve, reject) => {
         this.server.listen(this.config.addr, credentials).then(resolve).catch(err => {
-          this.logger.error('Error starting server', {message: err.message, stack: err.stack});
+          this.logger.error('Error starting server', { message: err.message, code: err.code, stack: err.stack });
           reject(err);
         });
       });
