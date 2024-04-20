@@ -1,3 +1,7 @@
+### 1.6.0 (April 20th, 2024)
+
+- changes for custom arguments for custom query
+
 ### 1.5.0 (April 15th, 2024)
 
 - update deps

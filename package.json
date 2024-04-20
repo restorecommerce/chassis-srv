@@ -1,6 +1,6 @@
 {
   "name": "@restorecommerce/chassis-srv",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Restore Commerce microservice chassis",
   "main": "./lib/index.js",
   "author": "n-fuse GmbH",
