@@ -1,3 +1,7 @@
+### 1.6.1 (May 14th, 2024)
+
+- remove response logging
+
 ### 1.6.0 (April 20th, 2024)
 
 - changes for custom arguments for custom query

@@ -34,7 +34,7 @@ export const loggingMiddleware = (logger: Logger) => {
 
     try {
       const response = yield* call.next(call.request, context);
-      logger.verbose(`[rid: ${context.rid}] request to method ${path} response`, {request: call.request, response});
+      logger.verbose(`[rid: ${context.rid}] request to method ${path} response sent`, {request: call.request});
       return response;
     } catch (error) {
       if (error instanceof ServerError) {
