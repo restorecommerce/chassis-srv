@@ -83,10 +83,6 @@ export class Server extends EventEmitter {
         this.logger = createLogger();
       } else {
         const loggerCfg = this.config.logger;
-        loggerCfg.esTransformer = (msg) => {
-          msg.fields = JSON.stringify(msg.fields);
-          return msg;
-        };
         this.logger = createLogger(loggerCfg);
       }
     } else {
