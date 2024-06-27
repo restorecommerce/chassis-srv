@@ -879,16 +879,16 @@ const testProvider = (providerCfg) => {
       // doc with updated name
       doc.name = 'test';
       await db.update(personCollectionName, [doc]);
-      const newdoc = await db.getEdge(personCollectionName, `person/e`);
-      newdoc.name.should.equal('test');
+      const docUpdated = await db.getVertex(personCollectionName, `person/e`);
+      docUpdated.name.should.equal('test');
     });
     it('should update a edge given the document handle', async () => {
       const doc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
       // doc with updated name
       doc.info = 'test has Car E';
       await db.update(hasEdgeCollectionName, [doc]);
-      const newdoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
-      newdoc.info.should.equal('test has Car E');
+      const edgeDoc = await db.getEdge(hasEdgeCollectionName, edgeResult._id);
+      edgeDoc.info.should.equal('test has Car E');
     });
     it('should remove a vertice given the document handle for Person B', async () => {
       const removedDoc = await db.removeVertex(personCollectionName, `person/b`);

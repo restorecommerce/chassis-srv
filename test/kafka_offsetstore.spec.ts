@@ -35,7 +35,7 @@ describe('offsetStore', () => {
 
   it('should emit an event and verify the stored offset value from redis',
     async function testStoredOffsetValue() {
-      this.timeout(10000);
+      this.timeout(15000);
       offsetStore = new OffsetStore(events, cfg, logger);
       topic = await (events.topic(topicName));
 

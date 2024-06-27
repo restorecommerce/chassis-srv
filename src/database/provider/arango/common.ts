@@ -44,7 +44,7 @@ const ensureKey = (document: any): any => {
   if (_.has(doc, '_key')) {
     return doc;
   }
-  const id = doc.id;
+  const id = (doc as any).id;
   if (id) {
     _.set(doc, '_key', idToKey(id));
   }
@@ -226,20 +226,20 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
     // will always search for an empty string
     return autoCastKey(key, '') + ' == ' + bindValueVar;
   }
-  if (!_.isNil(value.$startswith)) {
+  if (!_.isNil((value as any).$startswith)) {
     let bindValueVar1 = `@value${index + 1}`;
     let bindValueVarWithOutPrefix1 = `value${index + 1}`;
     const k = autoCastKey(key);
-    const v = autoCastValue(value.$startswith);
+    const v = autoCastValue((value as any).$startswith);
     bindVarsMap[bindValueVarWithOutPrefix] = v;
     bindVarsMap[bindValueVarWithOutPrefix1] = v;
     return `LEFT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;
   }
-  if (!_.isNil(value.$endswith)) {
+  if (!_.isNil((value as any).$endswith)) {
     let bindValueVar1 = `@value${index + 1}`;
     let bindValueVarWithOutPrefix1 = `value${index + 1}`;
     const k = autoCastKey(key);
-    const v = autoCastValue(value.$endswith);
+    const v = autoCastValue((value as any).$endswith);
     bindVarsMap[bindValueVarWithOutPrefix] = v;
     bindVarsMap[bindValueVarWithOutPrefix1] = v;
     return `RIGHT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;

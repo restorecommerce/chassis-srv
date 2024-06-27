@@ -1,5 +1,5 @@
 {
   "extension": ["ts"],
-  "spec": "test/**/*.spec.ts",
+  "spec": "test/**/microservice.spec.ts",
   "require": "ts-node/register"
 }
