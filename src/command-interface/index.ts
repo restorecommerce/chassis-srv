@@ -126,15 +126,11 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
     });
 
     // check for buffer fields
-    this.bufferedCollection = new Map<string, string>();
-    if (this.config.get('fieldHandlers:bufferFields')) {
-      for (let bufferedCollection in this.config.get('fieldHandlers:bufferFields')) {
-        const buffFields = this.config.get('fieldHandlers:bufferFields');
-        this.bufferedCollection.set(bufferedCollection,
-          buffFields[bufferedCollection]);
-      }
-      this.logger.info('Buffered collections are:', this.bufferedCollection);
-    }
+    const buffFields = this.config.get('fieldHandlers:bufferFields') ?? {};
+    this.bufferedCollection = new Map<string, string>(
+      Object.entries(buffFields)
+    );
+    this.logger.info('Buffered collections are:', this.bufferedCollection);
   }
 
   /**
