@@ -38,7 +38,7 @@ const connect = async (conf: any, logger: Logger): Promise<any> => {
   let i = 1;
   try {
     return await retry(async () => {
-      logger.info('Attempt to connect database', {
+      logger?.info('Attempt to connect database', {
         dbHost, dbPort, dbName,
         attempt: i
       });
@@ -55,7 +55,7 @@ const connect = async (conf: any, logger: Logger): Promise<any> => {
       } catch (err) {
         if (err.name === 'ArangoError' && err.errorNum === 1228) {
           if (autoCreate) {
-            logger.verbose(`auto creating arango database ${dbName}`);
+            logger?.verbose(`auto creating arango database ${dbName}`);
             // Database does not exist, create a new one
             db.database(DB_SYSTEM);
             await db.createDatabase(dbName);
@@ -71,7 +71,7 @@ const connect = async (conf: any, logger: Logger): Promise<any> => {
   catch (err) {
     const safeError = Object.getOwnPropertyNames(Object.getPrototypeOf(err))
       .reduce((acc, curr) => { return acc[curr] = err[curr], acc; }, {});
-    logger.error('Database connection error', { err: safeError, dbHost, dbPort, dbName, attempt: i });
+    logger?.error('Database connection error', { err: safeError, dbHost, dbPort, dbName, attempt: i });
     mainError = err;
   }
   throw mainError;
@@ -119,7 +119,7 @@ export const create = async (conf: any, logger: any, graphName?: string, edgeDef
         const viewCfg = JSON.parse(fs.readFileSync(path, 'utf8'));
         await db.createAnalyzerAndView(viewCfg, collectionName);
       } catch (error) {
-        logger.error('Error creating analyzer or view', {
+        logger?.error('Error creating analyzer or view', {
           code: error.code, message: error.message, stack: error.stack
         });
       }

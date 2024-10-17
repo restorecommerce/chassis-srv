@@ -19,15 +19,13 @@ import { TraversalResponse } from './interface';
 import { Logger } from 'winston';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
-  graph: Graph;
-  edgeDefConfig: any;
-  logger: Logger;
-
-  constructor(conn: Database, graph: Graph, edgeDefConfig: any, logger: Logger) {
-    super(conn);
-    this.graph = graph;
-    this.edgeDefConfig = edgeDefConfig; // edge definition config
-    this.logger = logger;
+  constructor(
+    db: Database,
+    public readonly graph: Graph,
+    public readonly edgeDefConfig: any,
+    public readonly logger: Logger
+  ) {
+    super(db);
   }
 
   /**
