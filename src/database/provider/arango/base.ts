@@ -18,20 +18,16 @@ export interface CustomQuery {
  * ArangoDB database provider.
  */
 export class Arango implements DatabaseProvider {
-  db: Database;
-  customQueries: Map<string, CustomQuery>;
-  collectionNameAnalyzerMap: Map<string, ViewMap>;
-  logger: Logger;
+  public readonly customQueries = new Map<string, CustomQuery>();
+  public readonly collectionNameAnalyzerMap = new Map<string, ViewMap>();
   /**
    *
    * @param {Object} conn Arangojs database connection.
    */
-  constructor(conn: any, logger?: Logger) {
-    this.db = conn;
-    this.customQueries = new Map<string, CustomQuery>();
-    this.logger = logger;
-    this.collectionNameAnalyzerMap = new Map<string, ViewMap>();
-  }
+  constructor(
+    public readonly db: Database,
+    public readonly logger?: Logger,
+  ) {}
 
   /**
    * Find documents based on filter.
@@ -44,7 +40,7 @@ export class Arango implements DatabaseProvider {
   async find(collectionName: string, filter?: any, options?: any): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for find operation');
+      this.logger?.error('invalid or missing collection argument for find operation');
       throw new Error('invalid or missing collection argument for find operation');
     }
 
@@ -58,7 +54,7 @@ export class Arango implements DatabaseProvider {
     if (!_.isEmpty(opts.customQueries)) {
       for (let queryName of opts.customQueries) {
         if (!this.customQueries.has(queryName)) {
-          this.logger.error(`custom query ${query} not found`);
+          this.logger?.error(`custom query ${query} not found`);
           throw new Error(`custom query ${query} not found`);
         }
         const customQuery = this.customQueries.get(queryName);
@@ -133,7 +129,7 @@ export class Arango implements DatabaseProvider {
         // override sortQuery (to rank based on score for frequency search match - term frequency–inverse document frequency algorithm TF-IDF)
         sortQuery = `SORT TFIDF(node) DESC`;
       } else {
-        this.logger.info(`View and analyzer configuration data not set for ${collectionName} and hence ignoring search string`);
+        this.logger?.info(`View and analyzer configuration data not set for ${collectionName} and hence ignoring search string`);
       }
     }
 
@@ -196,12 +192,12 @@ export class Arango implements DatabaseProvider {
   async findByID(collectionName: string, ids: string | string[]): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) ||
       _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for findByID operation');
+      this.logger?.error('invalid or missing collection argument for findByID operation');
       throw new Error('invalid or missing collection argument for findByID operation');
     }
 
     if (_.isNil(ids)) {
-      this.logger.error('invalid or missing ids argument for findByID operation');
+      this.logger?.error('invalid or missing ids argument for findByID operation');
       throw new Error('invalid or missing ids argument for findByID operation');
     }
     if (!_.isArray(ids)) {
@@ -269,21 +265,21 @@ export class Arango implements DatabaseProvider {
     let updateDocsResponse = [];
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for update operation');
+      this.logger?.error('invalid or missing collection argument for update operation');
       throw new Error('invalid or missing collection argument for update operation');
     }
     if (_.isNil(documents)) {
-      this.logger.error('invalid or missing document argument for update operation');
+      this.logger?.error('invalid or missing document argument for update operation');
       throw new Error('invalid or missing document argument for update operation');
     }
     const collection = this.db.collection(collectionName);
     const collectionExists = await collection.exists();
     if (!collectionExists) {
-      this.logger.error(`Collection ${collectionName} does not exist for update operation`);
+      this.logger?.error(`Collection ${collectionName} does not exist for update operation`);
       throw new Error(`Collection ${collectionName} does not exist for update operation`);
     }
     if (!_.isArray(documents)) {
-      this.logger.error(`Documents should be list for update operation`);
+      this.logger?.error(`Documents should be list for update operation`);
       throw new Error(`Documents should be list for update operation`);
     }
     const docsWithHandlers = await this.getDocumentHandlers(collectionName, collection, documents);
@@ -326,11 +322,11 @@ export class Arango implements DatabaseProvider {
   async upsert(collectionName: string, documents: any): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for upsert operation');
+      this.logger?.error('invalid or missing collection argument for upsert operation');
       throw new Error('invalid or missing collection argument for upsert operation');
     }
     if (_.isNil(documents)) {
-      this.logger.error('invalid or missing documents argument for upsert operation');
+      this.logger?.error('invalid or missing documents argument for upsert operation');
       throw new Error('invalid or missing documents argument for upsert operation');
     }
     let docs = _.cloneDeep(documents);
@@ -344,7 +340,7 @@ export class Arango implements DatabaseProvider {
     const collection = this.db.collection(collectionName);
     const collectionExists = await collection.exists();
     if (!collectionExists) {
-      this.logger.error(`Collection ${collectionName} does not exist for upsert operation`);
+      this.logger?.error(`Collection ${collectionName} does not exist for upsert operation`);
       throw new Error(`Collection ${collectionName} does not exist for upsert operation`);
     }
     let upsertedDocs = await collection.saveAll(docs, { returnNew: true, overwriteMode: 'update' });
@@ -371,17 +367,17 @@ export class Arango implements DatabaseProvider {
   async delete(collectionName: string, ids: string[]): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument');
+      this.logger?.error('invalid or missing collection argument');
       throw new Error('invalid or missing collection argument');
     }
     if (_.isNil(ids) || _.isEmpty(ids)) {
-      this.logger.error('invalid or missing document IDs argument for delete operation');
+      this.logger?.error('invalid or missing document IDs argument for delete operation');
       throw new Error('invalid or missing document IDs argument for delete operation');
     }
     const collection = this.db.collection(collectionName);
     const collectionExists = await collection.exists();
     if (!collectionExists) {
-      this.logger.error(`Collection ${collectionName} does not exist for delete operation`);
+      this.logger?.error(`Collection ${collectionName} does not exist for delete operation`);
       throw new Error(`Collection ${collectionName} does not exist for delete operation`);
     }
 
@@ -419,7 +415,7 @@ export class Arango implements DatabaseProvider {
   async count(collectionName: string, filter: any): Promise<any> {
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for count operation');
+      this.logger?.error('invalid or missing collection argument for count operation');
       throw new Error('invalid or missing collection argument for count operation');
     }
     let filterQuery: any = filter || {};
@@ -481,12 +477,12 @@ export class Arango implements DatabaseProvider {
       for (let view of viewName) {
         try {
           let response = await this.db.view(view).drop();
-          this.logger.info(`View ${view} dropped successfully`, response);
+          this.logger?.info(`View ${view} dropped successfully`, response);
           if (response === true) {
             dropViewResponse.push({ id: view, code: 200, message: `View ${view} dropped successfully` });
           }
         } catch (err) {
-          this.logger.error(`Error dropping View ${view}`, { code: err.code, message: err.message, stack: err.stack });
+          this.logger?.error(`Error dropping View ${view}`, { code: err.code, message: err.message, stack: err.stack });
           dropViewResponse.push({ id: view, code: err.code, message: err.message });
         }
       }
@@ -504,12 +500,12 @@ export class Arango implements DatabaseProvider {
       for (let analyzer of analyzerName) {
         try {
           let response = await this.db.analyzer(analyzer).drop();
-          this.logger.info(`Analyzer ${analyzer} deleted successfully`, response);
+          this.logger?.info(`Analyzer ${analyzer} deleted successfully`, response);
           if (response.code === 200 && response.error === false) {
             deleteResponse.push({ id: analyzer, code: response.code, message: `Analyzer ${analyzer} deleted successfully` });
           }
         } catch (err) {
-          this.logger.error(`Error deleting analyzer ${analyzer}`, { code: err.code, message: err.message, stack: err.stack });
+          this.logger?.error(`Error deleting analyzer ${analyzer}`, { code: err.code, message: err.message, stack: err.stack });
           deleteResponse.push({ id: analyzer, code: err.code, message: err.message });
         }
       }
@@ -525,11 +521,11 @@ export class Arango implements DatabaseProvider {
    */
   async insert(collectionName: string, documents: any): Promise<any> {
     if (_.isNil(collectionName) || !_.isString(collectionName) || _.isEmpty(collectionName)) {
-      this.logger.error('invalid or missing collection argument for insert operation');
+      this.logger?.error('invalid or missing collection argument for insert operation');
       throw new Error('invalid or missing collection argument for insert operation');
     }
     if (_.isNil(documents)) {
-      this.logger.error('invalid or missing documents argument for insert operation');
+      this.logger?.error('invalid or missing documents argument for insert operation');
       throw new Error('invalid or missing documents argument for insert operation');
     }
     let docs = _.cloneDeep(documents);
@@ -578,7 +574,7 @@ export class Arango implements DatabaseProvider {
    */
   unregisterCustomQuery(name: string): void {
     if (!this.customQueries.has(name)) {
-      this.logger.error('custom function not found');
+      this.logger?.error('custom function not found');
       throw new Error('custom function not found');
     }
     this.customQueries.delete(name);
@@ -590,11 +586,11 @@ export class Arango implements DatabaseProvider {
 
   async createAnalyzerAndView(viewConfig: ViewAnalyzerOptions, collectionName: string): Promise<void> {
     if (!viewConfig.view.viewName || !viewConfig?.view?.options) {
-      this.logger.error(`View name or view configuration missing for ${collectionName}`);
+      this.logger?.error(`View name or view configuration missing for ${collectionName}`);
       throw new Error(`View name or view configuration missing for ${collectionName}`);
     }
     if ((!viewConfig?.analyzers) || (viewConfig.analyzers.length === 0) || !(viewConfig.analyzerOptions)) {
-      this.logger.error(`Analyzer options or configuration missing for ${collectionName}`);
+      this.logger?.error(`Analyzer options or configuration missing for ${collectionName}`);
       throw new Error(`Analyzer options or configuration missing for ${collectionName}`);
     }
     // create analyzer if it does not exist
@@ -605,13 +601,13 @@ export class Arango implements DatabaseProvider {
           let analyzerCfg = viewConfig.analyzerOptions.filter((optionsCfg) => Object.keys(optionsCfg)[0] === analyzerName);
           if (analyzerCfg?.length === 1) {
             await analyzer.create(analyzerCfg[0][analyzerName] as any);
-            this.logger.info(`Analyzer ${analyzerName} created successfully`);
+            this.logger?.info(`Analyzer ${analyzerName} created successfully`);
           }
         } catch (err) {
-          this.logger.error(`Error creating analyzer ${analyzerName}`, { code: err.code, message: err.message, stack: err.stack });
+          this.logger?.error(`Error creating analyzer ${analyzerName}`, { code: err.code, message: err.message, stack: err.stack });
         }
       } else {
-        this.logger.info(`Analyzer ${analyzerName} already exists`);
+        this.logger?.info(`Analyzer ${analyzerName} already exists`);
       }
     }
 
@@ -621,11 +617,11 @@ export class Arango implements DatabaseProvider {
     try {
       if (!collectionExists) {
         await collection.create();
-        this.logger.info(`Collection ${collectionName} created successfully`);
+        this.logger?.info(`Collection ${collectionName} created successfully`);
       }
     } catch (err) {
       if (err.message && err.message.indexOf('duplicate name') == -1) {
-        this.logger.error(`Error creating collection ${collectionName}`, { code: err.code, message: err.message, stack: err.stack });
+        this.logger?.error(`Error creating collection ${collectionName}`, { code: err.code, message: err.message, stack: err.stack });
         throw err;
       }
     }
@@ -636,12 +632,12 @@ export class Arango implements DatabaseProvider {
     if (!viewExists) {
       try {
         await this.db.createView(viewConfig?.view?.viewName, viewConfig?.view?.options);
-        this.logger.info(`View ${viewConfig?.view?.viewName} created successfully`);
+        this.logger?.info(`View ${viewConfig?.view?.viewName} created successfully`);
       } catch (err) {
-        this.logger.error(`Error creating View ${viewConfig?.view?.viewName}`, { code: err.code, message: err.message, stack: err.stack });
+        this.logger?.error(`Error creating View ${viewConfig?.view?.viewName}`, { code: err.code, message: err.message, stack: err.stack });
       }
     } else {
-      this.logger.info(`View ${viewConfig?.view?.viewName} already exists`);
+      this.logger?.info(`View ${viewConfig?.view?.viewName} already exists`);
     }
     // map the collectionName with list of indexed fields, view name, analyzerslist, similarity threshold
     // to be used in find()
