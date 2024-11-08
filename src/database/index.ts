@@ -34,7 +34,7 @@ register('nedb', require('./provider/nedb').create);
  * @param [Logger] logger
  * @return {Promise} New, active and ready database connection.
  */
-export const get = async (config: any, logger: Logger, graphName?: string, edgeConfig?: any): Promise<DatabaseProvider> => {
+export const get = async (config: any, logger?: Logger, graphName?: string, edgeConfig?: any): Promise<DatabaseProvider> => {
   const db = databases[config.provider];
   if (!db) {
     throw new Error(`database provider ${config.provider} does not exist`);
