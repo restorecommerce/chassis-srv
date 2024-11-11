@@ -229,8 +229,10 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     if (_.isNil(dropCollection)) {
       dropCollection = false;
     }
-    const collection = await this.graph.removeVertexCollection(collectionName,
-      dropCollection);
+    const collection = await this.graph.removeVertexCollection(
+      collectionName,
+      dropCollection
+    );
     return collection;
   }
 
@@ -492,16 +494,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     return result;
   }
 
-  arrUnique(arr) {
-    let cleaned = [];
-    arr.forEach((itm) => {
-      let unique = true;
-      cleaned.forEach((itm2) => {
-        if (_.isEqual(itm, itm2)) unique = false;
-      });
-      if (unique) cleaned.push(itm);
-    });
-    return cleaned;
+  arrUnique<T>(arr: T[]) {
+    return [... new Set<T>(arr)];
   }
 
   /**
