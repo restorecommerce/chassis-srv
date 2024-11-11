@@ -44,8 +44,8 @@ export class Arango implements DatabaseProvider {
       throw new Error('invalid or missing collection argument for find operation');
     }
 
-    let filterQuery: any = filter || {};
-    const opts = options || {};
+    let filterQuery: any = filter ?? {};
+    const opts = options ?? {};
     let filterResult: any;
     let bindVars: any;
 
