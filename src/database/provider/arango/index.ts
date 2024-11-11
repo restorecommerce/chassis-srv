@@ -85,13 +85,6 @@ const connect = async (conf: any, logger: Logger): Promise<any> => {
  * @return {Arango}        ArangoDB provider
  */
 export const create = async (conf: any, logger: any, graphName?: string, edgeDefConfig?: any): Promise<Arango> => {
-  if (!logger) {
-    logger = {
-      verbose: () => { },
-      info: () => { },
-      error: () => { },
-    };
-  }
   let graph;
   const conn = await connect(conf, logger);
   let db: Arango;

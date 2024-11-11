@@ -21,9 +21,9 @@ import { Logger } from 'winston';
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   constructor(
     db: Database,
-    public readonly logger: Logger,
     public readonly graph: Graph,
     public readonly edgeDefConfig: any,
+    public readonly logger?: Logger,
   ) {
     super(db);
   }

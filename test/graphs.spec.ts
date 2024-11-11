@@ -1,3 +1,4 @@
+import {} from 'mocha';
 import * as should from 'should';
 import * as _ from 'lodash';
 import { createLogger } from '@restorecommerce/logger';
@@ -24,16 +25,8 @@ const providers = [
   }
 ];
 
-const arrUnique = (arr) => {
-  let cleaned = [];
-  arr.forEach((itm) => {
-    let unique = true;
-    cleaned.forEach((itm2) => {
-      if (_.isEqual(itm, itm2)) unique = false;
-    });
-    if (unique) cleaned.push(itm);
-  });
-  return cleaned;
+const arrUnique = <T>(arr: T[]) => {
+  return [...new Set<T>(arr)];
 };
 
 const testProvider = (providerCfg) => {
