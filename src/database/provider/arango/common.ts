@@ -10,7 +10,7 @@ import Long from 'long';
  * @return {Promise} arangojs query result
  */
 export const query = async (db: any, collectionName: string, query: string | any,
-  args?: Object): Promise<any> => {
+  args?: object): Promise<any> => {
   const collection = db.collection(collectionName);
   const collectionExists = await collection.exists();
   try {
@@ -54,7 +54,7 @@ const ensureKey = (document: any): any => {
 const ensureDatatypes = (document: any): any => {
   const doc = _.clone(document);
   const keys = _.keys(doc);
-  for (let key of keys) {
+  for (const key of keys) {
     if (Long.isLong(doc[key])) {
       doc[key] = (doc[key] as Long).toNumber();
     }
@@ -67,7 +67,7 @@ const ensureDatatypes = (document: any): any => {
  * @param {Object} document A document returned from arangodb.
  * @return {Object} A clone of the document without arangodb specific fields.
  */
-export const sanitizeOutputFields = (document: Object): Object => {
+export const sanitizeOutputFields = (document: object): object => {
   const doc = _.clone(document);
   _.unset(doc, '_id');
   _.unset(doc, '_key');
@@ -131,13 +131,13 @@ export const autoCastValue = (value: any): any => {
  * @return {any} query template string and bind variables
  */
 
-export const buildComparison = (filter: any, op: String, index: number,
+export const buildComparison = (filter: any, op: string, index: number,
   bindVarsMap: any): any => {
   const ele = _.map(filter, (e) => {
     if (!_.isArray(e)) {
       e = [e];
     }
-    e = buildFilter(e, index, bindVarsMap); // eslint-disable-line
+    e = buildFilter(e, index, bindVarsMap);  
     index += 1;
     return e.q;
   });
@@ -164,8 +164,8 @@ export const buildComparison = (filter: any, op: String, index: number,
  * @return {String} query template string
  */
 export const buildField = (key: any, value: any, index: number, bindVarsMap: any): string => {
-  let bindValueVar = `@value${index}`;
-  let bindValueVarWithOutPrefix = `value${index}`;
+  const bindValueVar = `@value${index}`;
+  const bindValueVarWithOutPrefix = `value${index}`;
   if (_.isString(value) || _.isBoolean(value) || _.isNumber(value || _.isDate(value))) {
     bindVarsMap[bindValueVarWithOutPrefix] = autoCastValue(value);
     return autoCastKey(key, value) + ' == ' + bindValueVar;
@@ -227,8 +227,8 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
     return autoCastKey(key, '') + ' == ' + bindValueVar;
   }
   if (!_.isNil((value as any).$startswith)) {
-    let bindValueVar1 = `@value${index + 1}`;
-    let bindValueVarWithOutPrefix1 = `value${index + 1}`;
+    const bindValueVar1 = `@value${index + 1}`;
+    const bindValueVarWithOutPrefix1 = `value${index + 1}`;
     const k = autoCastKey(key);
     const v = autoCastValue((value as any).$startswith);
     bindVarsMap[bindValueVarWithOutPrefix] = v;
@@ -236,8 +236,8 @@ export const buildField = (key: any, value: any, index: number, bindVarsMap: any
     return `LEFT(${k}, LENGTH(${bindValueVar})) == ${bindValueVar1}`;
   }
   if (!_.isNil((value as any).$endswith)) {
-    let bindValueVar1 = `@value${index + 1}`;
-    let bindValueVarWithOutPrefix1 = `value${index + 1}`;
+    const bindValueVar1 = `@value${index + 1}`;
+    const bindValueVarWithOutPrefix1 = `value${index + 1}`;
     const k = autoCastKey(key);
     const v = autoCastValue((value as any).$endswith);
     bindVarsMap[bindValueVarWithOutPrefix] = v;
@@ -264,7 +264,7 @@ export const buildFilter = (filter: any, index?: number, bindVarsMap?: any): any
   if (filter.length > 0) {
     let q: any = '';
     let multipleFilters = false;
-    for (let eachFilter of filter) {
+    for (const eachFilter of filter) {
       _.forEach(eachFilter, (value, key) => {
         switch (key) {
           case '$or':
@@ -358,8 +358,8 @@ export const buildSorter = (options: any, index?: number, bindVarsMap?: any): an
   });
   let sortKeysOrder = '';
   let i = 1;
-  let objLength = Object.keys(sort).length;
-  for (let key in sort) {
+  const objLength = Object.keys(sort).length;
+  for (const key in sort) {
     if (objLength == i) {
       // Do not append ',' for the last element
       sortKeysOrder = `${sortKeysOrder} ${key} ${sort[key]} `;
@@ -374,7 +374,7 @@ export const buildSorter = (options: any, index?: number, bindVarsMap?: any): an
 export const buildReturn = (options: any): any => {
   let excludeIndex = 0;
   let includeIndex = 0;
-  let bindVarsMap = {};
+  const bindVarsMap = {};
   let q = '';
   if (_.isNil(options.fields) || _.isEmpty(options.fields)) {
     return { q, bindVarsMap };
@@ -409,6 +409,6 @@ export const buildReturn = (options: any): any => {
   return { q, bindVarsMap };
 };
 
-export const encodeMessage = (object: Object) => {
+export const encodeMessage = (object: object) => {
   return Buffer.from(JSON.stringify(object));
 };

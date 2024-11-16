@@ -79,13 +79,13 @@ const convertFilterToObject = (filter, obj, operatorList) => {
           temp[operatorList[i]].push({ [filter.field]: { $not: { $eq: value } } });
         }
       } else {
-        let op, opValue;
+        let opValue;
         if (typeof filter.operation === 'string' || filter.operation instanceof String) {
           opValue = filter.operation;
         } else if (Number.isInteger(filter.operation)) {
           opValue = filterOperationMap.get(filter.operation);
         }
-        op = `$${opValue}`;
+        const op = `$${opValue}`;
         if (_.isArray(temp)) {
           temp.push({ [filter.field]: { [op]: value } });
         } else {
@@ -172,7 +172,7 @@ export const toTraversalFilterObject = (input: any, obj?: any, operatorList?: st
       const operator = input.operator ? `$${input.operator}` : '$and';
       obj = { [operator]: [] };
     }
-    for (let filterObj of filters) {
+    for (const filterObj of filters) {
       obj = toTraversalFilterObject(filterObj, obj, operatorList);
     }
   } else if (filters.field && (filters.operation || filters.operation === 0) && filters.value != undefined) {
@@ -239,12 +239,12 @@ export const autoCastValue = (value: any): any => {
  * @param {string} op comparision operator
  * @return {any} query template string and bind variables
  */
-export const buildComparison = (filter: any, op: String, root?: boolean): any => {
+export const buildComparison = (filter: any, op: string, root?: boolean): any => {
   const ele = _.map(filter, (e) => {
     if (!_.isArray(e)) {
       e = [e];
     }
-    e = buildGraphFilter(e, root); // eslint-disable-line
+    e = buildGraphFilter(e, root);
     return e.q;
   });
 
@@ -351,7 +351,7 @@ export const buildGraphFilter = (filter: any, root?: boolean): any => {
   if (filter.length > 0) {
     let q: any = '';
     let multipleFilters = false;
-    for (let eachFilter of filter) {
+    for (const eachFilter of filter) {
       _.forEach(eachFilter, (value, key) => {
         switch (key) {
           case '$or':
@@ -416,7 +416,7 @@ export const recursiveFindEntities = (collection, edgeDefConfig, direction, enti
   } else if (direction === Direction.INBOUND) {
     items = edgeDefConfig.filter(col => col.to === collection);
   }
-  for (let item of items) {
+  for (const item of items) {
     if (direction === Direction.OUTBOUND) {
       recursiveFindEntities(item.to, edgeDefConfig, direction, entitiesList);
     } else if (direction === Direction.INBOUND) {
@@ -462,8 +462,8 @@ export const buildGraphSorter = (sortList: any): any => {
   });
   let sortKeysOrder = '';
   let i = 1;
-  let objLength = Object.keys(sort).length;
-  for (let key in sort) {
+  const objLength = Object.keys(sort).length;
+  for (const key in sort) {
     if (objLength == i) {
       // Do not append ',' for the last element
       sortKeysOrder = `${sortKeysOrder} ${key} ${sort[key]} `;
@@ -486,7 +486,7 @@ export const createGraphsAssociationFilter = (filters: GraphFilters[],
     if (!_.isArray(filters)) {
       filters = [filters];
     }
-    for (let eachFilter of filters) {
+    for (const eachFilter of filters) {
       if (eachFilter.entity && eachFilter.entity === traversalCollectionName) {
         rootEntityFilter = toTraversalFilterObject(eachFilter);
         continue;
@@ -559,13 +559,13 @@ export const createGraphsAssociationFilter = (filters: GraphFilters[],
     filteredEntities = filteredEntities.sort();
     completeEntities = completeEntities.sort();
     if (!_.isEqual(filteredEntities, completeEntities)) {
-      for (let removeEntity of _.intersection(filteredEntities, completeEntities)) {
+      for (const removeEntity of _.intersection(filteredEntities, completeEntities)) {
         completeEntities.splice(completeEntities.indexOf(removeEntity), 1);
       }
     }
     // AQL query for missing entities
     if (completeEntities && completeEntities.length > 0) {
-      for (let missingEntity of completeEntities) {
+      for (const missingEntity of completeEntities) {
         filter = filter + ` || ( v._id LIKE "${missingEntity}%" )`;
       }
     }

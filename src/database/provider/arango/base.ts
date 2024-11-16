@@ -1,4 +1,5 @@
 import { Database, aql } from 'arangojs';
+import DocumentOperationFailure from 'arangojs';
 import * as _ from 'lodash';
 import {
   buildFilter, buildSorter, buildLimiter, buildReturn,
@@ -52,7 +53,7 @@ export class Arango implements DatabaseProvider {
     let customFilter = '';
     // checking if a custom query should be used
     if (!_.isEmpty(opts.customQueries)) {
-      for (let queryName of opts.customQueries) {
+      for (const queryName of opts.customQueries) {
         if (!this.customQueries.has(queryName)) {
           this.logger?.error(`custom query ${query} not found`);
           throw new Error(`custom query ${query} not found`);
@@ -81,8 +82,8 @@ export class Arango implements DatabaseProvider {
     }
 
     let sortQuery = buildSorter(opts);
-    let limitQuery = buildLimiter(opts);
-    let returnResult = buildReturn(opts);
+    const limitQuery = buildLimiter(opts);
+    const returnResult = buildReturn(opts);
     let returnQuery = returnResult.q;
     // return complete node in case no specific fields are specified
     if (_.isEmpty(returnQuery)) {
@@ -103,7 +104,7 @@ export class Arango implements DatabaseProvider {
         if (caseSensitive) {
           // for casesensitive search use "ngram" analayzer type
           analyzerOptions.forEach((optionObj) => {
-            let keyName = Object.keys(optionObj)[0];
+            const keyName = Object.keys(optionObj)[0];
             if (optionObj[keyName].type === 'ngram') {
               analyzerName = JSON.stringify(keyName);
             }
@@ -111,13 +112,13 @@ export class Arango implements DatabaseProvider {
         } else {
           // for case-insensitive search use "pipleline" type (ngram + norm)
           analyzerOptions.forEach((optionObj) => {
-            let keyName = Object.keys(optionObj)[0];
+            const keyName = Object.keys(optionObj)[0];
             if (optionObj[keyName].type === 'pipeline') {
               analyzerName = JSON.stringify(keyName);
             }
           });
         }
-        for (let field of searchFields) {
+        for (const field of searchFields) {
           if (!searchQuery) {
             searchQuery = `NGRAM_MATCH(node.${field}, ${searchString}, ${similarityThreshold}, ${analyzerName}) `;
           } else {
@@ -207,8 +208,8 @@ export class Arango implements DatabaseProvider {
       return { id };
     });
 
-    let filterResult = buildFilter(filter);
-    let filterQuery = filterResult.q;
+    const filterResult = buildFilter(filter);
+    const filterQuery = filterResult.q;
 
     let varArgs = {};
     if (filterResult && filterResult.bindVarsMap) {
@@ -240,14 +241,14 @@ export class Arango implements DatabaseProvider {
       documents = [documents];
     }
     if (documents && documents.length > 0) {
-      for (let doc of documents) {
+      for (const doc of documents) {
         ids.push(doc.id);
       }
     }
     if (!_.isEmpty(idsArray) && _.isArray(idsArray)) {
       ids = idsArray;
     }
-    let queryString = aql`FOR node in ${collection}
+    const queryString = aql`FOR node in ${collection}
       FILTER node.id IN ${ids} return node`;
     const res = await query(this.db, collectionName, queryString);
     const docsWithSelector = await res.all();
@@ -261,8 +262,8 @@ export class Arango implements DatabaseProvider {
    * @param  {Object} updateDocuments  List of documents to update
    */
   async update(collectionName: string, updateDocuments: any): Promise<any> {
-    let documents = _.cloneDeep(updateDocuments);
-    let updateDocsResponse = [];
+    const documents = _.cloneDeep(updateDocuments);
+    const updateDocsResponse = [];
     if (_.isNil(collectionName) ||
       !_.isString(collectionName) || _.isEmpty(collectionName)) {
       this.logger?.error('invalid or missing collection argument for update operation');
@@ -285,9 +286,9 @@ export class Arango implements DatabaseProvider {
     const docsWithHandlers = await this.getDocumentHandlers(collectionName, collection, documents);
 
     // update _key for the input documents
-    for (let document of documents) {
+    for (const document of documents) {
       let foundInDB = false;
-      for (let docWithHandler of docsWithHandlers) {
+      for (const docWithHandler of docsWithHandlers) {
         if (docWithHandler.id === document.id) {
           foundInDB = true;
           document._key = docWithHandler._key;
@@ -301,10 +302,10 @@ export class Arango implements DatabaseProvider {
       }
     }
 
-    let updatedDocs = await collection.updateAll(documents, { returnNew: true });
-    for (let doc of updatedDocs) {
-      if (doc && doc.new) {
-        updateDocsResponse.push(sanitizeOutputFields(doc.new));
+    const updatedDocs = await collection.updateAll(documents, { returnNew: true });
+    for (const doc of updatedDocs) {
+      if ('new' in doc) {
+        updateDocsResponse.push(sanitizeOutputFields(doc?.new));
       } else {
         updateDocsResponse.push(doc);
       }
@@ -336,7 +337,7 @@ export class Arango implements DatabaseProvider {
     _.forEach(docs, (document, i) => {
       docs[i] = sanitizeInputFields(document);
     });
-    let upsertResponse = [];
+    const upsertResponse = [];
     const collection = this.db.collection(collectionName);
     const collectionExists = await collection.exists();
     if (!collectionExists) {
@@ -347,8 +348,8 @@ export class Arango implements DatabaseProvider {
     if (!_.isArray(upsertedDocs)) {
       upsertedDocs = [upsertedDocs];
     }
-    for (let doc of upsertedDocs) {
-      if (doc && doc.new) {
+    for (const doc of upsertedDocs) {
+      if ('new' in doc) {
         upsertResponse.push(sanitizeOutputFields(doc.new));
       } else {
         upsertResponse.push(doc);
@@ -383,10 +384,10 @@ export class Arango implements DatabaseProvider {
 
     // retreive _key for the give ids
     const docsWithHandlers = await this.getDocumentHandlers(collectionName, collection, null, ids);
-    for (let id of ids) {
+    for (const id of ids) {
       // check if given id is present in docsWithHandlers
       let foundDocInDB = false;
-      for (let doc of docsWithHandlers) {
+      for (const doc of docsWithHandlers) {
         if (doc.id === id) {
           foundDocInDB = true;
           break;
@@ -398,8 +399,8 @@ export class Arango implements DatabaseProvider {
         docsWithHandlers.push({ _key: id });
       }
     }
-    let deleteHandlerIds = [];
-    for (let doc of docsWithHandlers) {
+    const deleteHandlerIds = [];
+    for (const doc of docsWithHandlers) {
       deleteHandlerIds.push(doc._key);
     }
 
@@ -436,7 +437,7 @@ export class Arango implements DatabaseProvider {
     if (filterResult && filterResult.bindVarsMap) {
       varArgs = filterResult.bindVarsMap;
     }
-    let queryString = `FOR node in @@collection FILTER ${filterQuery} COLLECT WITH COUNT
+    const queryString = `FOR node in @@collection FILTER ${filterQuery} COLLECT WITH COUNT
       INTO length RETURN length`;
     const bindVars = Object.assign({
       '@collection': collectionName
@@ -472,11 +473,11 @@ export class Arango implements DatabaseProvider {
    * @param string[] list of view names.
    */
   async dropView(viewName: string[]): Promise<any> {
-    let dropViewResponse = [];
+    const dropViewResponse = [];
     if (viewName.length > 0) {
-      for (let view of viewName) {
+      for (const view of viewName) {
         try {
-          let response = await this.db.view(view).drop();
+          const response = await this.db.view(view).drop();
           this.logger?.info(`View ${view} dropped successfully`, response);
           if (response === true) {
             dropViewResponse.push({ id: view, code: 200, message: `View ${view} dropped successfully` });
@@ -495,11 +496,11 @@ export class Arango implements DatabaseProvider {
    * @param string[] list of analyzer names.
    */
   async deleteAnalyzer(analyzerName: string[]): Promise<any> {
-    let deleteResponse = [];
+    const deleteResponse = [];
     if (analyzerName.length > 0) {
-      for (let analyzer of analyzerName) {
+      for (const analyzer of analyzerName) {
         try {
-          let response = await this.db.analyzer(analyzer).drop();
+          const response = await this.db.analyzer(analyzer).drop();
           this.logger?.info(`Analyzer ${analyzer} deleted successfully`, response);
           if (response.code === 200 && response.error === false) {
             deleteResponse.push({ id: analyzer, code: response.code, message: `Analyzer ${analyzer} deleted successfully` });
@@ -540,13 +541,13 @@ export class Arango implements DatabaseProvider {
     if (!collectionExists) {
       await collection.create();
     }
-    let insertResponse = [];
+    const insertResponse = [];
     let createdDocs = await collection.saveAll(docs, { returnNew: true });
     if (!_.isArray(createdDocs)) {
       createdDocs = [createdDocs];
     }
-    for (let doc of createdDocs) {
-      if (doc && doc.new) {
+    for (const doc of createdDocs) {
+      if ('new' in doc) {
         insertResponse.push(sanitizeOutputFields(doc.new));
       } else {
         insertResponse.push(doc);
@@ -594,11 +595,11 @@ export class Arango implements DatabaseProvider {
       throw new Error(`Analyzer options or configuration missing for ${collectionName}`);
     }
     // create analyzer if it does not exist
-    for (let analyzerName of viewConfig.analyzers) {
+    for (const analyzerName of viewConfig.analyzers) {
       const analyzer = this.db.analyzer(analyzerName);
       if (!(await analyzer.exists())) {
         try {
-          let analyzerCfg = viewConfig.analyzerOptions.filter((optionsCfg) => Object.keys(optionsCfg)[0] === analyzerName);
+          const analyzerCfg = viewConfig.analyzerOptions.filter((optionsCfg) => Object.keys(optionsCfg)[0] === analyzerName);
           if (analyzerCfg?.length === 1) {
             await analyzer.create(analyzerCfg[0][analyzerName] as any);
             this.logger?.info(`Analyzer ${analyzerName} created successfully`);
@@ -628,7 +629,7 @@ export class Arango implements DatabaseProvider {
 
     // create view if it does not exist
     const view = this.db.view(viewConfig.view.viewName);
-    let viewExists = await view.exists();
+    const viewExists = await view.exists();
     if (!viewExists) {
       try {
         await this.db.createView(viewConfig?.view?.viewName, viewConfig?.view?.options);

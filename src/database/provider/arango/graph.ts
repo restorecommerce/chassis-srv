@@ -4,7 +4,7 @@ import { Database } from 'arangojs';
 import { Arango } from './base';
 import { sanitizeInputFields, sanitizeOutputFields } from './common';
 import { GraphDatabaseProvider } from '../..';
-import { Graph } from 'arangojs/graph';
+import { Graph, EdgeDefinitionOptions } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
 import { buildGraphFilter, buildGraphLimiter, buildGraphSorter, createGraphsAssociationFilter } from './utils';
 import {
@@ -36,15 +36,14 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
  * @param options — Options for creating the graph.
  * @return  {Object} A Graph instance
  */
-  async createGraphDB(graphName: string): Promise<Graph> {
+  async createGraphDB(graphName: string, edgeDefinitions: any, options: object): Promise<Graph> {
     if (!this.graph) {
-      let graph;
       if (_.isNil(graphName)) {
         throw new Error('missing graph name');
       }
-      graph = this.db.graph(graphName);
+      const graph = this.db.graph(graphName);
       try {
-        await graph.create();
+        await graph.create(edgeDefinitions, options);
       } catch (err) {
         if (err.message === 'graph already exists') {
           return this.graph;
@@ -80,8 +79,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     _.forEach(docs, (document, i) => {
       docs[i] = sanitizeInputFields(document);
     });
-    let responseDocs = [];
-    for (let eachDoc of docs) {
+    const responseDocs = [];
+    for (const eachDoc of docs) {
       let result;
       try {
         result = await collection.save(eachDoc);
@@ -108,7 +107,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
    * or a vertex (i.e. an object with an _id or _key property).
    * @return  {Object} created vertex
    */
-  async getVertex(collectionName: string, documentHandle: string): Promise<Object> {
+  async getVertex(collectionName: string, documentHandle: string): Promise<object> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
@@ -140,10 +139,10 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
       documentHandles = [documentHandles as string];
     }
     const collection = this.graph.vertexCollection(collectionName);
-    let removedVertexList = [];
-    for (let documentHandle of documentHandles) {
+    const removedVertexList = [];
+    for (const documentHandle of documentHandles) {
       const id = documentHandle.split('/')[1];
-      let removed: any = await collection.remove(documentHandle);
+      const removed: any = await collection.remove(documentHandle);
       if (!removed.error) {
         removedVertexList.push({ _id: documentHandle, _key: id, _rev: id });
       }
@@ -159,7 +158,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
    * or a vertex (i.e. an object with an _id or _key property).
    * @return  {Object} created vertex
    */
-  async getVertexCollection(collectionName: string): Promise<Object> {
+  async getVertexCollection(collectionName: string): Promise<object> {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
@@ -257,8 +256,8 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
    * edge in the collection, or a document (i.e. an object with an _id or _key property).
    * @return  {Object} edge object
    */
-  async createEdge(collectionName: string, data: Object, fromId?: string,
-    toId?: string): Promise<Object> {
+  async createEdge(collectionName: string, data: object, fromId?: string,
+    toId?: string): Promise<object> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
@@ -283,7 +282,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
    * @param  {String} documentHandle edge key
    * @return  {Object} edge object
    */
-  async getEdge(collectionName: string, documentHandle: string): Promise<Object> {
+  async getEdge(collectionName: string, documentHandle: string): Promise<object> {
     if (_.isNil(collectionName)) {
       throw new Error('missing edge collection name');
     }
@@ -424,14 +423,14 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
 
     // exclude vertices
     if (opts.exclude_vertexs) {
-      for (let excludeVertex of opts.exclude_vertexs) {
+      for (const excludeVertex of opts.exclude_vertexs) {
         filter = filter + ` FILTER v._id NOT LIKE "${excludeVertex}%" `;
       }
     }
 
     // exclude edges
     if (opts.exclude_edges) {
-      for (let excludeEdge of opts.exclude_edges) {
+      for (const excludeEdge of opts.exclude_edges) {
         filter = filter + ` FILTER e._id NOT LIKE "${excludeEdge}%" `;
       }
     }
@@ -507,7 +506,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * @return  {Object} The added edge definition
   */
   async addEdgeDefinition(edgeName: string, fromVertice: (string | ArangoCollection)[],
-    toVertice: (string | ArangoCollection)[]): Promise<Object> {
+    toVertice: (string | ArangoCollection)[]): Promise<object> {
     if (_.isNil(edgeName)) {
       throw new Error('missing edge name');
     }
@@ -553,7 +552,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   * associated with the definition will also be deleted from the database.
   * @return  {Object} replaced edge definition
   */
-  async removeEdgeDefinition(definitionName: string, dropCollection?: boolean): Promise<Object> {
+  async removeEdgeDefinition(definitionName: string, dropCollection?: boolean): Promise<object> {
     if (_.isNil(definitionName)) {
       throw new Error('missing definition name');
     }
