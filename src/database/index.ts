@@ -23,10 +23,12 @@ export const register = (name: string, provider: any): any => {
   databases[name] = provider;
 };
 
+import { create as arangodb } from './provider/arango';
+import { create as nedb } from './provider/nedb';
 
 // Add default providers
-register('arango', require('./provider/arango').create);
-register('nedb', require('./provider/nedb').create);
+register('arango', arangodb);
+register('nedb', nedb);
 
 /**
  * Get a new database connection.
@@ -60,7 +62,7 @@ export interface DatabaseProvider {
 
 
 export interface GraphDatabaseProvider extends DatabaseProvider {
-  createGraphDB(graphName: string): any;
+  createGraphDB(graphName: string, edgeDefinitions: any, options: object): any;
   createVertex(collectionName: string, data: any): any;
   getVertex(collectionName: string, documentHandle: string): any;
   removeVertex(collectionName: string, documentHandles: string | string[]): any;
@@ -70,15 +72,15 @@ export interface GraphDatabaseProvider extends DatabaseProvider {
   addVertexCollection(collectionName: string): any;
   removeVertexCollection(collectionName: string, dropCollection?: boolean): any;
   getGraphDB(): any;
-  createEdge(collectionName: string, data: Object, fromId?: string, toId?: string): any;
+  createEdge(collectionName: string, data: object, fromId?: string, toId?: string): any;
   getEdge(collectionName: string, documentHandle: string): any;
   getAllEdgesForVertice(collectionName: string, documentHandle: string): any;
   getInEdges(collectionName: string, documentHandle: string): any;
   getOutEdges(collectionName: string, documentHandle: string): any;
   traversal(startVertex: Vertices, collectionName: Collection, opts: TraversalOptions,
     filters?: GraphFilters[]): Promise<TraversalResponse>;
-  addEdgeDefinition(collectionName: string, fromVertice: Object | [Object],
-    toVertice: Object | [Object]): any;
+  addEdgeDefinition(collectionName: string, fromVertice: object | [object],
+    toVertice: object | [object]): any;
   removeEdgeDefinition(definitionName: string, dropCollection?: boolean): any;
   listGraphs(): any;
   removeEdge(collectionName: string, documentHandle: string): any;

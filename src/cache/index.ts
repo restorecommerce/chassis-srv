@@ -1,6 +1,9 @@
 import * as _ from 'lodash';
-import * as cacheManager from 'cache-manager';
+import { createCache } from 'cache-manager';
+import { Keyv } from 'keyv';
+import { LRUCache } from 'lru-cache';
 import { Logger } from 'winston';
+import { ObjectEncodingOptions } from 'fs';
 
 /**
  * A key, value map containing cache providers.
@@ -22,16 +25,16 @@ export const register = (name: string, provider: any): void => {
 // register defaults
 // add memory provider by default, since it is included with the cache-manager.
 register('memory', (config, logger) => {
-  const options: cacheManager.StoreConfig = {
-    store: 'memory',
-    max: config.max,
-    maxAge: config.maxAge,
-    dispose: config.dispose,
-    length: config.length,
-    stale: config.stale,
-    ttl: config.ttl,
+  const options = {
+    max: config?.max || 500,
+    dispose: config?.dispose,
+    allowStale: config?.allowStale,
+    ttl: config?.ttl || 5000,
   };
-  return cacheManager.caching(options);
+  const lruCache = new LRUCache(options);
+  const keyv = new Keyv({ store: lruCache });
+  const cache = createCache({ stores: [keyv] });
+  return cache;
 });
 
 /**
@@ -44,20 +47,9 @@ export const get = (config: any, logger: Logger): any => {
   if (_.isNil(config)) {
     throw new Error('missing argument config');
   }
-  const stores = _.map(config, (cacheConfig, i) => {
-    const providerName = cacheConfig.provider;
-    if (_.isNil(providerName)) {
-      throw new Error(`provider ${providerName} is not registered`);
-    }
-    const provider = providers[providerName];
-    if (_.isNil(provider)) {
-      throw new Error(`unknown ${providerName} cache store provider,
-      use function register to registrate the provider`);
-    }
-    return provider(cacheConfig, logger);
-  });
-  if (stores.length === 1) {
-    return stores[0];
-  }
-  return cacheManager.multiCaching(stores);
+
+  const providerName = config[0].provider;
+  const provider = providers[providerName];
+  const cache = provider(config, logger);
+  return cache;
 };

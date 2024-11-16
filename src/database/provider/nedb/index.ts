@@ -26,7 +26,7 @@ const convertToRegexp = (filter: any): any => {
       // neDB does not have ILIKE (LIKE with ignore case sensitive)
       // e.g.: convert %sOrT% =>  to /sort/ and find all fields
       // whose name contain the substring 'sort' using the regular expression
-      let iLikeVal = f[key].$iLike.slice(1, -1).toLowerCase();
+      const iLikeVal = f[key].$iLike.slice(1, -1).toLowerCase();
       // convert sort =>  to regexp /sort/
       f[key] = new RegExp(iLikeVal);
     } else if (_.isObject(value)) {
@@ -43,7 +43,7 @@ const convertToRegexp = (filter: any): any => {
  * @param {string} name the field name the comparison is based on.
  * @return {Object} NeDB or operator query filter.
  */
-const buildOrQuery = (options: any, name: string): Object => {
+const buildOrQuery = (options: any, name: string): object => {
   let opts = options;
   if (!_.isArray(options)) {
     opts = [options];
@@ -81,7 +81,7 @@ class NedbProvider {
       documents = [documents];
     }
     const docs = _.cloneDeep(documents);
-    for (let doc of docs) {
+    for (const doc of docs) {
       _.set(doc, '_id', doc.id);
     }
     return new Promise((resolve, reject) => {
@@ -93,7 +93,7 @@ class NedbProvider {
             errorMessage: err.message
           }]);
         } else {
-          for (let newdoc of newdocs) {
+          for (const newdoc of newdocs) {
             _.unset(newdoc, '_id');
           }
           resolve(newdocs);
@@ -110,7 +110,7 @@ class NedbProvider {
    * @param  {Object} options     options.limit, options.offset
    * @return {array.Object}            A list of found documents.
    */
-  async find(collection: string, filter: Object = {}, options: any = {}): Promise<any> {
+  async find(collection: string, filter: object = {}, options: any = {}): Promise<any> {
     const fil = convertToRegexp(filter || {});
     let q = this.collections[collection].find(fil, options.fields);
     if (options.offset) {
@@ -190,9 +190,9 @@ class NedbProvider {
     Object.keys(document).forEach((key) => {
       obj.$set[key] = document[key];
     });
-    let filter = { id: document.id }; // construct filter using document ids
+    const filter = { id: document.id }; // construct filter using document ids
     const fil = convertToRegexp(filter || {});
-    let updatedDocs = new Promise((resolve, reject) => {
+    const updatedDocs = new Promise((resolve, reject) => {
       collections[collection].update(fil, obj, { multi: true, returnUpdatedDocs: true }, (err, numReplaced, updatedDocs) => {
         if (err) {
           resolve(err);
@@ -227,8 +227,8 @@ class NedbProvider {
     if (!_.isArray(docs)) {
       docs = [docs];
     }
-    let results = [];
-    for (let doc of docs) {
+    const results = [];
+    for (const doc of docs) {
       _.set(doc, '_id', doc.id);
       const result = new Promise((resolve, reject) => {
         collections[collection].update({ _id: doc._id },
@@ -258,8 +258,8 @@ class NedbProvider {
   async delete(collection: string, ids: string[]): Promise<any> {
     const collections = this.collections;
     let fil = {};
-    let deleteResponse = [];
-    for (let id of ids) {
+    const deleteResponse = [];
+    for (const id of ids) {
       collections[collection].find({ id }, (err, docs) => {
         if (_.isEmpty(docs)) {
           deleteResponse.push({
@@ -294,7 +294,7 @@ class NedbProvider {
    * @param  {String} collection Collection name
    * @param  {Object} filter
    */
-  async count(collection: string, filter: Object = {}): Promise<any> {
+  async count(collection: string, filter: object = {}): Promise<any> {
     const collections = this.collections;
     const fil = convertToRegexp(filter || {});
     const result = new Promise((resolve, reject) => {
@@ -340,7 +340,7 @@ class NedbProvider {
  * @return {Object} key, value map containing collection names
  * as keys and the corresponding NeDB datastores as values.
  */
-const loadDatastores = async (config: any, logger: Logger): Promise<Object> => {
+const loadDatastores = async (config: any, logger: Logger): Promise<object> => {
   if (_.isNil(config.collections)) {
     throw new Error('missing collection config value');
   }
@@ -373,7 +373,7 @@ const loadDatastores = async (config: any, logger: Logger): Promise<Object> => {
  * @param {Object} [logger] Logger
  * @return {NedbProvider} NeDB provider
  */
-export const create = async (conf: Object, logger: any): Promise<any> => {
+export const create = async (conf: object, logger: any): Promise<any> => {
   let log = logger;
   if (_.isNil(logger)) {
     log = {

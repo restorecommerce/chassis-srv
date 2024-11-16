@@ -106,7 +106,7 @@ export const create = async (conf: any, logger: any, graphName?: string, edgeDef
 
   // iterate db conf and create list of views / analayzers
   if (conf?.arangoSearch?.length > 0) {
-    for (let obj of conf.arangoSearch) {
+    for (const obj of conf.arangoSearch) {
       try {
         const { collectionName, path } = obj;
         const viewCfg = JSON.parse(fs.readFileSync(path, 'utf8'));

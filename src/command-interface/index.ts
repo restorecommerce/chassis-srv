@@ -18,7 +18,7 @@ import {
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/grpc/health/v1/health';
 
 // For some reason this is required
-const crypto = require('crypto');
+import {randomBytes } from 'crypto';
 
 registerProtoMeta(protoMetadata);
 
@@ -262,7 +262,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
         let intersection: string[] = _.intersection(restoreCollections, collections);
         if (intersection.length > 0) {
           intersection = _.intersection(intersection, topicLabels);
-          for (let resource of intersection) {
+          for (const resource of intersection) {
             const topicName = kafkaCfg[`${resource}.resource`].topic;
             restoreEventSetup[topicName] = {
               topic: await this.kafkaEvents.topic(topicName),
@@ -277,11 +277,17 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
       if (_.isEmpty(restoreEventSetup)) {
         this.logger.warn('No data was setup for the restore process.');
       } else {
-        const that = this;
+        const logger = this.logger;
+        const kafkaEvents = this.kafkaEvents;
+        const config = this.config;
+        const service = this.service;
+        const encodeMsg = this.encodeMsg;
+        const commandTopic = this.commandTopic;
+        const startToReceiveRestoreMessages = this.startToReceiveRestoreMessages;
         // Start the restore process
         this.logger.warn('restoring data');
 
-        for (let topicName in restoreEventSetup) {
+        for (const topicName in restoreEventSetup) {
           const topicSetup: any = restoreEventSetup[topicName];
           const restoreTopic: Topic = topicSetup.topic;
           const topicEvents: any = topicSetup.events;
@@ -289,8 +295,8 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
           // saving listeners for potentially subscribed events on this topic,
           // so they don't get called during the restore process
           const previousEvents: string[] = _.cloneDeep(restoreTopic.subscribed);
-          const listenersBackup = new Map<string, Function[]>();
-          for (let event of previousEvents) {
+          const listenersBackup = new Map<string, object[]>();
+          for (const event of previousEvents) {
             listenersBackup.set(event, (restoreTopic.emitter as EventEmitter).listeners(event));
             await restoreTopic.removeAllListeners(event);
           }
@@ -303,7 +309,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
 
           this.logger.debug(`topic ${topicName} has current offset ${targetOffset}`);
 
-          const restoreGroupId = kafkaEventsCfg.groupId + '-restore-' + crypto.randomBytes(32).toString('hex');
+          const restoreGroupId = kafkaEventsCfg.groupId + '-restore-' + randomBytes(32).toString('hex');
 
           const consumer = (this.kafkaEvents.provider.client as KafkaJS).consumer({
             groupId: restoreGroupId
@@ -315,59 +321,59 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
             const context = _.pick(message, ['offset', 'partition', 'topic']);
             const eventListener = topicEvents[message.key];
             // decode protobuf
-            let decodedMsg = that.kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
+            let decodedMsg = kafkaEvents.provider.decodeObject(kafkaEventsCfg, eventName, msg);
             decodedMsg = _.pick(decodedMsg, _.keys(decodedMsg)); // preventing protobuf.js special fields
-            eventListener(decodedMsg, context, that.config.get(), eventName).then(() => {
+            eventListener(decodedMsg, context, config.get(), eventName).then(() => {
               done();
             }).catch((err) => {
-              that.logger.error(`Exception caught invoking restore listener for event ${eventName}`, { code: err.code, message: err.message, stack: err.stack });
+              logger.error(`Exception caught invoking restore listener for event ${eventName}`, { code: err.code, message: err.message, stack: err.stack });
               done(err);
             });
 
             if (message.offset >= targetOffset) {
-              for (let event of eventNames) {
+              for (const event of eventNames) {
                 restoreTopic.removeAllListeners(event).then(() => { }).catch((err) => {
-                  that.logger.error('Error removing listeners after restore', { code: err.code, message: err.message, stack: err.stack });
+                  logger.error('Error removing listeners after restore', { code: err.code, message: err.message, stack: err.stack });
                 });
               }
-              for (let event of previousEvents) {
+              for (const event of previousEvents) {
                 const listeners = listenersBackup.get(event);
-                for (let listener of listeners) {
+                for (const listener of listeners) {
                   restoreTopic.on(event, listener).then(() => { }).catch((err) => {
-                    that.logger.error('Error subscribing to listeners after restore', { code: err.code, message: err.message, stack: err.stack });
+                    logger.error('Error subscribing to listeners after restore', { code: err.code, message: err.message, stack: err.stack });
                   });
                 }
               }
 
               consumer.stop().then(() => consumer.disconnect()).then(() => {
                 this.kafkaEvents.provider.admin.deleteGroups([restoreGroupId]).then(() => {
-                  that.logger.debug('restore kafka group deleted');
+                  logger.debug('restore kafka group deleted');
                   const msg = {
                     topic: topicName,
                     offset: message.offset
                   };
-                  that.commandTopic.emit('restoreResponse', {
-                    services: _.keys(that.service),
-                    payload: that.encodeMsg(msg)
+                  commandTopic.emit('restoreResponse', {
+                    services: _.keys(service),
+                    payload: encodeMsg(msg)
                   }).then(() => {
-                    that.logger.info('Restore response emitted');
+                    logger.info('Restore response emitted');
                   }).catch((err) => {
-                    that.logger.error('Error emitting command response', { code: err.code, message: err.message, stack: err.stack });
+                    logger.error('Error emitting command response', { code: err.code, message: err.message, stack: err.stack });
                   });
-                  that.logger.info('restore process done');
+                  logger.info('restore process done');
                 }).catch(err => {
-                  that.logger.error('Error deleting restore kafka group', { code: err.code, message: err.message, stack: err.stack });
+                  logger.error('Error deleting restore kafka group', { code: err.code, message: err.message, stack: err.stack });
                 });
               }).catch(err => {
-                that.logger.error('Error stopping consumer', { code: err.code, message: err.message, stack: err.stack });
+                logger.error('Error stopping consumer', { code: err.code, message: err.message, stack: err.stack });
               });
             }
           };
 
-          const asyncQueue = that.startToReceiveRestoreMessages(restoreTopic, drainEvent);
+          const asyncQueue = startToReceiveRestoreMessages(restoreTopic, drainEvent);
 
           await consumer.connect().catch(err => {
-            that.logger.error('error connecting consumer', { code: err.code, message: err.message, stack: err.stack });
+            logger.error('error connecting consumer', { code: err.code, message: err.message, stack: err.stack });
             throw err;
           });
 
@@ -379,7 +385,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
             eachMessage: async (payload) => {
               if (payload.message.key.toString() in topicEvents && !_.includes(ignoreOffsets, parseInt(payload.message.offset))) {
                 asyncQueue.push(payload.message);
-                that.logger.debug(`received message ${payload.message.offset}/${targetOffset}`);
+                logger.debug(`received message ${payload.message.offset}/${targetOffset}`);
               }
             }
           });
@@ -407,7 +413,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
   }
 
   private startToReceiveRestoreMessages(restoreTopic: Topic,
-    drainEvent: Function): any {
+    drainEvent: (msg: any, err: any) => any): any {
     const asyncQueue = async.queue((msg, done) => {
       setImmediate(() => drainEvent(msg, err => {
         if (err) {
@@ -556,8 +562,8 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
     }
     let response;
     try {
-      let configProperties = Object.keys(payload);
-      for (let key of configProperties) {
+      const configProperties = Object.keys(payload);
+      for (const key of configProperties) {
         this.config.set(key, payload[key]);
       }
       response = {
@@ -589,8 +595,8 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
     }
     let response;
     try {
-      let configProperties = Object.keys(payload);
-      for (let key of configProperties) {
+      const configProperties = Object.keys(payload);
+      for (const key of configProperties) {
         this.config.set(key, payload[key]);
       }
       response = {
@@ -632,7 +638,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
     await this.redisClient.select(dbIndex);
     try {
       if (pattern != undefined) {
-        let flushPattern = '*' + pattern + '*';
+        const flushPattern = '*' + pattern + '*';
         this.logger.debug('Flushing cache wiht pattern', { dbIndex, flushPattern });
         let scanIterator;
         try {
@@ -685,17 +691,17 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
    * @param resource
    */
   makeResourcesRestoreSetup(db: any, resource: string): any {
-    const that = this;
+    const decodeBufferField = this.decodeBufferField;
     return {
       [`${resource}Created`]: async function restoreCreated(message: any,
         ctx: any, config: any, eventName: string): Promise<any> {
-        that.decodeBufferField(message, resource);
+        decodeBufferField(message, resource);
         await db.insert(`${resource}s`, message);
         return {};
       },
       [`${resource}Modified`]: async function restoreModified(message: any,
         ctx: any, config: any, eventName: string): Promise<any> {
-        that.decodeBufferField(message, resource);
+        decodeBufferField(message, resource);
         await db.update(`${resource}s`, { id: message.id }, _.omitBy(message, _.isNil));
 
         return {};

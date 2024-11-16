@@ -70,7 +70,7 @@ export class Server {
    */
   async start(): Promise<void> {
     if (!this.isBound) {
-      let credentials = grpc.ServerCredentials.createInsecure();
+      const credentials = grpc.ServerCredentials.createInsecure();
       if (_.has(this.config, 'credentials.ssl')) {
         // TODO Re-enable
         // credentials = grpc.credentials.createSsl(
@@ -94,3 +94,5 @@ export class Server {
     this.server.forceShutdown();
   }
 }
+
+export { grpc };
