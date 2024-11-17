@@ -7,10 +7,7 @@ import { createServiceConfig } from '@restorecommerce/service-config';
 import { createLogger } from '@restorecommerce/logger';
 import { createClient } from 'redis';
 import {
-  CommandInterfaceServiceDefinition
-} from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
-import {
-  CommandInterfaceServiceDefinition as CISServiceDefinition,
+  CommandInterfaceServiceDefinition,
   CommandInterfaceServiceClient
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/commandinterface';
 import {
@@ -26,7 +23,7 @@ import { Channel, createChannel } from 'nice-grpc';
  * @returns Arbitrary JSON
  */
 const decodeMsg = (msg: any): any => {
-  const decoded = Buffer.from(msg.value, 'base64').toString();
+  const decoded = Buffer.from(msg.value).toString();
   return JSON.parse(decoded);
 };
 
@@ -38,7 +35,7 @@ const decodeMsg = (msg: any): any => {
 const encodeMsg = (msg: any): any => {
 
   const stringified = JSON.stringify(msg);
-  const encoded = Buffer.from(stringified).toString('base64');
+  const encoded = Buffer.from(stringified);
   const ret = {
     type_url: 'payload',
     value: encoded
@@ -110,7 +107,7 @@ describe('CommandInterfaceService', () => {
     grpcClient = createGrpcClient({
       ...cfg.get('client:commandinterface'),
       logger
-    }, CISServiceDefinition, channel);
+    }, CommandInterfaceServiceDefinition, channel);
   });
   after(async function teardown() {
     this.timeout(30000);

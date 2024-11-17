@@ -736,7 +736,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
   * @returns Arbitrary JSON
   */
   decodeMsg(msg: any): any {
-    return JSON.parse(Buffer.from(msg.value, 'base64').toString());
+    return JSON.parse(Buffer.from(msg.value).toString());
   }
 
   /**
@@ -748,7 +748,7 @@ export class CommandInterface implements CommandInterfaceServiceImplementation {
     if (msg) {
       return {
         type_url: 'payload',
-        value: Buffer.from(JSON.stringify(msg)).toString('base64')
+        value: Buffer.from(JSON.stringify(msg))
       };
     }
   }
