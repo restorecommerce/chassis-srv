@@ -95,4 +95,4 @@ export class Server {
   }
 }
 
-export { grpc };
+export { Server as grpc };

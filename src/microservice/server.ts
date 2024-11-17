@@ -17,7 +17,7 @@ export const registerTransport = (name: string, provider: any): void => {
 };
 
 // register included providers
-registerTransport('grpc', grpc.Server);
+registerTransport('grpc', grpc);
 
 /**
  * Initializes all configured transports.
