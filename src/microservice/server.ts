@@ -2,7 +2,7 @@ import { createLogger } from '@restorecommerce/logger';
 import { Logger } from 'winston';
 import * as _ from 'lodash';
 import { EventEmitter } from 'events';
-import { BindConfig, grpc } from './transport/provider/grpc';
+import { BindConfig, grpcServer } from './transport/provider/grpc';
 
 const transports: Record<string, any> = {};
 
@@ -17,7 +17,7 @@ export const registerTransport = (name: string, provider: any): void => {
 };
 
 // register included providers
-registerTransport('grpc', grpc);
+registerTransport('grpc', grpcServer);
 
 /**
  * Initializes all configured transports.

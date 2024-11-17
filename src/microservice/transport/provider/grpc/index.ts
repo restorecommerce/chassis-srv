@@ -1,4 +1,3 @@
-import * as grpc from '@grpc/grpc-js';
 import * as _ from 'lodash';
 import { Logger } from 'winston';
 import type { Server as GRPCServer, ServiceImplementation } from 'nice-grpc';
@@ -46,8 +45,6 @@ export class Server {
     this.config = config;
     this.logger = logger;
 
-    grpc.setLogger(console);
-
     this.server = createServer()
       .use(tracingMiddleware)
       .use(metaMiddleware)
@@ -70,15 +67,13 @@ export class Server {
    */
   async start(): Promise<void> {
     if (!this.isBound) {
-      const credentials = grpc.ServerCredentials.createInsecure();
       if (_.has(this.config, 'credentials.ssl')) {
         // TODO Re-enable
         // credentials = grpc.credentials.createSsl(
         //   this.config.credentials.ssl.certs);
       }
       await this.server.listen(
-        this.config.addr,
-        credentials
+        this.config.addr
       ).catch(err => {
         this.logger.error('Error starting server', { message: err.message, code: err.code, stack: err.stack });
         throw err;
@@ -95,4 +90,4 @@ export class Server {
   }
 }
 
-export { Server as grpc };
+export { Server as grpcServer };
