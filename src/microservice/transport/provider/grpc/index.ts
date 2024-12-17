@@ -45,7 +45,7 @@ export class Server {
     this.config = config;
     this.logger = logger;
 
-    this.server = createServer()
+    this.server = createServer(config?.channelOptions)
       .use(tracingMiddleware)
       .use(metaMiddleware)
       .use(loggingMiddleware(this.logger));
