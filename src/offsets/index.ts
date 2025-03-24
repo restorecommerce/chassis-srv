@@ -1,49 +1,48 @@
-import * as _ from 'lodash';
 import { Events, Topic } from '@restorecommerce/kafka-client';
 import { createClient, RedisClientType } from 'redis';
-import { Logger } from 'winston';
+import {
+  type ServiceConfig
+} from '@restorecommerce/service-config';
+import {
+  type Logger
+} from '@restorecommerce/logger';
 
 /**
  * Stores the offsets of the provided topics to redis periodically
  */
 export class OffsetStore {
-  logger: Logger;
-  config: any;
-  kafkaEvents: Events;
-  redisClient: RedisClientType<any, any>;
-  topics: any;
-  timerID: any;
+  // protected readonly topics: Record<string, Topic> = {};
+  protected readonly timerID: NodeJS.Timeout[] = [];
+  protected readonly prefix: string;
 
-  constructor(events: Events, config: any, logger: Logger) {
-    if (!logger) {
-      throw new Error('Missing logger config or object');
-    }
-    if (_.isNil(events)) {
-      logger.error('No Kafka client was provided, offsets will not be stored to redis');
+  constructor(
+    protected readonly kafkaEvents: Events,
+    protected readonly config: ServiceConfig,
+    protected readonly logger?: Logger,
+    protected readonly redisClient?: RedisClientType,
+  ) {
+    if (!kafkaEvents) {
+      logger?.error('No Kafka client was provided, offsets will not be stored to redis');
       return;
     }
 
-    this.config = config;
-    this.logger = logger;
-
-    if (!(this.config.get('events'))
-      || !(this.config.get('events:kafka'))
-      || !(this.config.get('events:kafka:topics'))) {
+    if (!this.config.get('events:kafka:topics')) {
       throw new Error('Kafka events configuration was not provided.');
     }
 
-    this.kafkaEvents = events;
-    if (this.config.get('redis')) {
-      const redisConfig = this.config.get('redis');
-      if (_.has(redisConfig, 'db-indexes.db-offsetStore')) {
-        redisConfig.database = _.get(redisConfig, 'db-indexes.db-offsetStore');
-      }
+    this.prefix = this.config.get('events:kafka:kafka:clientId');
+    const redisConfig = this.config.get('redis');
+    if (!redisClient && redisConfig) {
+      redisConfig.database = this.config.get('redis:db-indexes:db-offsetStore') ?? 0;
       this.redisClient = createClient(redisConfig);
-      this.redisClient.on('error', (err) => logger.error('Redis Client Error in offsetstore', { code: err.code, message: err.message, stack: err.stack }));
-      this.redisClient.connect().then((val) => logger.info('Redis client connection successful for offsetstore'));
+      this.redisClient.on(
+        'error',
+        (err: Error) => logger?.error('Redis Client Error in offsetstore', err)
+      );
+      this.redisClient.connect().then(
+        () => logger?.info('Redis client connection successful for offsetstore')
+      );
     }
-    this.topics = {};
-    this.timerID = [];
     setTimeout(this.updateTopicOffsets.bind(this), 5000);
   }
 
@@ -51,19 +50,23 @@ export class OffsetStore {
   * updates the topic offset in redis periodically
   *
   */
-  updateTopicOffsets(): any {
+  async updateTopicOffsets(): Promise<void> {
     // Iterate through the topics and updateOffsets periodically for each topic
     // events.topic(TopicName) - gives the topic object
     const kafkaCfg = this.config.get('events:kafka');
-    const topicTypes = _.keys(kafkaCfg.topics);
+    const topicTypes = Object.keys(kafkaCfg.topics ?? {});
     for (let i = 0; i < topicTypes.length; i += 1) {
       const topicType = topicTypes[i];
       const topicName = kafkaCfg.topics[topicType].topic;
 
       this.kafkaEvents.topic(topicName).then(topic => {
-        this.topics[topicType] = topic;
-        this.timerID[i] = setInterval(this.storeOffset.bind(this),
-          this.config.get('redis:offsetStoreInterval'), this.topics[topicType], topicName);
+        // this.topics[topicType] = topic;
+        this.timerID[i] = setInterval(
+          this.storeOffset.bind(this),
+          this.config.get('redis:offsetStoreInterval') ?? 1000,
+          topic,
+          topicName
+        );
       });
     }
   }
@@ -74,10 +77,10 @@ export class OffsetStore {
    * @param  {object} redisClient
    * @return {object}
    */
-  async storeOffset(topic: Topic, topicName: string): Promise<any> {
+  async storeOffset(topic: Topic, topicName: string): Promise<void> {
     // get the latest offset here each time and store it.
     const offsetValue = await topic.$offset(-1);
-    const redisKey = this.config.get('events:kafka:kafka:clientId') + ':' + topicName;
+    const redisKey = `${this.prefix}:${topicName}`;
     this.redisClient.set(redisKey, offsetValue);
   }
 
@@ -87,10 +90,12 @@ export class OffsetStore {
    * @return {object}
    */
   async getOffset(topicName: string): Promise<number> {
-    const redisKey = this.config.get('events:kafka:kafka:clientId') + ':' + topicName;
+    const redisKey = `${this.prefix}:${topicName}`;
     const offsetValue = await this.redisClient.get(redisKey);
-    this.logger.info('The offset value retreived from redis for topic is:',
-      { topicName, offsetValue });
+    this.logger?.info(
+      'The offset value retreived from redis for topic is:',
+      { topicName, offsetValue }
+    );
     return Number(offsetValue);
   }
 
@@ -100,7 +105,7 @@ export class OffsetStore {
    * @param  {object} redisClient
    * @return {object}
    */
-  async stop(): Promise<any> {
+  async stop(): Promise<void> {
     for (let i = 0; i < this.timerID.length; i += 1) {
       clearInterval(this.timerID[i]);
     }
