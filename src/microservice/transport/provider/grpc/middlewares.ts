@@ -1,9 +1,9 @@
 import { CallContext, ServerError, ServerMiddlewareCall } from 'nice-grpc';
 import { isAbortError } from 'abort-controller-x';
-import { Logger } from 'winston';
-import { v1 as uuidv1 } from 'uuid';
+import { type Logger } from '@restorecommerce/logger';
 import { metadataPassThrough } from '@restorecommerce/grpc-client/dist/middleware';
 import { AsyncLocalStorage } from 'async_hooks';
+import { randomUUID } from 'crypto';
 
 const tracingHeader = 'x-request-id';
 
@@ -15,7 +15,7 @@ export async function* tracingMiddleware<Request, Response>(
   call: ServerMiddlewareCall<Request, Response, WithRequestID>,
   context: CallContext,
 ) {
-  const nextID = context.metadata.get(tracingHeader) || uuidv1();
+  const nextID = context.metadata.get(tracingHeader) || randomUUID();
   context.metadata?.set(tracingHeader, nextID);
   return yield* call.next(call.request, {
     ...context,

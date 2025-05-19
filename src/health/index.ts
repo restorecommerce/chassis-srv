@@ -1,7 +1,7 @@
 import { CommandInterface } from '../command-interface';
 import { ServiceConfig } from '@restorecommerce/service-config';
 import { createClient } from '@restorecommerce/grpc-client';
-import { Logger } from 'winston';
+import { Logger } from '@restorecommerce/logger';
 import {
   HealthClient,
   HealthDefinition,

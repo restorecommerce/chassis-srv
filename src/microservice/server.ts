@@ -1,5 +1,4 @@
-import { createLogger } from '@restorecommerce/logger';
-import { Logger } from 'winston';
+import { type Logger, createLogger } from '@restorecommerce/logger';
 import * as _ from 'lodash';
 import { EventEmitter } from 'events';
 import { BindConfig, grpcServer } from './transport/provider/grpc';

@@ -1,5 +1,4 @@
 import { Database, aql } from 'arangojs';
-import DocumentOperationFailure from 'arangojs';
 import * as _ from 'lodash';
 import {
   buildFilter, buildSorter, buildLimiter, buildReturn,
@@ -7,7 +6,7 @@ import {
 } from './common';
 import { DatabaseProvider } from '../..';
 import { ViewAnalyzerOptions, ViewMap } from './interface';
-import { Logger } from 'winston';
+import { type Logger } from '@restorecommerce/logger';
 
 export interface CustomQuery {
   code: string; // AQL code
@@ -201,7 +200,7 @@ export class Arango implements DatabaseProvider {
       this.logger?.error('invalid or missing ids argument for findByID operation');
       throw new Error('invalid or missing ids argument for findByID operation');
     }
-    if (!_.isArray(ids)) {
+    if (!Array.isArray(ids)) {
       ids = [ids as string];
     }
     const filter = (ids as string[]).map((id) => {
@@ -210,12 +209,7 @@ export class Arango implements DatabaseProvider {
 
     const filterResult = buildFilter(filter);
     const filterQuery = filterResult.q;
-
-    let varArgs = {};
-    if (filterResult && filterResult.bindVarsMap) {
-      varArgs = filterResult.bindVarsMap;
-    }
-
+    const varArgs = filterResult.bindVarsMap ?? {};
     const queryString = `FOR node in @@collection FILTER ${filterQuery} RETURN node`;
     const bindVars = Object.assign({
       '@collection': collectionName

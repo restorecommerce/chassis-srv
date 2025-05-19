@@ -4,7 +4,7 @@ import { ArangoGraph } from './graph';
 import retry from 'async-retry';
 import * as fs from 'fs';
 import { Database } from 'arangojs';
-import { Logger } from 'winston';
+import { type Logger } from '@restorecommerce/logger';
 
 const DB_SYSTEM = '_system';
 

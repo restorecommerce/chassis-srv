@@ -1,10 +1,9 @@
 import * as _ from 'lodash';
 import { Database } from 'arangojs';
-
 import { Arango } from './base';
 import { sanitizeInputFields, sanitizeOutputFields } from './common';
 import { GraphDatabaseProvider } from '../..';
-import { Graph, EdgeDefinitionOptions } from 'arangojs/graph';
+import { Graph } from 'arangojs/graph';
 import { ArangoCollection } from 'arangojs/collection';
 import { buildGraphFilter, buildGraphLimiter, buildGraphSorter, createGraphsAssociationFilter } from './utils';
 import {
@@ -16,7 +15,7 @@ import {
   DeepPartial
 } from '@restorecommerce/rc-grpc-clients/dist/generated-server/io/restorecommerce/graph';
 import { TraversalResponse } from './interface';
-import { Logger } from 'winston';
+import { type Logger } from '@restorecommerce/logger';
 
 export class ArangoGraph extends Arango implements GraphDatabaseProvider {
   constructor(
@@ -171,9 +170,9 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
    * Fetches all vertex collections from the graph and returns
    * an array of collection descriptions.
    *
-   * @return  {Array<Object>} vertex list
+   * @return  {Array<string>} vertex list
    */
-  async listVertexCollections(): Promise<any> {
+  async listVertexCollections(): Promise<string[]> {
     const collections = await this.graph.listVertexCollections();
     return collections;
   }
@@ -225,9 +224,7 @@ export class ArangoGraph extends Arango implements GraphDatabaseProvider {
     if (_.isNil(collectionName)) {
       throw new Error('missing vertex collection name');
     }
-    if (_.isNil(dropCollection)) {
-      dropCollection = false;
-    }
+    dropCollection ??= false;
     const collection = await this.graph.removeVertexCollection(
       collectionName,
       dropCollection
